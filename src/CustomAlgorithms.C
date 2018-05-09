@@ -595,6 +595,28 @@ int CorrectTRLYForDriftAcrossRuns(unsigned long long tStart,unsigned long long t
    return 0;
 }
 //______________________________________________________________________________
+int CalculateAveragePP(std::vector<plungingProbeAnaEvent_t> ppData,double &B,double &B_err){
+   // compute the average PP data
+   // sum over all events  
+   int M=0;
+   const int N = ppData.size();  // number of runs 
+   double arg=0;
+   std::vector<double> x; 
+   for(int i=0;i<N;i++){
+      M = ppData[i].numTraces;
+      for(int j=0;j<M;j++){
+         arg = ppData[i].freq_LO[i] + ppData[i].freq[j];
+	 x.push_back(arg); 
+      }
+   }
+
+   // assign to output container 
+   B     = gm2fieldUtil::Math::GetMean<double>(x);
+   B_err = gm2fieldUtil::Math::GetStandardDeviation<double>(x);  // FIXME: does this make sense?   
+
+   return 0;
+}
+//______________________________________________________________________________
 int CalculateAveragePP(int method,std::vector<int> fxprList,std::vector<gm2field::fixedProbeFrequency_t> fxprData,
                        std::vector<plungingProbeAnaEvent_t> ppData,double &B,double &B_err){
    // compute the average PP data

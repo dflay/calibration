@@ -26,6 +26,7 @@
 #include "./include/plungingProbeAnaEvent.h"
 #include "./include/trolleyAnaEvent.h"
 
+#include "./src/InputManager.C"
 #include "./src/FXPRFuncs.C"
 #include "./src/Consolidate.C"
 #include "./src/CustomMath.C"
@@ -36,13 +37,22 @@
 #include "./src/CustomUtilities.C"
 #include "./src/DeltaBFuncs.C"
 
-int GetShimmedTransGrad(std::string date,std::string fitFuncStr,int probeNumber,bool isBlind){
+int GetShimmedTransGrad(std::string input_path){
 
-   TString fitFunc = Form("%s",fitFuncStr.c_str());
-   // TString fitFunc = Form("pol2");
+   std::cout << "----------------------------------" << std::endl;
+   std::cout << "SHIMMED TRANSVERSE GRADIENT CALCULATION" << std::endl;
 
    int rc=0;
    int method = gm2fieldUtil::Constants::kPhaseDerivative;
+
+   InputManager *inputMgr = new InputManager();
+   inputMgr->Load(input_path);
+   inputMgr->Print();
+
+   std::string date    = inputMgr->GetAnalysisDate();
+   std::string fitFunc = inputMgr->GetFitFunction();
+   bool isBlind        = inputMgr->IsBlind();
+   int probeNumber     = inputMgr->GetTrolleyProbe();
 
    date_t theDate; 
    GetDate(theDate);
@@ -55,16 +65,23 @@ int GetShimmedTransGrad(std::string date,std::string fitFuncStr,int probeNumber,
    ImportBlinding(blind);
    double blindValue = blind.value_tr; 
 
-   std::cout << "----------------------------------" << std::endl;
-   std::cout << "SHIMMED TRANSVERSE GRADIENT CALCULATION" << std::endl;
+   // char inpath[200];
+   // sprintf(inpath,"./input/runlists/%s/trly-shimmed_trans_%s.csv",date.c_str(),date.c_str());
+   // std::vector<int> run;
+   // std::vector<double> sf;
+   // std::vector<std::string> label;
+   // ImportDeltaBFileList_csv(inpath,run,label,sf);
 
-   char inpath[200];
-   sprintf(inpath,"./input/runlists/%s/trly-shimmed_trans_%s.csv",date.c_str(),date.c_str());
+   // const int NRUN = run.size();
+   // if(NRUN==0){
+   //    std::cout << "No data!" << std::endl;
+   //    return 1;
+   // }
 
    std::vector<int> run;
-   std::vector<double> sf;
    std::vector<std::string> label;
-   ImportDeltaBFileList_csv(inpath,run,label,sf);
+   inputMgr->GetRunList(run);
+   inputMgr->GetRunLabels(label);
 
    const int NRUN = run.size();
    if(NRUN==0){
@@ -96,6 +113,16 @@ int GetShimmedTransGrad(std::string date,std::string fitFuncStr,int probeNumber,
       return 1;
    }
 
+   const int NN = fxprData.size();
+   const int NFP = fxprList.size();
+   unsigned long long t0     = 0;
+   unsigned long long tStart = fxprData[0].GpsTimeStamp[fxprList[0]];
+   unsigned long long tStop  = fxprData[NN-1].GpsTimeStamp[fxprList[NFP-1]];
+   unsigned long long tStep  = 1E+9;
+
+   std::vector<fixedProbeEvent_t> fxprDataAvg;
+   GetAverageFXPRVectorsNew(method,t0,tStart,tStop,tStep,fxprList,fxprData,fxprDataAvg);
+
    // trolley data for drift correction
    std::vector<int> inList,trlyList; 
    std::string trlyPath = "./input/probe-lists/trly-list.csv"; 
@@ -110,7 +137,7 @@ int GetShimmedTransGrad(std::string date,std::string fitFuncStr,int probeNumber,
    std::cout << "Applying field drift corrections (during measurement)..." << std::endl;
    // correct for field drift 
    // use fxpr 
-   rc = CorrectTRLYForDriftDuringMeasurement(method,fxprList,fxprData,Data,DataCor);
+   rc = CorrectTRLYForDriftDuringMeasurement(fxprDataAvg,Data,DataCor);
    if(rc!=0) return 1;
    // use trly 
    rc = CorrectTRLYForDriftDuringMeasurement(method,trlyList,trlyData,Data,DataCorAlt);
@@ -151,7 +178,7 @@ int GetShimmedTransGrad(std::string date,std::string fitFuncStr,int probeNumber,
    gm2fieldUtil::Graph::SetGraphLabelSizes(gRB,0.05,0.06); 
    gRB->GetXaxis()->SetLimits(-4.5,4.5); 
    gRB->Draw("ap");
-   gRB->Fit(fitFunc);
+   gRB->Fit(fitFunc.c_str());
    c1->Update();
 
    c1->cd(2); 
@@ -160,7 +187,7 @@ int GetShimmedTransGrad(std::string date,std::string fitFuncStr,int probeNumber,
    gm2fieldUtil::Graph::SetGraphLabelSizes(gRB_fxpr,0.05,0.06); 
    gRB_fxpr->GetXaxis()->SetLimits(-4.5,4.5); 
    gRB_fxpr->Draw("ap");
-   gRB_fxpr->Fit(fitFunc);
+   gRB_fxpr->Fit(fitFunc.c_str());
    c1->Update();
 
    c1->cd(3); 
@@ -169,10 +196,10 @@ int GetShimmedTransGrad(std::string date,std::string fitFuncStr,int probeNumber,
    gm2fieldUtil::Graph::SetGraphLabelSizes(gRB_trly,0.05,0.06); 
    gRB_trly->GetXaxis()->SetLimits(-4.5,4.5); 
    gRB_trly->Draw("ap");
-   gRB_trly->Fit(fitFunc);
+   gRB_trly->Fit(fitFunc.c_str());
    c1->Update();
 
-   TString plotPath = Form("%s/shimmed-rad-grad_%s.png",plotDir,date.c_str());
+   TString plotPath = Form("%s/trly-shimmed_rad-grad_run-%d_%s.png",plotDir,run[0],date.c_str());
    c1->cd(); 
    c1->Print(plotPath); 
 
@@ -189,7 +216,7 @@ int GetShimmedTransGrad(std::string date,std::string fitFuncStr,int probeNumber,
    gm2fieldUtil::Graph::SetGraphLabelSizes(gVB,0.05,0.06); 
    gVB->GetXaxis()->SetLimits(-4.5,4.5); 
    gVB->Draw("ap");
-   gVB->Fit(fitFunc); 
+   gVB->Fit(fitFunc.c_str()); 
    c2->Update();
 
    c2->cd(2); 
@@ -198,7 +225,7 @@ int GetShimmedTransGrad(std::string date,std::string fitFuncStr,int probeNumber,
    gm2fieldUtil::Graph::SetGraphLabelSizes(gVB_fxpr,0.05,0.06); 
    gVB_fxpr->GetXaxis()->SetLimits(-4.5,4.5); 
    gVB_fxpr->Draw("ap");
-   gVB_fxpr->Fit(fitFunc); 
+   gVB_fxpr->Fit(fitFunc.c_str()); 
    c2->Update();
 
    c2->cd(3); 
@@ -207,22 +234,22 @@ int GetShimmedTransGrad(std::string date,std::string fitFuncStr,int probeNumber,
    gm2fieldUtil::Graph::SetGraphLabelSizes(gVB_trly,0.05,0.06); 
    gVB_trly->GetXaxis()->SetLimits(-4.5,4.5); 
    gVB_trly->Draw("ap");
-   gVB_trly->Fit(fitFunc); 
+   gVB_trly->Fit(fitFunc.c_str()); 
    c2->Update();
 
-   plotPath = Form("%s/shimmed-vert-grad_%s.png",plotDir,date.c_str());
+   plotPath = Form("%s/trly-shimmed_vert-grad_run-%d_%s.png",plotDir,run[0],date.c_str());
    c2->cd(); 
    c2->Print(plotPath); 
 
    double PR[3],ER[3];
-   TF1 *fitRB      = gRB->GetFunction(fitFunc);
-   TF1 *fitRB_fxpr = gRB_fxpr->GetFunction(fitFunc);
-   TF1 *fitRB_trly = gRB_trly->GetFunction(fitFunc);
+   TF1 *fitRB      = gRB->GetFunction( fitFunc.c_str() );
+   TF1 *fitRB_fxpr = gRB_fxpr->GetFunction( fitFunc.c_str() );
+   TF1 *fitRB_trly = gRB_trly->GetFunction( fitFunc.c_str() );
 
    double PV[3],EV[3];
-   TF1 *fitVB      = gVB->GetFunction(fitFunc);
-   TF1 *fitVB_fxpr = gVB_fxpr->GetFunction(fitFunc);
-   TF1 *fitVB_trly = gVB_trly->GetFunction(fitFunc);
+   TF1 *fitVB      = gVB->GetFunction( fitFunc.c_str() );
+   TF1 *fitVB_fxpr = gVB_fxpr->GetFunction( fitFunc.c_str() );
+   TF1 *fitVB_trly = gVB_trly->GetFunction( fitFunc.c_str() );
 
    PR[0] = fitRB->GetParameter(1);
    PR[1] = fitRB_fxpr->GetParameter(1);
@@ -270,6 +297,8 @@ int GetShimmedTransGrad(std::string date,std::string fitFuncStr,int probeNumber,
    PrintToFile(outpath,"rad-grad",PR,ER,drift,drift_err); 
    sprintf(outpath,"%s/vert-grad_final-location_pr-%02d_%s.csv"   ,outdir,probeNumber,date.c_str()); 
    PrintToFile(outpath,"vert-grad",PV,EV,drift,drift_err); 
+
+   delete inputMgr; 
 
    return 0;
 }

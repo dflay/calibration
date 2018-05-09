@@ -39,7 +39,7 @@ TGraph *GetDriftTGraphR2R(int method,std::vector<int> driftRun,std::vector<int> 
 int CalculateTRLYAvg_Stationary(int probeNumber,std::vector<trolleyAnaEvent_t> Event,double &mean,double &stdev);
 
 // PP functions 
-
+int CalculateAveragePP(std::vector<plungingProbeAnaEvent_t> ppData,double &B,double &B_err); 
 int CalculateAveragePP(bool isDriftCor,std::vector<int> trlyList,std::vector<trolleyAnaEvent_t> trlyData,
                        std::vector<plungingProbeAnaEvent_t> ppData,double &B,double &B_err);
 

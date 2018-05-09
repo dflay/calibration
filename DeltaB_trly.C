@@ -25,6 +25,7 @@
 #include "./include/plungingProbeAnaEvent.h"
 #include "./include/trolleyAnaEvent.h"
 
+#include "./src/InputManager.C"
 #include "./src/FitFuncs.C"
 #include "./src/FXPRFuncs.C"
 #include "./src/Consolidate.C"
@@ -36,10 +37,25 @@
 #include "./src/CustomUtilities.C"
 #include "./src/DeltaBFuncs.C"
 
-int DeltaB_trly(std::string date,int probeNumber,int type,int finalPos,int isBlind,bool isFullAnalysis,bool useFXPRFit){
+int DeltaB_trly(std::string configFile){
+
+   std::cout << "----------------------------------" << std::endl;
+   std::cout << "TRLY DELTA B CALCULATION" << std::endl;
 
    int rc=0;
    int method = gm2fieldUtil::Constants::kPhaseDerivative;
+
+   InputManager *inputMgr = new InputManager();
+   inputMgr->Load(configFile);
+   inputMgr->Print();
+
+   std::string date    = inputMgr->GetAnalysisDate();
+   bool isBlind        = inputMgr->IsBlind();
+   bool finalPos       = inputMgr->IsFinalLocation();
+   bool isFullAnalysis = inputMgr->IsFullAnalysis();
+   bool useP2PFit      = inputMgr->UseP2PFit();
+   int probeNumber     = inputMgr->GetTrolleyProbe();
+   int axis            = inputMgr->GetAxis();
 
    date_t theDate; 
    GetDate(theDate); 
@@ -48,13 +64,10 @@ int DeltaB_trly(std::string date,int probeNumber,int type,int finalPos,int isBli
    ImportBlinding(blind);
    double blindValue = blind.value_tr;
 
-   std::cout << "----------------------------------" << std::endl;
-   std::cout << "TRLY DELTA B CALCULATION" << std::endl;
-
    std::string gradName;
-   if(type==0) gradName = "rad"; 
-   if(type==1) gradName = "vert"; 
-   if(type==2) gradName = "azi"; 
+   if(axis==0) gradName = "rad"; 
+   if(axis==1) gradName = "vert"; 
+   if(axis==2) gradName = "azi"; 
 
    char tag[100];
    if(finalPos==1){
@@ -66,13 +79,23 @@ int DeltaB_trly(std::string date,int probeNumber,int type,int finalPos,int isBli
       return 1;
    }
 
-   char inpath[200];
-   sprintf(inpath,"./input/runlists/%s/dB-trly%s%s-grad_%s.csv",date.c_str(),tag,gradName.c_str(),date.c_str());
+   // char inpath[200];
+   // sprintf(inpath,"./input/runlists/%s/dB-trly%s%s-grad_%s.csv",date.c_str(),tag,gradName.c_str(),date.c_str());
+   // std::vector<int> allRuns;
+   // std::vector<double> sf;
+   // std::vector<std::string> label;
+   // ImportDeltaBFileList_csv(inpath,allRuns,label,sf);
 
    std::vector<int> allRuns;
-   std::vector<double> sf;
    std::vector<std::string> label;
-   ImportDeltaBFileList_csv(inpath,allRuns,label,sf);
+   inputMgr->GetRunList(allRuns);
+   inputMgr->GetRunLabels(label);
+
+   const int NRUN = allRuns.size();
+   if(NRUN==0){
+      std::cout << "No data!" << std::endl;
+      return 1;
+   }
 
    std::vector<int> index,run,driftRun;
    SortRuns(label,allRuns,run,driftRun,index);
@@ -163,7 +186,7 @@ int DeltaB_trly(std::string date,int probeNumber,int type,int finalPos,int isBli
    TGraph *gFPAVG_bare_trm = RemoveTrend(gFPAVG_bare,fxprFit_bare,mean_p2p,STDEV_P2P_BARE);
    TGraph *gFPAVG_grad_trm = RemoveTrend(gFPAVG_grad,fxprFit_grad,mean_p2p,STDEV_P2P_GRAD);
 
-   if(useFXPRFit){
+   if(useP2PFit){
       stdev_p2p_bare = STDEV_P2P_BARE;
       stdev_p2p_grad = STDEV_P2P_GRAD;
    }
@@ -204,7 +227,7 @@ int DeltaB_trly(std::string date,int probeNumber,int type,int finalPos,int isBli
    std::cout << "Applying field drift corrections (during measurement)..." << std::endl;
    // correct for field drift 
    // use fxpr 
-   if(useFXPRFit){
+   if(useP2PFit){
       rc = CorrectTRLYForDriftDuringMeasurement(method,fxprFit_bare,EventBare,EventBareCor);
       rc = CorrectTRLYForDriftDuringMeasurement(method,fxprFit_grad,EventGrad,EventGradCor);
    }else{
@@ -318,7 +341,7 @@ int DeltaB_trly(std::string date,int probeNumber,int type,int finalPos,int isBli
    gm2fieldUtil::Graph::SetGraphLabelSizes(gFPAVG_bare,0.05,0.06);
    gFPAVG_bare->GetXaxis()->SetLimits(xMin_bare,xMax_bare); 
    gFPAVG_bare->Draw("alp");
-   if(useFXPRFit) fxprFit_bare->Draw("same");
+   if(useP2PFit) fxprFit_bare->Draw("same");
    c1->Update();
 
    TString plotPath = Form("%s/trly_pr-%02d_bare-run-%d.png",plotDir,probeNumber,run[bareIndex]);
@@ -345,7 +368,7 @@ int DeltaB_trly(std::string date,int probeNumber,int type,int finalPos,int isBli
    gm2fieldUtil::Graph::SetGraphLabelSizes(gFPAVG_grad,0.05,0.06);
    gFPAVG_grad->GetXaxis()->SetLimits(xMin_grad,xMax_grad); 
    gFPAVG_grad->Draw("alp");
-   if(useFXPRFit) fxprFit_grad->Draw("same");
+   if(useP2PFit) fxprFit_grad->Draw("same");
    c2->Update();
 
    plotPath = Form("%s/trly_pr-%02d_grad-run-%d.png",plotDir,probeNumber,run[gradIndex]);

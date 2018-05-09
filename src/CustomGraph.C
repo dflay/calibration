@@ -369,9 +369,9 @@ TGraph2D *GetAzimuthalProjection(std::vector<trolleyAnaEvent_t> data,int units){
       // average over all events for each probe  
       for(int j=0;j<M;j++){
          arg = data[j].freq[i]; 
-         if(units==gm2fieldUtil::Units::kHz) arg /= 1E+3; 
-         if(units==gm2fieldUtil::Units::ppm) arg /= 61.79; 
-         if(units==gm2fieldUtil::Units::ppb) arg /= 0.06179; 
+         if(units==gm2fieldUtil::Constants::kHz) arg /= 1E+3; 
+         if(units==gm2fieldUtil::Constants::ppm) arg /= 61.79; 
+         if(units==gm2fieldUtil::Constants::ppb) arg /= 0.06179; 
          if( gm2fieldUtil::Math::IsInfOrNaN<double>(arg) ) std::cout << "ERROR: " << arg << std::endl;
 	 w.push_back(arg);
       }

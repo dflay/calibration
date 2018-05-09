@@ -26,6 +26,7 @@
 #include "./include/plungingProbeAnaEvent.h"
 #include "./include/trolleyAnaEvent.h"
 
+#include "./src/InputManager.C"
 #include "./src/FitFuncs.C"
 #include "./src/FXPRFuncs.C"
 #include "./src/Consolidate.C"
@@ -36,10 +37,24 @@
 #include "./src/CustomAlgorithms.C"
 #include "./src/CustomUtilities.C"
 
-int GetShimmedField_pp(std::string date,bool isBlind,bool useFXPRFit){
+int GetShimmedField_pp(std::string configFile){
+
+   std::cout << "----------------------------------" << std::endl;
+   std::cout << "PP SHIMMED FIELD" << std::endl;
 
    int rc=0;
    int method = gm2fieldUtil::Constants::kPhaseDerivative;
+
+   InputManager *inputMgr = new InputManager();
+   inputMgr->Load(configFile);
+   inputMgr->Print();
+
+   std::string date    = inputMgr->GetAnalysisDate();
+   bool isBlind        = inputMgr->IsBlind();
+   bool isFullAnalysis = inputMgr->IsFullAnalysis();
+   bool useP2PFit      = inputMgr->UseP2PFit();
+   int probeNumber     = inputMgr->GetTrolleyProbe();
+   int axis            = inputMgr->GetAxis();
 
    date_t theDate; 
    GetDate(theDate);
@@ -51,19 +66,24 @@ int GetShimmedField_pp(std::string date,bool isBlind,bool useFXPRFit){
    blind_t blind;
    ImportBlinding(blind);
    double blindValue = blind.value_pp;
-
-   std::cout << "----------------------------------" << std::endl;
-   std::cout << "PP SHIMMED FIELD" << std::endl;
    
-   char inpath[200];   
-   sprintf(inpath,"./input/runlists/%s/pp-shimmed_%s.csv",date.c_str(),date.c_str());
+   // char inpath[200];   
+   // sprintf(inpath,"./input/runlists/%s/pp-shimmed_%s.csv",date.c_str(),date.c_str());
+   // std::vector<int> run;
+   // std::vector<double> sf;
+   // std::vector<std::string> label;
+   // ImportDeltaBFileList_csv(inpath,run,label,sf);
 
    std::vector<int> run;
-   std::vector<double> sf;
    std::vector<std::string> label;
-   ImportDeltaBFileList_csv(inpath,run,label,sf);
+   inputMgr->GetRunList(run);
+   inputMgr->GetRunLabels(label);
 
    const int NRUN = run.size();
+   if(NRUN==0){
+      std::cout << "No data!" << std::endl;
+      return 1;
+   }
 
    // fixed probe data
    std::string fxprPath = "./input/probe-lists/fxpr-list.csv"; 
@@ -102,7 +122,7 @@ int GetShimmedField_pp(std::string date,bool isBlind,bool useFXPRFit){
    double mean_p2p=0,stdev_p2p=0;
    TGraph *gFPAVG_alt = RemoveTrend(gFPAVG,fxprFit,MEAN_P2P,STDEV_P2P);
 
-   if(useFXPRFit){
+   if(useP2PFit){
       stdev_p2p = STDEV_P2P;
    }
 
@@ -186,7 +206,7 @@ int GetShimmedField_pp(std::string date,bool isBlind,bool useFXPRFit){
  
    CopyPlungingProbe(ppEvent,ppEvent_tr);
 
-   if(useFXPRFit){
+   if(useP2PFit){
       rc = CorrectPPForDriftDuringMeasurement(method,fxprFit,ppEvent,ppEventCor);
    }else{
       rc = CorrectPPForDriftDuringMeasurement(fxprDataAvg,ppEvent,ppEventCor);
@@ -198,9 +218,9 @@ int GetShimmedField_pp(std::string date,bool isBlind,bool useFXPRFit){
    double B[3]     = {0,0,0}; 
    double B_err[3] = {0,0,0}; 
    // raw 
-   CalculateAveragePP(method,fxprList,fxprData,ppEvent   ,B[0],B_err[0]);
+   CalculateAveragePP(ppEvent   ,B[0],B_err[0]);
    // drift corrected [fxpr] 
-   CalculateAveragePP(method,fxprList,fxprData,ppEventCor,B[1],B_err[1]);
+   CalculateAveragePP(ppEventCor,B[1],B_err[1]);
    // drift corrected [trly] 
    // CalculateAveragePP(true ,method,trlyList,trlyData,ppEventCor_tr,B[2],B_err[2]);
 
@@ -269,10 +289,10 @@ int GetShimmedField_pp(std::string date,bool isBlind,bool useFXPRFit){
    gm2fieldUtil::Graph::SetGraphLabelSizes(gFPAVG,0.05,0.06);
    gFPAVG->GetXaxis()->SetLimits(xMin,xMax); 
    gFPAVG->Draw("alp");
-   if(useFXPRFit) fxprFit->Draw("same"); 
+   if(useP2PFit) fxprFit->Draw("same"); 
    c2->Update();
 
-   TString plotName = Form("%s/pp-shimmed_drift-cor_%s.png",plotDir,date.c_str());
+   TString plotName = Form("%s/pp-shimmed_drift-cor_run-%d_%s.png",plotDir,run[0],date.c_str());
 
    c2->cd(); 
    c2->Print(plotName);

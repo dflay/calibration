@@ -32,7 +32,7 @@ TGraph *GetTRLYTGraph(int probe,TString xAxis,TString yAxis,std::vector<trolleyA
 TGraphErrors *GetSlicePlot(char axis,std::vector<trolleyAnaEvent_t> trlyData); 
 TGraphErrors *GetSlicePlot(char axis,std::vector<trolleyAnaEvent_t> trlyData,
                            std::vector<double> &X,std::vector<double> &Y,std::vector<double> &EY); 
-TGraph2D *GetAzimuthalProjection(std::vector<trolleyAnaEvent_t> data,int units=gm2fieldUtil::Units::Hz); 
+TGraph2D *GetAzimuthalProjection(std::vector<trolleyAnaEvent_t> data,int units=gm2fieldUtil::Constants::Hz); 
 int FillTRVector(int probe,TString axis,std::vector<trolleyAnaEvent_t> data,std::vector<double> &x);
 
 // fixed probe plots 

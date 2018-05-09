@@ -34,6 +34,8 @@ def writeConfigFile(data,tag,keyList,isFullAnalysis,isFinalLocation,axis,fitData
    outData['p2p-fit']    = data['p2p-fit'] 
    if(fitData): 
       outData['fit'] = data[tag]['fit']  
+   else: 
+      outData['fit'] = "NONE"
    outData['full-ana']   = isFullAnalysis 
    outData['final-loc']  = isFinalLocation 
    outData['nruns']      = len(runList) 

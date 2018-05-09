@@ -27,6 +27,7 @@
 #include "./include/plungingProbeAnaEvent.h"
 #include "./include/trolleyAnaEvent.h"
 
+#include "./src/InputManager.C"
 #include "./src/FitFuncs.C"
 #include "./src/FXPRFuncs.C"
 #include "./src/Consolidate.C"
@@ -38,10 +39,25 @@
 #include "./src/CustomUtilities.C"
 #include "./src/DeltaBFuncs.C"
 
-int DeltaB_pp(std::string date,int type,int finalPos,bool isBlind,bool isFullAnalysis,bool useFXPRFit){
+int DeltaB_pp(std::string configFile){
+
+   std::cout << "----------------------------------" << std::endl;
+   std::cout << "PP DELTA B CALCULATION" << std::endl;
 
    int rc=0;
    int method = gm2fieldUtil::Constants::kPhaseDerivative;
+
+   InputManager *inputMgr = new InputManager();
+   inputMgr->Load(configFile);
+   inputMgr->Print();
+
+   std::string date    = inputMgr->GetAnalysisDate();
+   bool isBlind        = inputMgr->IsBlind();
+   bool finalPos       = inputMgr->IsFinalLocation(); 
+   bool isFullAnalysis = inputMgr->IsFullAnalysis();
+   bool useP2PFit      = inputMgr->UseP2PFit(); 
+   int probeNumber     = inputMgr->GetTrolleyProbe();
+   int axis            = inputMgr->GetAxis();
 
    date_t theDate; 
    GetDate(theDate);
@@ -50,34 +66,31 @@ int DeltaB_pp(std::string date,int type,int finalPos,bool isBlind,bool isFullAna
    ImportBlinding(blind);
    double blindValue = blind.value_pp; 
 
-   std::cout << "----------------------------------" << std::endl;
-   std::cout << "PP DELTA B CALCULATION" << std::endl;
-
    std::string gradName;
-   if(type==0) gradName = "rad"; 
-   if(type==1) gradName = "vert"; 
-   if(type==2) gradName = "azi"; 
+   if(axis==0) gradName = "rad"; 
+   if(axis==1) gradName = "vert"; 
+   if(axis==2) gradName = "azi"; 
 
    char tag[100];
-   if(finalPos==1){
+   if(finalPos){
       sprintf(tag,"_final-location_"); 
-   }else if(finalPos==0){
+   }else if(!finalPos){
       sprintf(tag,"_"); 
    }else{
       std::cout << "Invalid type! finalPos = " << finalPos <<std::endl;
       return 1;
    }
-   
-   char inpath[200];   
-   sprintf(inpath,"./input/runlists/%s/dB-pp%s%s-grad_%s.csv",date.c_str(),tag,gradName.c_str(),date.c_str());
 
    std::vector<int> allRuns;
-   std::vector<double> sf;
    std::vector<std::string> label;
-   rc = ImportDeltaBFileList_csv(inpath,allRuns,label,sf);
-   if(rc!=0) return 1;
+   inputMgr->GetRunList(allRuns);
+   inputMgr->GetRunLabels(label);
 
    const int NRUN = allRuns.size();
+   if(NRUN==0){
+      std::cout << "No data!" << std::endl;
+      return 1;
+   }
 
    std::vector<int> index,run,driftRun;
    SortRuns(label,allRuns,run,driftRun,index); 
@@ -171,7 +184,7 @@ int DeltaB_pp(std::string date,int type,int finalPos,bool isBlind,bool isFullAna
    TGraph *gFPAVG_bare_trm = RemoveTrend(gFPAVG_bare,fxprFit_bare,mean_p2p,STDEV_P2P_BARE);
    TGraph *gFPAVG_grad_trm = RemoveTrend(gFPAVG_grad,fxprFit_grad,mean_p2p,STDEV_P2P_GRAD);
 
-   if(useFXPRFit){
+   if(useP2PFit){
       stdev_p2p_bare = STDEV_P2P_BARE;
       stdev_p2p_grad = STDEV_P2P_GRAD;
    } 
@@ -238,7 +251,7 @@ int DeltaB_pp(std::string date,int type,int finalPos,bool isBlind,bool isFullAna
 
    plungingProbeAnaEvent_t ppEventCor_bare,ppEventCor_grad,ppEventCor_new; 
 
-   if(useFXPRFit){
+   if(useP2PFit){
       rc = CorrectPPForDriftDuringMeasurement(method,fxprFit_bare,ppEvent[bareIndex],ppEventCor_bare);
       rc = CorrectPPForDriftDuringMeasurement(method,fxprFit_grad,ppEvent[gradIndex],ppEventCor_grad);
       ppEventCor.push_back(ppEventCor_bare); 
@@ -335,7 +348,6 @@ int DeltaB_pp(std::string date,int type,int finalPos,bool isBlind,bool isFullAna
    sprintf(plotDir,"./plots/%02d-%02d-%02d",theDate.month,theDate.day,theDate.year-2000); 
    rc = MakeDirectory(plotDir); 
 
-
    // draw some plots 
    TCanvas *c1 = new TCanvas("c1","Bare Run",1200,600);
    c1->Divide(1,2); 
@@ -355,7 +367,7 @@ int DeltaB_pp(std::string date,int type,int finalPos,bool isBlind,bool isFullAna
    gm2fieldUtil::Graph::UseTimeDisplay(gFPAVG_bare); 
    gFPAVG_bare->GetXaxis()->SetLimits(xMin_bare,xMax_bare); 
    gFPAVG_bare->Draw("alp");
-   if(useFXPRFit) fxprFit_bare->Draw("same"); 
+   if(useP2PFit) fxprFit_bare->Draw("same"); 
    c1->Update(); 
 
    c1->cd();
@@ -381,7 +393,7 @@ int DeltaB_pp(std::string date,int type,int finalPos,bool isBlind,bool isFullAna
    gm2fieldUtil::Graph::UseTimeDisplay(gFPAVG_grad); 
    gFPAVG_grad->GetXaxis()->SetLimits(xMin_grad,xMax_grad); 
    gFPAVG_grad->Draw("alp");
-   if(useFXPRFit) fxprFit_grad->Draw("same"); 
+   if(useP2PFit) fxprFit_grad->Draw("same"); 
    c2->Update();
 
    c2->cd();
@@ -389,6 +401,8 @@ int DeltaB_pp(std::string date,int type,int finalPos,bool isBlind,bool isFullAna
    plotPath = Form("%s/pp_grad-run-%d.png",plotDir,run[gradIndex]); 
    c2->Print(plotPath); 
    delete c2;  
+
+   delete inputMgr; 
 
    return 0;
 }

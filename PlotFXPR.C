@@ -71,7 +71,7 @@ int PlotFXPR(){
    TGraph *gFPAVG = GetTGraphNew(fxprDataAvg);
    gm2fieldUtil::Graph::SetGraphParameters(gFPAVG,20,kBlack); 
 
-   const int nOrder = 3;
+   const int nOrder = 2;
    std::vector< std::vector<double> > eps;
    TF1 *fxprFit = GetPolyFitToFXPR("myFit",nOrder,gFPAVG,eps);
 

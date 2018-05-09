@@ -24,6 +24,7 @@
 #include "./include/plungingProbeAnaEvent.h"
 #include "./include/trolleyAnaEvent.h"
 
+#include "./src/InputManager.C"
 #include "./src/FXPRFuncs.C"
 #include "./src/Consolidate.C"
 #include "./src/CustomMath.C"
@@ -34,13 +35,24 @@
 #include "./src/CustomUtilities.C"
 #include "./src/DeltaBFuncs.C"
 
-int GetImposedGradient_pp(std::string date,std::string fitFunc,int probeNumber,int axis,bool isBlind,bool isFullAnalysis,bool p2pFitStatus){
+int GetImposedGradient_pp(std::string configFile){
 
    std::cout << "------------------------------------" << std::endl;
    std::cout << "GET IMPOSED GRADIENT (USING PP SCAN)" << std::endl;
 
    int rc=0;
    int method = gm2fieldUtil::Constants::kPhaseDerivative;
+
+   InputManager *inputMgr = new InputManager();
+   inputMgr->Load(configFile);
+   inputMgr->Print();
+
+   std::string date    = inputMgr->GetAnalysisDate();
+   std::string fitFunc = inputMgr->GetFitFunction();
+   bool isBlind        = inputMgr->IsBlind();
+   bool isFullAnalysis = inputMgr->IsFullAnalysis();
+   int probeNumber     = inputMgr->GetTrolleyProbe();
+   int axis            = inputMgr->GetAxis();
 
    date_t theDate;
    GetDate(theDate);
@@ -74,10 +86,21 @@ int GetImposedGradient_pp(std::string date,std::string fitFunc,int probeNumber,i
    char inpath[200];
    sprintf(inpath,"./input/runlists/%s/pp-scan_%s-grad_%s.csv",date.c_str(),gradType.Data(),date.c_str());
 
+   // std::vector<int> allRuns,run,bRun,gRun;
+   // std::vector<double> sf;
+   // std::vector<std::string> label;
+   // ImportDeltaBFileList_csv(inpath,allRuns,label,sf);
+
+   // const int NRUN = allRuns.size();
+   // if(NRUN==0){
+   //    std::cout << "No data!" << std::endl;
+   //    return 1;
+   // }
+
    std::vector<int> allRuns,run,bRun,gRun;
-   std::vector<double> sf;
    std::vector<std::string> label;
-   ImportDeltaBFileList_csv(inpath,allRuns,label,sf);
+   inputMgr->GetRunList(allRuns);
+   inputMgr->GetRunLabels(label);
 
    const int NRUN = allRuns.size();
    if(NRUN==0){
@@ -337,7 +360,7 @@ int GetImposedGradient_pp(std::string date,std::string fitFunc,int probeNumber,i
    std::cout << Form("%s [fxpr]: %.3lf +/- %.3lf +/- %.3lf Hz/mm",gradType.Data(),PR[1],ER[1],drift_err[1]) << std::endl;
    std::cout << Form("%s [trly]: %.3lf +/- %.3lf +/- %.3lf Hz/mm",gradType.Data(),PR[2],ER[2],drift_err[2]) << std::endl;
 
-   char outpath[200],outdir[200];
+   char outdir[200];
    if(isBlind)  sprintf(outdir,"./output/blinded/%02d-%02d-%02d"  ,theDate.month,theDate.day,theDate.year-2000);
    if(!isBlind) sprintf(outdir,"./output/unblinded/%02d-%02d-%02d",theDate.month,theDate.day,theDate.year-2000);
    if(!isFullAnalysis){
@@ -346,14 +369,16 @@ int GetImposedGradient_pp(std::string date,std::string fitFunc,int probeNumber,i
       sprintf(outdir,"./output/delta-b/%02d-%02d-%02d",theDate.month,theDate.day,theDate.year-2000);
    }
    rc = MakeDirectory(outdir);
-   // print results  
-   if(Axis.compare("x")==0) sprintf(outpath,"%s/rad-grad_pr-%02d_%s.csv" ,outdir,probeNumber,date.c_str());
-   if(Axis.compare("y")==0) sprintf(outpath,"%s/vert-grad_pr-%02d_%s.csv",outdir,probeNumber,date.c_str());
-   if(Axis.compare("z")==0) sprintf(outpath,"%s/azi-grad_pr-%02d_%s.csv" ,outdir,probeNumber,date.c_str());
 
-   if(Axis.compare("x")==0) PrintToFile(outpath,"rad-grad" ,PR,ER,drift,drift_err);
-   if(Axis.compare("y")==0) PrintToFile(outpath,"vert-grad",PR,ER,drift,drift_err);
-   if(Axis.compare("z")==0) PrintToFile(outpath,"azi-grad" ,PR,ER,drift,drift_err);
+   // print results 
+   char tag[200],outpath[200]; 
+   sprintf(tag,"%s-grad",gradType.Data());  
+   sprintf(outpath,"%s/%s_pr-%02d_%s.csv" ,outdir,tag,probeNumber,date.c_str());
+
+   std::string tagStr = tag; 
+   PrintToFile(outpath,tagStr,PR,ER,drift,drift_err);
+
+   delete inputMgr; 
  
    return 0;
 }

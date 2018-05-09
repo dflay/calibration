@@ -37,7 +37,7 @@
 #include "./src/CustomUtilities.C"
 #include "./src/DeltaBFuncs.C"
 
-int GetShimmedGrad_pp(){
+int GetShimmedGrad_pp(std::string input_path){
 
    std::cout << "------------------------------------" << std::endl;
    std::cout << "GET SHIMMED GRADIENT (USING PP SCAN)" << std::endl;
@@ -45,7 +45,7 @@ int GetShimmedGrad_pp(){
    int rc=0;
    int method = gm2fieldUtil::Constants::kPhaseDerivative;
 
-   std::string input_path = "./input/json/get-shim-grad-pp.json";
+   // std::string input_path = "./input/json/get-shim-grad-pp.json";
    InputManager *inputMgr = new InputManager(); 
    inputMgr->Load(input_path);
    inputMgr->Print(); 

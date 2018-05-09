@@ -25,6 +25,7 @@
 #include "./include/plungingProbeAnaEvent.h"
 #include "./include/trolleyAnaEvent.h"
 
+#include "./src/InputManager.C"
 #include "./src/FitFuncs.C"
 #include "./src/FXPRFuncs.C"
 #include "./src/Consolidate.C"
@@ -36,10 +37,23 @@
 #include "./src/CustomUtilities.C"
 #include "./src/DeltaBFuncs.C"
 
-int GetShimmedField_trly(std::string date,int probeNumber,bool isBlind,bool useFXPRFit){
+int GetShimmedField_trly(std::string configFile){
+
+   std::cout << "----------------------------------" << std::endl;
+   std::cout << "TRLY SHIMMED FIELD CALCULATION" << std::endl;
 
    int rc=0;
    int method = gm2fieldUtil::Constants::kPhaseDerivative;
+
+   InputManager *inputMgr = new InputManager();
+   inputMgr->Load(configFile);
+   inputMgr->Print();
+
+   std::string date    = inputMgr->GetAnalysisDate();
+   bool isBlind        = inputMgr->IsBlind();
+   bool isFullAnalysis = inputMgr->IsFullAnalysis();
+   bool useP2PFit      = inputMgr->UseP2PFit();
+   int probeNumber     = inputMgr->GetTrolleyProbe();
 
    date_t theDate;
    GetDate(theDate);
@@ -52,33 +66,34 @@ int GetShimmedField_trly(std::string date,int probeNumber,bool isBlind,bool useF
    ImportBlinding(blind);
    double blindValue = blind.value_tr; 
 
-   std::cout << "----------------------------------" << std::endl;
-   std::cout << "TRLY SHIMMED FIELD CALCULATION" << std::endl;
-
-   char inpath[200];
-   sprintf(inpath,"./input/runlists/%s/trly-shimmed_%s.csv",date.c_str(),date.c_str());
+   // char inpath[200];
+   // sprintf(inpath,"./input/runlists/%s/trly-shimmed_%s.csv",date.c_str(),date.c_str());
+   // std::vector<int> run;
+   // std::vector<double> sf;
+   // std::vector<std::string> label;
+   // ImportDeltaBFileList_csv(inpath,run,label,sf);
 
    std::vector<int> run;
-   std::vector<double> sf;
    std::vector<std::string> label;
-   ImportDeltaBFileList_csv(inpath,run,label,sf);
+   inputMgr->GetRunList(run);
+   inputMgr->GetRunLabels(label);
 
    const int NRUN = run.size();
-   if(NRUN>2){
-      std::cout << "Too many runs!" << std::endl;
+   if(NRUN==0){
+      std::cout << "No data!" << std::endl;
       return 1;
    }
  
-   int bareRun=0,bareIndex=0,gradRun=0,gradIndex=0;
-   for(int i=0;i<NRUN;i++){
-      if(label[i].compare("bare")==0){
-	 bareRun   = run[i];
-	 bareIndex = i;
-      }else{
-	 gradRun   = run[i];
-	 gradIndex = i;
-      }
-   } 
+   // int bareRun=0,bareIndex=0,gradRun=0,gradIndex=0;
+   // for(int i=0;i<NRUN;i++){
+   //    if(label[i].compare("bare")==0){
+   //       bareRun   = run[i];
+   //       bareIndex = i;
+   //    }else{
+   //       gradRun   = run[i];
+   //       gradIndex = i;
+   //    }
+   // } 
 
    // fixed probe data
    std::string fxprPath = "./input/probe-lists/fxpr-list.csv"; 
@@ -118,7 +133,7 @@ int GetShimmedField_trly(std::string date,int probeNumber,bool isBlind,bool useF
    double STDEV_P2P=0;
    TGraph *gFPAVG_trm = RemoveTrend(gFPAVG,fxprFit,mean_p2p,STDEV_P2P);
 
-   if(useFXPRFit){
+   if(useP2PFit){
       stdev_p2p = STDEV_P2P;
    }
 
@@ -155,7 +170,7 @@ int GetShimmedField_trly(std::string date,int probeNumber,bool isBlind,bool useF
    std::cout << "Applying field drift corrections (during measurement)..." << std::endl;
    // correct for field drift 
    // use fxpr 
-   if(useFXPRFit){
+   if(useP2PFit){
       rc = CorrectTRLYForDriftDuringMeasurement(method,fxprFit,Event,EventCor);
    }else{
       rc = CorrectTRLYForDriftDuringMeasurement(fxprDataAvg,Event,EventCor);
@@ -179,11 +194,11 @@ int GetShimmedField_trly(std::string date,int probeNumber,bool isBlind,bool useF
    // drift corrected (trly)   
    CalculateTRLYAvg_Stationary(probeNumber,EventCorAlt,B[2],B_err[2]);
 
-   if(useFXPRFit){
+   if(useP2PFit){
       for(int i=1;i<3;i++) P2PErr[i] = STDEV_P2P; 
    }
 
-   std::cout << Form("===================== RESULTS FOR PROBE %02d =====================",probeNumber+1) << std::endl;
+   std::cout << Form("===================== RESULTS FOR PROBE %02d =====================",probeNumber) << std::endl;
    std::cout << "Raw results: " << std::endl; 
    std::cout << Form("%.3lf +/- %.3lf Hz (%.3lf ppb)",
                      B[0],B_err[0],B_err[0]/0.06179) << std::endl;
@@ -248,13 +263,15 @@ int GetShimmedField_trly(std::string date,int probeNumber,bool isBlind,bool useF
    gm2fieldUtil::Graph::SetGraphLabelSizes(gFPAVG,0.05,0.06);
    gFPAVG->GetXaxis()->SetLimits(xMin,xMax); 
    gFPAVG->Draw("alp");
-   if(useFXPRFit) fxprFit->Draw("same"); 
+   if(useP2PFit) fxprFit->Draw("same"); 
    c2->Update();
 
-   TString plotPath = Form("%s/trly-shimmed_drift-cor_pr-%02d_%s.png",plotDir,probeNumber,date.c_str());
+   TString plotPath = Form("%s/trly-shimmed_drift-cor_pr-%02d_run-%d_%s.png",plotDir,probeNumber,run[0],date.c_str());
 
    c2->cd();
    c2->Print(plotPath);
+
+   delete inputMgr; 
 
    return 0;
 }

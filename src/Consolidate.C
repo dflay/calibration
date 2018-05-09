@@ -114,6 +114,9 @@ int GetTrolleyData(std::string date,int runNumber,int freqMethod,std::vector<tro
       startIndex = FindStartIndexTRLY(date,runNumber);
    } 
 
+   // FIXME: special case...
+   if(runNumber==3030) startIndex = 10; 
+
    rc = ConsolidateTrolleyData(startIndex,freqMethod,trlyTime,trlyPos,trlyMon,trlyFreq,trlyEvent);
 
    return rc;
