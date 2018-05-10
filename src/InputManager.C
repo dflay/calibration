@@ -77,7 +77,7 @@ int InputManager::Load(std::string inpath){
 }
 //______________________________________________________________________________
 int InputManager::Print(){
-   char axis;
+   char axis='N';
    if(fAxis==0) axis = 'x'; 
    if(fAxis==1) axis = 'y'; 
    if(fAxis==2) axis = 'z'; 

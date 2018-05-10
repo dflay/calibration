@@ -14,6 +14,7 @@ debug = False
 json_prefix = "./input/json"
 
 filename = os.getcwd()+"/input/json/calib_02-28-18.json"
+filename = os.getcwd()+"/input/json/calib-alt_02-28-18.json"
 # filename = os.getcwd()+"/input/json/calib_04-25-18.json"
 inData   = json.loads(open(filename).read())
 
@@ -21,6 +22,7 @@ inData   = json.loads(open(filename).read())
 theDate     = inData["date"]
 probeNumber = inData["trly-probe"] # counting starts from zero   
 isBlind     = inData["blinding"]
+useP2PFit   = inData["p2p-fit"]
 
 json_prefix = json_prefix + "/" + theDate
 if not os.path.exists(json_prefix):
@@ -28,7 +30,7 @@ if not os.path.exists(json_prefix):
 
 # a key list to use later 
 keyList = []  
-# other useful constants 
+# useful constants 
 gradLabel = ["rad"       ,"vert"     ,"azi"]
 gradName  = ["norm-quad" ,"skew-quad","azi"]
 axisName  = ["x"         ,"y"        ,"z"]
@@ -37,34 +39,17 @@ print("======================== ANALYSIS PARAMETERS ========================")
 print("date: {0}, blinding: {1}, trolley probe: {2}".format(theDate,isBlind,probeNumber) )
 print("===============================================================") 
 
-# get the fit functions we need 
-fitFunc_shim_trans = getPrimaryValue(inData,"shimmed-grad","trans-fit")
-fitFunc_shim_azi   = getPrimaryValue(inData,"shimmed-grad","azi-fit"  )
-fitFunc_trans      = getPrimaryValue(inData,"trans-grad"  ,"fit"      )
-fitFunc_azi        = getPrimaryValue(inData,"azi-grad"    ,"fit"      )
-
-# get P2P fit status 
-useP2PFit          = inData["p2p-fit"]
-
 # PP scan info 
 ppScan             = getPrimaryValue(inData,"pp-scan"     ,"enable") 
 if(ppScan): 
-   print("Will use PP scan data!")
-   fitFunc_ppScan_0   = getPrimaryValue(inData,"pp-scan-rad" ,"fit") 
-   fitFunc_ppScan_1   = getPrimaryValue(inData,"pp-scan-vert","fit") 
-   fitFunc_ppScan_2   = getPrimaryValue(inData,"pp-scan-azi" ,"fit") 
-   fitFunc_ppScan     = [fitFunc_ppScan_0,fitFunc_ppScan_1,fitFunc_ppScan_2]
+   print("--> Will use PP scan data!")
 
-p2pFitStatus = 0 # assume false 
-if( useP2PFit ) :
-   p2pFitStatus = 1  
-
-# get the shimmed runs 
-shimRun_pp   = getShimRun(inData,"pp-shimmed"  ) 
-shimRun_trly = getShimRun(inData,"trly-shimmed") 
-
-# prepare input files 
-prepareRunLists(theDate,inData,ppScan)  
+# prepare TRLY mode input files 
+trly_mode_prefix = "./input/runlists/{0}".format(theDate) 
+deleteDir(trly_mode_prefix) # delete existing directory 
+createDir(trly_mode_prefix) # recreate directory 
+writeToFileTRLYMode(trly_mode_prefix,"interactive",inData)
+writeToFileTRLYMode(trly_mode_prefix,"continuous" ,inData) 
 
 isBlind = 0  
 if( inData["blinding"] ):
@@ -82,15 +67,15 @@ if(not ppScan):
    scriptName    = "DeltaB_pp.C"
    for i in xrange(0,3):
       tag     = "dB-pp_{0}-grad".format(gradLabel[i])
-      outpath = "{0}/delta-b_pp-{1}.json".format(json_prefix,axisName[i]) 
+      configPath = "{0}/delta-b_pp-{1}.json".format(json_prefix,axisName[i]) 
       # make a run list  
       keyList[:] = [] 
       keyList.append("bare") 
       keyList.append( "{0}".format(gradName[i]) )
       keyList.append("bare-2") 
       # write the input file 
-      writeConfigFile(inData,tag,keyList,isFullAnalysis,finalLocation,i,fitData,outpath)
-      cmd = "root -q -b -l '{0}+(\"{1}\")'".format(scriptName,outpath)
+      writeConfigFile(inData,tag,keyList,isFullAnalysis,finalLocation,i,fitData,configPath)
+      cmd = "root -q -b -l '{0}+(\"{1}\")'".format(scriptName,configPath)
       if(debug):  print(cmd)
       if(not debug): os.system(cmd)
    print("===============================================================")
@@ -101,15 +86,15 @@ if(not ppScan):
    scriptName    = "DeltaB_pp.C"
    for i in xrange(0,3):
       tag     = "dB-pp_final-location_{0}-grad".format(gradLabel[i])
-      outpath = "{0}/delta-b_pp-{1}.json".format(json_prefix,axisName[i]) 
+      configPath = "{0}/delta-b_pp-{1}.json".format(json_prefix,axisName[i]) 
       # make a run list  
       keyList[:] = [] 
       keyList.append("bare") 
       keyList.append( "{0}".format(gradName[i]) )
       keyList.append("bare-2") 
       # write the input file 
-      writeConfigFile(inData,tag,keyList,isFullAnalysis,finalLocation,i,fitData,outpath)
-      cmd = "root -q -b -l '{0}+(\"{1}\")'".format(scriptName,outpath)
+      writeConfigFile(inData,tag,keyList,isFullAnalysis,finalLocation,i,fitData,configPath)
+      cmd = "root -q -b -l '{0}+(\"{1}\")'".format(scriptName,configPath)
       if(debug):  print(cmd)
       if(not debug): os.system(cmd)
    print("===============================================================") 
@@ -120,29 +105,29 @@ else:
    scriptName    = "GetImposedGradient_pp.C"
    for i in xrange(0,3):
       tag     = "pp-scan-{0}".format(gradLabel[i])
-      outpath = "{0}/get-imposed-grad-pp-{1}".format(json_prefix,axisName[i]) 
+      configPath = "{0}/get-imposed-grad-pp-{1}".format(json_prefix,axisName[i]) 
       # make a run list  
       keyList[:] = [] 
       keyList.append("bare") 
       keyList.append( "{0}".format(gradName[i]) )
       # write the input file 
-      writeConfigFile(inData,tag,keyList,isFullAnalysis,finalLocation,i,fitData,outpath)
-      cmd = "root -q -b -l '{0}+(\"{1}\")'".format(scriptName,outpath)
+      writeConfigFile(inData,tag,keyList,isFullAnalysis,finalLocation,i,fitData,configPath)
+      cmd = "root -q -b -l '{0}+(\"{1}\")'".format(scriptName,configPath)
       if(debug):  print(cmd)
       if(not debug): os.system(cmd)
    print("===============================================================")
 # Shimmed field 
 finalLocation = 1            # shimmed location? yes 
 fitData       = False        # fitting PP data? no  
-tag           = "pp-shimmed" # top-level JSON key 
+tag           = "calib-runs" # top-level JSON key 
 # set up JSON path 
-outpath = "{0}/pp-shimmed.json".format(json_prefix) 
+configPath = "{0}/pp-shimmed.json".format(json_prefix) 
 # make a run list 
 keyList[:] = []         # clear entries  
-keyList.append("shim")  # run list 
-writeConfigFile(inData,tag,keyList,isFullAnalysis,finalLocation,-1,fitData,outpath)
+keyList.append("pp")  # run list 
+writeConfigFile(inData,tag,keyList,isFullAnalysis,finalLocation,-1,fitData,configPath)
 scriptName = "GetShimmedField_pp.C"
-cmd = "root -q -b -l '{0}+(\"{1}\")'".format(scriptName,outpath)
+cmd = "root -q -b -l '{0}+(\"{1}\")'".format(scriptName,configPath)
 if(debug):  print(cmd)
 if(not debug): os.system(cmd) 
 print("===============================================================") 
@@ -154,15 +139,15 @@ tag           = "none"    # clear the top-level key for the JSON object
 scriptName    = "DeltaB_trly.C"
 for i in xrange(0,3):
    tag     = "dB-trly_{0}-grad".format(gradLabel[i])
-   outpath = "{0}/delta-b_trly-{1}.json".format(json_prefix,axisName[i]) 
+   configPath = "{0}/delta-b_trly-{1}.json".format(json_prefix,axisName[i]) 
    # make a run list  
    keyList[:] = [] 
    keyList.append("bare") 
    keyList.append( "{0}".format(gradName[i]) )
    keyList.append("bare-2") 
    # write the input file 
-   writeConfigFile(inData,tag,keyList,isFullAnalysis,finalLocation,i,fitData,outpath)
-   cmd = "root -q -b -l '{0}+(\"{1}\")'".format(scriptName,outpath)
+   writeConfigFile(inData,tag,keyList,isFullAnalysis,finalLocation,i,fitData,configPath)
+   cmd = "root -q -b -l '{0}+(\"{1}\")'".format(scriptName,configPath)
    if(debug):  print(cmd)
    if(not debug): os.system(cmd) 
 print("===============================================================") 
@@ -173,66 +158,92 @@ tag           = "none"    # clear the top-level key for the JSON object
 scriptName    = "DeltaB_trly.C"
 for i in xrange(0,3):
    tag     = "dB-trly_final-location_{0}-grad".format(gradLabel[i])
-   outpath = "{0}/delta-b_final-location_trly-{1}.json".format(json_prefix,axisName[i]) 
+   configPath = "{0}/delta-b_final-location_trly-{1}.json".format(json_prefix,axisName[i]) 
    # make a run list  
    keyList[:] = [] 
    keyList.append("bare") 
    keyList.append( "{0}".format(gradName[i]) )
    keyList.append("bare-2") 
    # write the input file 
-   writeConfigFile(inData,tag,keyList,isFullAnalysis,finalLocation,i,fitData,outpath)
-   cmd = "root -q -b -l '{0}+(\"{1}\")'".format(scriptName,outpath)
+   writeConfigFile(inData,tag,keyList,isFullAnalysis,finalLocation,i,fitData,configPath)
+   cmd = "root -q -b -l '{0}+(\"{1}\")'".format(scriptName,configPath)
    if(debug):  print(cmd)
    if(not debug): os.system(cmd) 
 print("===============================================================") 
 # Shimmed field (TRLY) 
 finalLocation = 1              # shimmed location? yes 
 fitData       = False          # fitting PP data? no  
-tag           = "trly-shimmed" # top-level JSON key 
+tag           = "calib-runs" # top-level JSON key 
 # set up JSON path 
-outpath = "{0}/trly-shimmed.json".format(json_prefix) 
+configPath = "{0}/trly-shimmed.json".format(json_prefix) 
 # make a run list 
 keyList[:] = []         # clear entries  
-keyList.append("shim")  # run list 
-writeConfigFile(inData,tag,keyList,isFullAnalysis,finalLocation,-1,fitData,outpath)
+keyList.append("trly")  # run list 
+writeConfigFile(inData,tag,keyList,isFullAnalysis,finalLocation,-1,fitData,configPath)
 scriptName = "GetShimmedField_trly.C"
-cmd = "root -q -b -l '{0}+(\"{1}\")'".format(scriptName,outpath)
+cmd = "root -q -b -l '{0}+(\"{1}\")'".format(scriptName,configPath)
 if(debug):  print(cmd)
 if(not debug): os.system(cmd)
 print("===============================================================")
-sys.exit(0)
 if(not ppScan): 
    #------------------------- run gradient analysis code -------------------------
-   # Find imposed gradients: transverse  
+   # Find imposed gradients: transverse 
+   finalLocation = 0              # shimmed location? no 
+   fitData       = True           # fitting TRLY data? yes  
+   tag           = "trans-grad"   # top-level JSON key 
+   # set up JSON path 
+   configPath = "{0}/get-trans-grad-trly.json".format(json_prefix) 
+   # make a run list 
+   keyList[:] = []                # clear entries  
+   keyList    = ["bare","norm-quad","skew-quad","bare-2"]  # run list 
+   writeConfigFile(inData,tag,keyList,isFullAnalysis,finalLocation,-1,fitData,configPath)   
    scriptName = "GetTransverseGradients.C" 
-   cmd = "root -q -b -l '{0}+(\"{1}\",\"{2}\",{3},{4},{5})'".format(scriptName,theDate,fitFunc_trans,probeNumber,isBlind,isFullAnalysis)
+   cmd = "root -q -b -l '{0}+(\"{1}\")'".format(scriptName,configPath)
    if(debug):  print(cmd)
    if(not debug): os.system(cmd)
    print("===============================================================") 
    # Find imposed gradients: azimuthal  
+   finalLocation = 0              # shimmed location? no 
+   fitData       = True           # fitting TRLY data? yes  
+   tag           = "azi-grad"    # top-level JSON key 
+   # set up JSON path 
+   configPath = "{0}/get-azi-grad-trly.json".format(json_prefix) 
+   # make a run list 
+   keyList[:] = []                # clear entries  
+   keyList    = ["bare","azi","bare-2"]  # run list 
+   writeConfigFile(inData,tag,keyList,isFullAnalysis,finalLocation,-1,fitData,configPath)
    scriptName = "GetAziGradient.C" 
-   cmd = "root -q -b -l '{0}+(\"{1}\",\"{2}\",{3},{4},{5})'".format(scriptName,theDate,fitFunc_azi,probeNumber,isBlind,isFullAnalysis)
+   cmd = "root -q -b -l '{0}+(\"{1}\")'".format(scriptName,configPath)
    if(debug):  print(cmd)
    if(not debug): os.system(cmd)
    print("===============================================================") 
    # Shimmed gradients: transverse 
    finalLocation = 1                 # shimmed location? yes 
    fitData       = True              # fitting PP data? yes  
-   tag           = "trly-shimmed-grad_trans" # top-level JSON key 
+   tag           = "trans-grad_shimmed" # top-level JSON key 
    # set up JSON path 
-   outpath = "{0}/get-shim-trans-grad-trly.json".format(json_prefix) 
+   configPath = "{0}/get-shim-trans-grad-trly.json".format(json_prefix) 
    # make a run list 
    keyList[:] = []         # clear entries  
    keyList.append("trly")  # run list 
-   writeConfigFile(inData,tag,keyList,isFullAnalysis,finalLocation,-1,fitData,outpath)
+   writeConfigFile(inData,tag,keyList,isFullAnalysis,finalLocation,-1,fitData,configPath)
    scriptName = "GetShimmedTransGrad.C" 
-   cmd = "root -q -b -l '{0}+(\"{1}\")'".format(scriptName,outpath)
+   cmd = "root -q -b -l '{0}+(\"{1}\")'".format(scriptName,configPath)
    if(debug):  print(cmd)
    if(not debug): os.system(cmd)
-   print("===============================================================") 
+   print("===============================================================")
    # Shimmed gradients: azimuthal  
+   finalLocation = 1                  # shimmed location? yes 
+   fitData       = True               # fitting TRLY data? yes  
+   tag           = "azi-grad_shimmed" # top-level JSON key 
+   # set up JSON path 
+   configPath = "{0}/get-shim-azi-grad-trly.json".format(json_prefix) 
+   # make a run list 
+   keyList[:] = []         # clear entries  
+   keyList.append("trly")  # run list 
+   writeConfigFile(inData,tag,keyList,isFullAnalysis,finalLocation,-1,fitData,configPath)
    scriptName = "GetShimmedAziGrad.C" 
-   cmd = "root -q -b -l '{0}+(\"{1}\",\"{2}\",{3},{4})'".format(scriptName,theDate,fitFunc_shim_azi,probeNumber,isBlind)
+   cmd = "root -q -b -l '{0}+(\"{1}\")'".format(scriptName,configPath)
    if(debug):  print(cmd)
    if(not debug): os.system(cmd)
    print("===============================================================") 
@@ -243,15 +254,15 @@ else:
    tag           = "pp-shimmed-grad" # top-level JSON key 
    for i in xrange(0,2):
       # set up JSON path 
-      outpath = "{0}/get-shim-grad-pp-{1}.json".format(json_prefix,axisName[i]) 
+      configPath = "{0}/get-shim-grad-pp-{1}.json".format(json_prefix,axisName[i]) 
       # make a run list 
       keyList[:] = [] # clear entries  
       keyList.append("pp")
       keyList.append( "pp{0}".format(axisName[i]) ) 
       keyList.append("trly") 
-      writeConfigFile(inData,tag,keyList,isFullAnalysis,finalLocation,i,fitData,outpath)
+      writeConfigFile(inData,tag,keyList,isFullAnalysis,finalLocation,i,fitData,configPath)
       scriptName = "GetShimmedGrad_pp.C" 
-      cmd = "root -q -b -l '{0}+(\"{1}\")'".format(scriptName,outpath)
+      cmd = "root -q -b -l '{0}+(\"{1}\")'".format(scriptName,configPath)
       if(debug):  print(cmd)
       if(not debug): os.system(cmd)
    print("===============================================================") 
@@ -260,27 +271,27 @@ else:
    fitData       = True              # fitting PP data? yes  
    tag           = "trly-shimmed-grad_trans" # top-level JSON key 
    # set up JSON path 
-   outpath = "{0}/get-shim-trans-grad-trly.json".format(json_prefix) 
+   configPath = "{0}/get-shim-trans-grad-trly.json".format(json_prefix) 
    # make a run list 
    keyList[:] = []         # clear entries  
    keyList.append("trly")  # run list 
-   writeConfigFile(inData,tag,keyList,isFullAnalysis,finalLocation,-1,fitData,outpath)
+   writeConfigFile(inData,tag,keyList,isFullAnalysis,finalLocation,-1,fitData,configPath)
    scriptName = "GetShimmedTransGrad.C" 
-   cmd = "root -q -b -l '{0}+(\"{1}\")'".format(scriptName,outpath)
+   cmd = "root -q -b -l '{0}+(\"{1}\")'".format(scriptName,configPath)
    if(debug):  print(cmd)
    if(not debug): os.system(cmd)
    print("===============================================================") 
 #------------------------- run calibration analysis code -------------------------
 # Now do the calibration calculation 
-keyList[:] = [] 
-keyList = ["trly","pp"]
-outpath = json_prefix + "/calibrate.json"
-fitData = False
-finalLocation = 1 
-writeConfigFile(inData,"calib-runs",keyList,isFullAnalysis,finalLocation,-1,fitData,outpath)
-sys.exit(0) 
+keyList[:]    = [] 
+keyList       = ["trly","pp"]
+configPath    = json_prefix + "/calibrate.json"
+fitData       = False
+finalLocation = 1
+tag           = "calib-runs" 
+writeConfigFile(inData,tag,keyList,isFullAnalysis,finalLocation,-1,fitData,configPath)
 scriptName = "Calibrate.C"
-cmd = "root -q -b -l '{0}+(\"{1}\")'".format(scriptName,outpath)
+cmd = "root -q -b -l '{0}+(\"{1}\")'".format(scriptName,configPath)
 if(debug):  print(cmd)
 if(not debug): os.system(cmd)
 print("===============================================================")

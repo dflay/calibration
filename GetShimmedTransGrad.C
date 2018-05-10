@@ -37,7 +37,7 @@
 #include "./src/CustomUtilities.C"
 #include "./src/DeltaBFuncs.C"
 
-int GetShimmedTransGrad(std::string input_path){
+int GetShimmedTransGrad(std::string configFile){
 
    std::cout << "----------------------------------" << std::endl;
    std::cout << "SHIMMED TRANSVERSE GRADIENT CALCULATION" << std::endl;
@@ -46,7 +46,7 @@ int GetShimmedTransGrad(std::string input_path){
    int method = gm2fieldUtil::Constants::kPhaseDerivative;
 
    InputManager *inputMgr = new InputManager();
-   inputMgr->Load(input_path);
+   inputMgr->Load(configFile);
    inputMgr->Print();
 
    std::string date    = inputMgr->GetAnalysisDate();
@@ -64,19 +64,6 @@ int GetShimmedTransGrad(std::string input_path){
    blind_t blind;
    ImportBlinding(blind);
    double blindValue = blind.value_tr; 
-
-   // char inpath[200];
-   // sprintf(inpath,"./input/runlists/%s/trly-shimmed_trans_%s.csv",date.c_str(),date.c_str());
-   // std::vector<int> run;
-   // std::vector<double> sf;
-   // std::vector<std::string> label;
-   // ImportDeltaBFileList_csv(inpath,run,label,sf);
-
-   // const int NRUN = run.size();
-   // if(NRUN==0){
-   //    std::cout << "No data!" << std::endl;
-   //    return 1;
-   // }
 
    std::vector<int> run;
    std::vector<std::string> label;
@@ -178,7 +165,7 @@ int GetShimmedTransGrad(std::string input_path){
    gm2fieldUtil::Graph::SetGraphLabelSizes(gRB,0.05,0.06); 
    gRB->GetXaxis()->SetLimits(-4.5,4.5); 
    gRB->Draw("ap");
-   gRB->Fit(fitFunc.c_str());
+   gRB->Fit(fitFunc.c_str(),"Q");
    c1->Update();
 
    c1->cd(2); 
@@ -187,7 +174,7 @@ int GetShimmedTransGrad(std::string input_path){
    gm2fieldUtil::Graph::SetGraphLabelSizes(gRB_fxpr,0.05,0.06); 
    gRB_fxpr->GetXaxis()->SetLimits(-4.5,4.5); 
    gRB_fxpr->Draw("ap");
-   gRB_fxpr->Fit(fitFunc.c_str());
+   gRB_fxpr->Fit(fitFunc.c_str(),"Q");
    c1->Update();
 
    c1->cd(3); 
@@ -196,7 +183,7 @@ int GetShimmedTransGrad(std::string input_path){
    gm2fieldUtil::Graph::SetGraphLabelSizes(gRB_trly,0.05,0.06); 
    gRB_trly->GetXaxis()->SetLimits(-4.5,4.5); 
    gRB_trly->Draw("ap");
-   gRB_trly->Fit(fitFunc.c_str());
+   gRB_trly->Fit(fitFunc.c_str(),"Q");
    c1->Update();
 
    TString plotPath = Form("%s/trly-shimmed_rad-grad_run-%d_%s.png",plotDir,run[0],date.c_str());
@@ -216,7 +203,7 @@ int GetShimmedTransGrad(std::string input_path){
    gm2fieldUtil::Graph::SetGraphLabelSizes(gVB,0.05,0.06); 
    gVB->GetXaxis()->SetLimits(-4.5,4.5); 
    gVB->Draw("ap");
-   gVB->Fit(fitFunc.c_str()); 
+   gVB->Fit(fitFunc.c_str(),"Q"); 
    c2->Update();
 
    c2->cd(2); 
@@ -225,7 +212,7 @@ int GetShimmedTransGrad(std::string input_path){
    gm2fieldUtil::Graph::SetGraphLabelSizes(gVB_fxpr,0.05,0.06); 
    gVB_fxpr->GetXaxis()->SetLimits(-4.5,4.5); 
    gVB_fxpr->Draw("ap");
-   gVB_fxpr->Fit(fitFunc.c_str()); 
+   gVB_fxpr->Fit(fitFunc.c_str(),"Q"); 
    c2->Update();
 
    c2->cd(3); 
@@ -234,7 +221,7 @@ int GetShimmedTransGrad(std::string input_path){
    gm2fieldUtil::Graph::SetGraphLabelSizes(gVB_trly,0.05,0.06); 
    gVB_trly->GetXaxis()->SetLimits(-4.5,4.5); 
    gVB_trly->Draw("ap");
-   gVB_trly->Fit(fitFunc.c_str()); 
+   gVB_trly->Fit(fitFunc.c_str(),"Q"); 
    c2->Update();
 
    plotPath = Form("%s/trly-shimmed_vert-grad_run-%d_%s.png",plotDir,run[0],date.c_str());

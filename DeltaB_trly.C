@@ -265,7 +265,7 @@ int DeltaB_trly(std::string configFile){
       drift_err[i] = TMath::Sqrt(arg_sq);
    }
 
-   std::cout << Form("===================== RESULTS FOR PROBE %02d =====================",probeNumber+1) << std::endl;
+   std::cout << Form("===================== RESULTS FOR PROBE %02d =====================",probeNumber) << std::endl;
    std::cout << "Raw results: " << std::endl; 
    std::cout << Form("dB (%s): %.3lf +/- %.3lf Hz (%.3lf +/- %.3lf ppb)",label[gradIndex].c_str(),
                      dB[0],dB_err[0],dB[0]/0.06179,dB_err[0]/0.06179) << std::endl;

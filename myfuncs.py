@@ -257,6 +257,9 @@ def prepareRunListsDeltaBOnly(theDate,data,ppScan):
    # trolley mode data 
    writeToFileTRLYMode(prefix,"interactive",data)  
    writeToFileTRLYMode(prefix,"continuous" ,data)  
- 
 #_______________________________________________________________________________
-
+def deleteDir(path): 
+   shutil.rmtree(path) 
+#_______________________________________________________________________________
+def createDir(path): 
+   os.makedirs(path)

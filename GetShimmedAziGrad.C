@@ -26,6 +26,7 @@
 #include "./include/plungingProbeAnaEvent.h"
 #include "./include/trolleyAnaEvent.h"
 
+#include "./src/InputManager.C"
 #include "./src/FXPRFuncs.C"
 #include "./src/Consolidate.C"
 #include "./src/CustomMath.C"
@@ -36,13 +37,22 @@
 #include "./src/CustomUtilities.C"
 #include "./src/DeltaBFuncs.C"
 
-int GetShimmedAziGrad(std::string date,std::string fitFuncStr,int probeNumber,bool isBlind){
-   
-   TString fitFunc = Form("%s",fitFuncStr.c_str());
-   // TString fitFunc = Form("pol1");
+int GetShimmedAziGrad(std::string configFile){
+
+   std::cout << "----------------------------------" << std::endl;
+   std::cout << "SHIMMED AZI GRADIENT CALCULATION" << std::endl;
 
    int rc=0;
    int method = gm2fieldUtil::Constants::kPhaseDerivative;
+
+   InputManager *inputMgr = new InputManager();
+   inputMgr->Load(configFile);
+   inputMgr->Print();
+
+   std::string date    = inputMgr->GetAnalysisDate();
+   std::string fitFunc = inputMgr->GetFitFunction();
+   bool isBlind        = inputMgr->IsBlind();
+   int probeNumber     = inputMgr->GetTrolleyProbe();
 
    date_t theDate;
    GetDate(theDate);
@@ -55,16 +65,10 @@ int GetShimmedAziGrad(std::string date,std::string fitFuncStr,int probeNumber,bo
    ImportBlinding(blind);
    double blindValue = blind.value_tr; 
 
-   std::cout << "----------------------------------" << std::endl;
-   std::cout << "SHIMMED AZI GRADIENT CALCULATION" << std::endl;
-
-   char inpath[200];
-   sprintf(inpath,"./input/runlists/%s/trly-shimmed_azi_%s.csv",date.c_str(),date.c_str());
-
    std::vector<int> run;
-   std::vector<double> sf;
    std::vector<std::string> label;
-   ImportDeltaBFileList_csv(inpath,run,label,sf);
+   inputMgr->GetRunList(run);
+   inputMgr->GetRunLabels(label);
 
    const int NRUN = run.size();
    if(NRUN==0){
@@ -100,6 +104,16 @@ int GetShimmedAziGrad(std::string date,std::string fitFuncStr,int probeNumber,bo
       return 1;
    }
 
+   const int NN = fxprData.size();
+   const int NFP = fxprList.size();
+   unsigned long long t0     = 0;
+   unsigned long long tStart = fxprData[0].GpsTimeStamp[fxprList[0]];
+   unsigned long long tStop  = fxprData[NN-1].GpsTimeStamp[fxprList[NFP-1]];
+   unsigned long long tStep  = 1E+9;
+
+   std::vector<fixedProbeEvent_t> fxprDataAvg;
+   GetAverageFXPRVectorsNew(method,t0,tStart,tStop,tStep,fxprList,fxprData,fxprDataAvg);
+
    // trolley data for drift correction
    std::vector<int> inList,trlyList; 
    std::string trlyPath = "./input/probe-lists/trly-list.csv"; 
@@ -114,7 +128,7 @@ int GetShimmedAziGrad(std::string date,std::string fitFuncStr,int probeNumber,bo
    std::cout << "Applying field drift corrections (during measurement)..." << std::endl;
    // correct for field drift 
    // use fxpr 
-   rc = CorrectTRLYForDriftDuringMeasurement(method,fxprList,fxprData,Data,DataCor);
+   rc = CorrectTRLYForDriftDuringMeasurement(fxprDataAvg,Data,DataCor);
    if(rc!=0) return 1;
    // use trly 
    rc = CorrectTRLYForDriftDuringMeasurement(method,trlyList,trlyData,Data,DataCorAlt);
@@ -147,7 +161,7 @@ int GetShimmedAziGrad(std::string date,std::string fitFuncStr,int probeNumber,bo
    gm2fieldUtil::Graph::SetGraphLabels(gAB,"No Drift Cor",xAxisTitle,yAxisTitle);
    gm2fieldUtil::Graph::SetGraphLabelSizes(gAB,0.06,0.06); 
    gAB->Draw("ap");
-   gAB->Fit(fitFunc,"QR","",xmin,xmax); 
+   gAB->Fit(fitFunc.c_str(),"QR","",xmin,xmax); 
    c1->Update();
 
    c1->cd(2); 
@@ -155,7 +169,7 @@ int GetShimmedAziGrad(std::string date,std::string fitFuncStr,int probeNumber,bo
    gm2fieldUtil::Graph::SetGraphLabels(gAB_fxpr,"Drift Cor (FXPR)",xAxisTitle,yAxisTitle);
    gm2fieldUtil::Graph::SetGraphLabelSizes(gAB_fxpr,0.06,0.06); 
    gAB_fxpr->Draw("ap");
-   gAB_fxpr->Fit(fitFunc,"QR","",xmin,xmax); 
+   gAB_fxpr->Fit(fitFunc.c_str(),"QR","",xmin,xmax); 
    c1->Update();
 
    c1->cd(3); 
@@ -163,17 +177,17 @@ int GetShimmedAziGrad(std::string date,std::string fitFuncStr,int probeNumber,bo
    gm2fieldUtil::Graph::SetGraphLabels(gAB_trly,"Drift Cor (TRLY)",xAxisTitle,yAxisTitle);
    gm2fieldUtil::Graph::SetGraphLabelSizes(gAB_trly,0.06,0.06); 
    gAB_trly->Draw("ap");
-   gAB_trly->Fit(fitFunc,"QR","",xmin,xmax); 
+   gAB_trly->Fit(fitFunc.c_str(),"QR","",xmin,xmax); 
    c1->Update();
 
-   TString plotPath = Form("%s/shimmed-azi-grad_%s.png",plotDir,date.c_str());
+   TString plotPath = Form("%s/shimmed-azi-grad_run-%d_%s.png",plotDir,run[0],date.c_str());
    c1->cd();
    c1->Print(plotPath); 
 
    double PA[3],EA[3];
-   TF1 *fitAB      = gAB->GetFunction(fitFunc);
-   TF1 *fitAB_fxpr = gAB_fxpr->GetFunction(fitFunc);
-   TF1 *fitAB_trly = gAB_trly->GetFunction(fitFunc);
+   TF1 *fitAB      = gAB->GetFunction(fitFunc.c_str());
+   TF1 *fitAB_fxpr = gAB_fxpr->GetFunction(fitFunc.c_str());
+   TF1 *fitAB_trly = gAB_trly->GetFunction(fitFunc.c_str());
 
    PA[0] = fitAB->GetParameter(1);
    PA[1] = fitAB_fxpr->GetParameter(1);
@@ -206,8 +220,7 @@ int GetShimmedAziGrad(std::string date,std::string fitFuncStr,int probeNumber,bo
    PrintToFile(outpath,"azi-grad",PA,EA,drift,drift_err);
 
    // Fixed probe plot 
-   const int NTR = Data.size();
-   TGraph *gFXPR = GetTGraph(method,Data[0].time[0],Data[NTR-1].time[3],1E+9,fxprList,fxprData);
+   TGraph *gFXPR = GetTGraphNew(fxprDataAvg);
    gm2fieldUtil::Graph::SetGraphParameters(gFXPR,20,kBlack); 
  
    TCanvas *c2 = new TCanvas("c2","Average FXPR Data",1200,600);
@@ -220,8 +233,10 @@ int GetShimmedAziGrad(std::string date,std::string fitFuncStr,int probeNumber,bo
    gFXPR->Draw("alp");
    c2->Update();
  
-   plotPath = Form("%s/shimmed-azi-grad_avg-fxpr_pr-%02d_%s.png",plotDir,probeNumber,date.c_str()); 
+   plotPath = Form("%s/shimmed-azi-grad_avg-fxpr_pr-%02d_run-%d_%s.png",plotDir,probeNumber,run[0],date.c_str()); 
    c2->Print(plotPath);   
+
+   delete inputMgr; 
 
    return 0;
 }

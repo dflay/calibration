@@ -44,7 +44,7 @@
 #include "./src/ErrorFuncs.C"
 #include "./src/CustomUtilities.C"
 
-int Calibrate(){
+int Calibrate(std::string configFile){
 
    std::cout << "----------------------------------" << std::endl;
    std::cout << "CALIBRATION CALCULATION" << std::endl;
@@ -54,7 +54,7 @@ int Calibrate(){
 
    std::string input_path = "./input/json/calibrate.json";
    InputManager *inputMgr = new InputManager();
-   inputMgr->Load(input_path);
+   inputMgr->Load(configFile);
    inputMgr->Print();
 
    std::string date    = inputMgr->GetAnalysisDate();

@@ -25,6 +25,7 @@
 #include "./include/plungingProbeAnaEvent.h"
 #include "./include/trolleyAnaEvent.h"
 
+#include "./src/InputManager.C"
 #include "./src/FXPRFuncs.C"
 #include "./src/Consolidate.C"
 #include "./src/CustomMath.C"
@@ -35,13 +36,23 @@
 #include "./src/CustomUtilities.C"
 #include "./src/DeltaBFuncs.C"
 
-int GetTransverseGradients(std::string date,std::string fitFuncStr,int probeNumber,bool isBlind,bool isFullAnalysis){
+int GetTransverseGradients(std::string configFile){
 
-   TString fitFunc = Form("%s",fitFuncStr.c_str());
-   // TString fitFunc = Form("pol2");
+   std::cout << "----------------------------------" << std::endl;
+   std::cout << "SCC TRANSVERSE GRADIENT CALCULATION" << std::endl;
 
    int rc=0;
    int method = gm2fieldUtil::Constants::kPhaseDerivative;
+
+   InputManager *inputMgr = new InputManager();
+   inputMgr->Load(configFile);
+   inputMgr->Print();
+
+   std::string date    = inputMgr->GetAnalysisDate();
+   std::string fitFunc = inputMgr->GetFitFunction();
+   bool isFullAnalysis = inputMgr->IsFullAnalysis();
+   bool isBlind        = inputMgr->IsBlind();
+   int probeNumber     = inputMgr->GetTrolleyProbe();
 
    date_t theDate;
    GetDate(theDate);
@@ -60,16 +71,17 @@ int GetTransverseGradients(std::string date,std::string fitFuncStr,int probeNumb
    ImportBlinding(blind);
    double blindValue = blind.value_tr;
 
-   std::cout << "----------------------------------" << std::endl;
-   std::cout << "SCC TRANSVERSE GRADIENT CALCULATION" << std::endl;
-   
-   char inpath[200];
-   sprintf(inpath,"./input/runlists/%s/trans-grad_%s.csv",date.c_str(),date.c_str());
+   // char inpath[200];
+   // sprintf(inpath,"./input/runlists/%s/trans-grad_%s.csv",date.c_str(),date.c_str());
+   // std::vector<int> allRuns,run,vRun,rRun,aRun,bRun,b2Run;
+   // std::vector<double> sf;
+   // std::vector<std::string> label;
+   // ImportDeltaBFileList_csv(inpath,allRuns,label,sf);
 
    std::vector<int> allRuns,run,vRun,rRun,aRun,bRun,b2Run;
-   std::vector<double> sf;
    std::vector<std::string> label;
-   ImportDeltaBFileList_csv(inpath,allRuns,label,sf);
+   inputMgr->GetRunList(allRuns);
+   inputMgr->GetRunLabels(label);
 
    const int NRUN = allRuns.size();
    if(NRUN==0){
@@ -166,6 +178,16 @@ int GetTransverseGradients(std::string date,std::string fitFuncStr,int probeNumb
       return 1;
    }
 
+   const int NN = fxprData.size();
+   const int NFP = fxprList.size();
+   unsigned long long t0     = 0;
+   unsigned long long tStart = fxprData[0].GpsTimeStamp[fxprList[0]];
+   unsigned long long tStop  = fxprData[NN-1].GpsTimeStamp[fxprList[NFP-1]];
+   unsigned long long tStep  = 1E+9;
+
+   std::vector<fixedProbeEvent_t> fxprDataAvg;
+   GetAverageFXPRVectorsNew(method,t0,tStart,tStop,tStep,fxprList,fxprData,fxprDataAvg);
+
    // trolley data for drift correction
    std::vector<int> inList,trlyList; 
    std::string trlyPath = "./input/probe-lists/trly-list.csv"; 
@@ -180,9 +202,9 @@ int GetTransverseGradients(std::string date,std::string fitFuncStr,int probeNumb
    std::cout << "Applying field drift corrections (during measurement)..." << std::endl;
    // correct for field drift 
    // use fxpr 
-   rc = CorrectTRLYForDriftDuringMeasurement(method,fxprList,fxprData,bareData,bareDataCor);
-   rc = CorrectTRLYForDriftDuringMeasurement(method,fxprList,fxprData,radData ,radDataCor);
-   rc = CorrectTRLYForDriftDuringMeasurement(method,fxprList,fxprData,vertData,vertDataCor);
+   rc = CorrectTRLYForDriftDuringMeasurement(fxprDataAvg,bareData,bareDataCor);
+   rc = CorrectTRLYForDriftDuringMeasurement(fxprDataAvg,radData ,radDataCor);
+   rc = CorrectTRLYForDriftDuringMeasurement(fxprDataAvg,vertData,vertDataCor);
    if(rc!=0) return 1;
    // use trly 
    rc = CorrectTRLYForDriftDuringMeasurement(method,trlyList,trlyData,bareData,bareDataCorAlt);
@@ -194,9 +216,9 @@ int GetTransverseGradients(std::string date,std::string fitFuncStr,int probeNumb
    // correct the radial data 
    double drift_rad[3]     = {0,0,0}; 
    double drift_rad_err[3] = {0,0,0}; 
-   const int NN = bareDataCor.size(); 
-   unsigned long long tStart = bareDataCor[NN-1].time[NUM_TRLY-1];  // last event, last probe time  
-   unsigned long long tStop  = radDataCor[0].time[0];               // first event, first probe time 
+   const int NBC = bareDataCor.size(); 
+   tStart = bareDataCor[NBC-1].time[NUM_TRLY-1];  // last event, last probe time  
+   tStop  = radDataCor[0].time[0];               // first event, first probe time 
    rc = CorrectTRLYForDriftAcrossRuns(tStart,tStop,gDrift,radDataCor,drift_rad[1],drift_rad_err[1]); 
    if(rc!=0) return 1;
 
@@ -313,7 +335,7 @@ int GetTransverseGradients(std::string date,std::string fitFuncStr,int probeNumb
    gm2fieldUtil::Graph::SetGraphLabels(gRDiff,"Radial Gradient","r (cm)","Frequency (Hz)");
    gRDiff->GetXaxis()->SetLimits(-4.5,4.5); 
    gRDiff->Draw("ap");
-   gRDiff->Fit(fitFunc,"Q");
+   gRDiff->Fit(fitFunc.c_str(),"Q");
    c1->Update();
 
    c1->cd(5); 
@@ -321,7 +343,7 @@ int GetTransverseGradients(std::string date,std::string fitFuncStr,int probeNumb
    gm2fieldUtil::Graph::SetGraphLabels(gRDiff_fxpr,"Radial Gradient (Drift Cor FXPR)","r (cm)","Frequency (Hz)");
    gRDiff_fxpr->GetXaxis()->SetLimits(-4.5,4.5); 
    gRDiff_fxpr->Draw("ap");
-   gRDiff_fxpr->Fit(fitFunc,"Q");
+   gRDiff_fxpr->Fit(fitFunc.c_str(),"Q");
    c1->Update();
 
    c1->cd(6); 
@@ -329,10 +351,10 @@ int GetTransverseGradients(std::string date,std::string fitFuncStr,int probeNumb
    gm2fieldUtil::Graph::SetGraphLabels(gRDiff_trly,"Radial Gradient (Drift Cor TRLY)","r (cm)","Frequency (Hz)");
    gRDiff_trly->GetXaxis()->SetLimits(-4.5,4.5); 
    gRDiff_trly->Draw("ap");
-   gRDiff_trly->Fit(fitFunc,"Q");
+   gRDiff_trly->Fit(fitFunc.c_str(),"Q");
    c1->Update();
 
-   TString rPlotPath = Form("%s/rad-grad_%s.png",plotDir,date.c_str());
+   TString rPlotPath = Form("%s/rad-grad_bare-run-%d_grad-run-%d_%s.png",plotDir,bRun[0],rRun[0],date.c_str());
    c1->cd(); 
    c1->Print(rPlotPath);  
 
@@ -365,7 +387,7 @@ int GetTransverseGradients(std::string date,std::string fitFuncStr,int probeNumb
    gm2fieldUtil::Graph::SetGraphLabels(gVDiff,"Vertical Gradient","r (cm)","Frequency (Hz)");
    gVDiff->GetXaxis()->SetLimits(-4.5,4.5); 
    gVDiff->Draw("ap");
-   gVDiff->Fit(fitFunc,"Q");
+   gVDiff->Fit(fitFunc.c_str(),"Q");
    c2->Update();
 
    c2->cd(5); 
@@ -373,7 +395,7 @@ int GetTransverseGradients(std::string date,std::string fitFuncStr,int probeNumb
    gm2fieldUtil::Graph::SetGraphLabels(gVDiff_fxpr,"Vertical Gradient (Drift Cor FXPR)","y (cm)","Frequency (Hz)");
    gVDiff_fxpr->GetXaxis()->SetLimits(-4.5,4.5); 
    gVDiff_fxpr->Draw("ap");
-   gVDiff_fxpr->Fit(fitFunc,"Q");
+   gVDiff_fxpr->Fit(fitFunc.c_str(),"Q");
    c2->Update();
 
    c2->cd(6); 
@@ -381,22 +403,22 @@ int GetTransverseGradients(std::string date,std::string fitFuncStr,int probeNumb
    gm2fieldUtil::Graph::SetGraphLabels(gVDiff_trly,"Vertical Gradient (Drift Cor TRLY)","y (cm)","Frequency (Hz)");
    gVDiff_trly->GetXaxis()->SetLimits(-4.5,4.5); 
    gVDiff_trly->Draw("ap");
-   gVDiff_trly->Fit(fitFunc,"Q");
+   gVDiff_trly->Fit(fitFunc.c_str(),"Q");
    c2->Update();
 
-   TString vPlotPath = Form("%s/vert-grad_%s.png",plotDir,date.c_str());
+   TString vPlotPath = Form("%s/vert-grad_bare-run-%d_grad-run-%d_%s.png",plotDir,bRun[0],vRun[0],date.c_str());
    c2->cd(); 
    c2->Print(vPlotPath);  
 
    double PR[3],ER[3];
-   TF1 *fitR      = gRDiff->GetFunction(fitFunc);
-   TF1 *fitR_fxpr = gRDiff_fxpr->GetFunction(fitFunc);
-   TF1 *fitR_trly = gRDiff_trly->GetFunction(fitFunc);
+   TF1 *fitR      = gRDiff->GetFunction(fitFunc.c_str());
+   TF1 *fitR_fxpr = gRDiff_fxpr->GetFunction(fitFunc.c_str());
+   TF1 *fitR_trly = gRDiff_trly->GetFunction(fitFunc.c_str());
 
    double PV[3],EV[3];
-   TF1 *fitV      = gVDiff->GetFunction(fitFunc);
-   TF1 *fitV_fxpr = gVDiff_fxpr->GetFunction(fitFunc);
-   TF1 *fitV_trly = gVDiff_trly->GetFunction(fitFunc);
+   TF1 *fitV      = gVDiff->GetFunction(fitFunc.c_str());
+   TF1 *fitV_fxpr = gVDiff_fxpr->GetFunction(fitFunc.c_str());
+   TF1 *fitV_trly = gVDiff_trly->GetFunction(fitFunc.c_str());
 
    PR[0] = fitR->GetParameter(1);
    PR[1] = fitR_fxpr->GetParameter(1);
@@ -454,6 +476,8 @@ int GetTransverseGradients(std::string date,std::string fitFuncStr,int probeNumb
    // vertical 
    sprintf(outpath,"%s/vert-grad_pr-%02d_%s.csv"  ,outdir,probeNumber,date.c_str()); 
    PrintToFile(outpath,"vert-grad",PV,EV,drift_vert,drift_vert_err); 
+
+   delete inputMgr; 
 
    return 0;
 }

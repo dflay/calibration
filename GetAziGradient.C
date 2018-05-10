@@ -26,6 +26,7 @@
 #include "./include/plungingProbeAnaEvent.h"
 #include "./include/trolleyAnaEvent.h"
 
+#include "./src/InputManager.C"
 #include "./src/FXPRFuncs.C"
 #include "./src/Consolidate.C"
 #include "./src/CustomMath.C"
@@ -36,13 +37,23 @@
 #include "./src/CustomUtilities.C"
 #include "./src/DeltaBFuncs.C"
 
-int GetAziGradient(std::string date,std::string fitFuncStr,int probeNumber,bool isBlind,bool isFullAnalysis){
+int GetAziGradient(std::string configFile){
 
-   TString fitFunc = Form("%s",fitFuncStr.c_str());
-   // TString fitFunc = Form("pol1");
+   std::cout << "----------------------------------" << std::endl;
+   std::cout << "SCC AZIMUTHAL GRADIENT CALCULATION" << std::endl;
 
    int rc=0;
    int method = gm2fieldUtil::Constants::kPhaseDerivative;
+
+   InputManager *inputMgr = new InputManager();
+   inputMgr->Load(configFile);
+   inputMgr->Print();
+
+   std::string date    = inputMgr->GetAnalysisDate();
+   std::string fitFunc = inputMgr->GetFitFunction();
+   bool isFullAnalysis = inputMgr->IsFullAnalysis();
+   bool isBlind        = inputMgr->IsBlind();
+   int probeNumber     = inputMgr->GetTrolleyProbe();
 
    date_t theDate;
    GetDate(theDate); 
@@ -61,16 +72,17 @@ int GetAziGradient(std::string date,std::string fitFuncStr,int probeNumber,bool 
    ImportBlinding(blind);
    double blindValue = blind.value_tr; 
 
-   std::cout << "----------------------------------" << std::endl;
-   std::cout << "SCC AZIMUTHAL GRADIENT CALCULATION" << std::endl;
-
-   char inpath[200];
-   sprintf(inpath,"./input/runlists/%s/azi-grad_%s.csv",date.c_str(),date.c_str());
+   // char inpath[200];
+   // sprintf(inpath,"./input/runlists/%s/azi-grad_%s.csv",date.c_str(),date.c_str());
+   // std::vector<int> allRuns,run,aRun,bRun,b2Run;
+   // std::vector<double> sf;
+   // std::vector<std::string> label;
+   // ImportDeltaBFileList_csv(inpath,allRuns,label,sf);
 
    std::vector<int> allRuns,run,aRun,bRun,b2Run;
-   std::vector<double> sf;
    std::vector<std::string> label;
-   ImportDeltaBFileList_csv(inpath,allRuns,label,sf);
+   inputMgr->GetRunList(allRuns);
+   inputMgr->GetRunLabels(label);
 
    const int NRUN = allRuns.size();
    if(NRUN==0){
@@ -148,6 +160,17 @@ int GetAziGradient(std::string date,std::string fitFuncStr,int probeNumber,bool 
       std::cout << "No FXPR data!" << std::endl;
       return 1;
    }
+
+   const int NN = fxprData.size();
+   const int NFP = fxprList.size();
+   unsigned long long t0     = 0;
+   unsigned long long tStart = fxprData[0].GpsTimeStamp[fxprList[0]];
+   unsigned long long tStop  = fxprData[NN-1].GpsTimeStamp[fxprList[NFP-1]];
+   unsigned long long tStep  = 1E+9;
+
+   std::vector<fixedProbeEvent_t> fxprDataAvg;
+   GetAverageFXPRVectorsNew(method,t0,tStart,tStop,tStep,fxprList,fxprData,fxprDataAvg);
+
    // trolley data for drift correction
    std::vector<int> inList,trlyList; 
    std::string trlyPath = "./input/probe-lists/trly-list.csv"; 
@@ -162,8 +185,8 @@ int GetAziGradient(std::string date,std::string fitFuncStr,int probeNumber,bool 
    std::cout << "Applying field drift corrections (during measurement)..." << std::endl;
    // correct for field drift 
    // use fxpr 
-   rc = CorrectTRLYForDriftDuringMeasurement(method,fxprList,fxprData,bareData,bareDataCor);
-   rc = CorrectTRLYForDriftDuringMeasurement(method,fxprList,fxprData,aziData ,aziDataCor);
+   rc = CorrectTRLYForDriftDuringMeasurement(fxprDataAvg,bareData,bareDataCor);
+   rc = CorrectTRLYForDriftDuringMeasurement(fxprDataAvg,aziData ,aziDataCor);
    if(rc!=0) return 1;
    // use trly 
    rc = CorrectTRLYForDriftDuringMeasurement(method,trlyList,trlyData,bareData,bareDataCorAlt);
@@ -174,9 +197,9 @@ int GetAziGradient(std::string date,std::string fitFuncStr,int probeNumber,bool 
    // correct the azimuthal data
    double drift[3]     = {0,0,0};
    double drift_err[3] = {0,0,0}; 
-   const int NN = bareDataCor.size();
-   unsigned long long tStart = bareDataCor[NN-1].time[NUM_TRLY-1];  // last event, last probe time  
-   unsigned long long tStop  = aziDataCor[0].time[0];               // first event, first probe time 
+   const int NBC = bareDataCor.size();
+   tStart = bareDataCor[NBC-1].time[NUM_TRLY-1];  // last event, last probe time  
+   tStop  = aziDataCor[0].time[0];               // first event, first probe time 
    rc = CorrectTRLYForDriftAcrossRuns(tStart,tStop,gDrift,aziDataCor,drift[1],drift_err[1]);
    if(rc!=0) return 1;
 
@@ -246,7 +269,7 @@ int GetAziGradient(std::string date,std::string fitFuncStr,int probeNumber,bool 
    gDiff->Draw("ap");
    gm2fieldUtil::Graph::SetGraphLabels(gDiff,"Azimuthal Gradient","Azimuthal Position (deg)","Frequency (Hz)");
    gDiff->Draw("ap");
-   gDiff->Fit(fitFunc,"QR","",xmin,xmax);
+   gDiff->Fit(fitFunc.c_str(),"QR","",xmin,xmax);
    c1->Update(); 
 
    c1->cd(5);
@@ -254,7 +277,7 @@ int GetAziGradient(std::string date,std::string fitFuncStr,int probeNumber,bool 
    gDiff_fxpr->Draw("ap");
    gm2fieldUtil::Graph::SetGraphLabels(gDiff_fxpr,"Azimuthal Gradient (FXPR Drift Cor)","Azimuthal Position (deg)","Frequency (Hz)");
    gDiff_fxpr->Draw("ap");
-   gDiff_fxpr->Fit(fitFunc,"QR","",xmin,xmax);
+   gDiff_fxpr->Fit(fitFunc.c_str(),"QR","",xmin,xmax);
    c1->Update(); 
 
    c1->cd(6);
@@ -262,17 +285,17 @@ int GetAziGradient(std::string date,std::string fitFuncStr,int probeNumber,bool 
    gDiff_trly->Draw("ap");
    gm2fieldUtil::Graph::SetGraphLabels(gDiff_trly,"Azimuthal Gradient (TRLY Drift Cor)","Azimuthal Position (deg)","Frequency (Hz)");
    gDiff_trly->Draw("ap");
-   gDiff_trly->Fit(fitFunc,"QR","",xmin,xmax);
+   gDiff_trly->Fit(fitFunc.c_str(),"QR","",xmin,xmax);
    c1->Update(); 
  
-   TString plotPath = Form("%s/azi-grad_%s.png",plotDir,date.c_str());
+   TString plotPath = Form("%s/azi-grad_bare-run-%d_grad-run-%d_%s.png",plotDir,bRun[0],aRun[0],date.c_str());
 
    c1->cd();
    c1->Print(plotPath); 
  
-   TF1 *fitZ      = gDiff->GetFunction(fitFunc);
-   TF1 *fitZ_fxpr = gDiff_fxpr->GetFunction(fitFunc);
-   TF1 *fitZ_trly = gDiff_trly->GetFunction(fitFunc);
+   TF1 *fitZ      = gDiff->GetFunction(fitFunc.c_str());
+   TF1 *fitZ_fxpr = gDiff_fxpr->GetFunction(fitFunc.c_str());
+   TF1 *fitZ_trly = gDiff_trly->GetFunction(fitFunc.c_str());
    double P[3],err[3];
    P[0] = fitZ->GetParameter(1); 
    P[1] = fitZ_fxpr->GetParameter(1); 
@@ -311,6 +334,8 @@ int GetAziGradient(std::string date,std::string fitFuncStr,int probeNumber,bool 
    rc = MakeDirectory(outdir);
    sprintf(outpath,"%s/azi-grad_pr-%02d_%s.csv"  ,outdir,probeNumber,date.c_str());
    PrintToFile(outpath,"azi-grad",P,err,drift,drift_err);
+
+   delete inputMgr; 
 
    return 0;
 }

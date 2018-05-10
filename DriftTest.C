@@ -42,9 +42,6 @@ TGraph *GetLagrangeInterpolatedTGraph(int method,std::vector<int> probeList,
                                       std::vector<gm2field::fixedProbeFrequency_t> fxprData); 
 
 TSpline3 *GetSpline(int method,std::vector<int> probe,std::vector<gm2field::fixedProbeFrequency_t> fxprData); 
-// TGraph *GetInterpolatedTGraph(int method,std::vector<int> probe,
-//                               unsigned long long tStart,unsigned long long tStop,unsigned long long tStep,
-//                               std::vector<gm2field::fixedProbeFrequency_t> fxprData); 
 
 int DriftTest(){
 
@@ -62,7 +59,7 @@ int DriftTest(){
    std::cout << std::endl;
 
    // Fixed Probe data
-   std::string fxprPath = "./input/probe-lists/fxpr-list.csv";
+   std::string fxprPath = "./input/probe-lists/fxpr-list_alt.csv";
    std::vector<int> fxprList;
    gm2fieldUtil::Import::ImportData1<int>(fxprPath,"csv",fxprList);
 

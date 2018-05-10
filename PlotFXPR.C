@@ -40,9 +40,9 @@ int PlotFXPR(){
    int rc=0;
    int method = gm2fieldUtil::Constants::kPhaseDerivative;
 
-   int run=0;
-   std::cout << "Enter run: ";
-   std::cin  >> run;
+   std::vector<int> run;
+   gm2fieldUtil::Import::GetRunList(run);
+   const int NRUNS = run.size();
 
    // fixed probe data
    std::string fxprPath = "./input/probe-lists/fxpr-list.csv"; 
@@ -51,7 +51,7 @@ int PlotFXPR(){
 
    // get fixed probe data 
    std::vector<gm2field::fixedProbeFrequency_t> fxprData;
-   rc = gm2fieldUtil::RootHelper::GetFPFrequencies(run,fxprData);
+   for(int i=0;i<NRUNS;i++) rc = gm2fieldUtil::RootHelper::GetFPFrequencies(run[i],fxprData);
    if(rc!=0){
       std::cout << "No data!" << std::endl;
       return 1;
@@ -84,29 +84,29 @@ int PlotFXPR(){
    }
 
    // get a graph of all probes 
-   TMultiGraph *mg = new TMultiGraph(); 
-   TLegend *L      = new TLegend(0.6,0.6,0.8,0.8); 
-   rc = gm2fieldUtil::Graph::FillMultiGraph(fxprList,method,"GpsTimeStamp","Frequency",fxprData,mg,L);
+   // TMultiGraph *mg = new TMultiGraph(); 
+   // TLegend *L      = new TLegend(0.6,0.6,0.8,0.8); 
+   // rc = gm2fieldUtil::Graph::FillMultiGraph(fxprList,method,"GpsTimeStamp","Frequency",fxprData,mg,L);
 
    TCanvas *c1 = new TCanvas("c1","TRLY Data",1200,600);
-   c1->Divide(1,2);  
+   // c1->Divide(1,2);  
    
-   c1->cd(1);
-   mg->Draw("al");
-   gm2fieldUtil::Graph::SetGraphLabels(mg,"Individual Fixed Probes","","Frequency (Hz)");
-   gm2fieldUtil::Graph::SetGraphLabelSizes(mg,0.05,0.06); 
-   gm2fieldUtil::Graph::UseTimeDisplay(mg); 
-   mg->Draw("al");
-   L->Draw("same"); 
-   c1->Update();
+   // c1->cd(1);
+   // mg->Draw("al");
+   // gm2fieldUtil::Graph::SetGraphLabels(mg,"Individual Fixed Probes","","Frequency (Hz)");
+   // gm2fieldUtil::Graph::SetGraphLabelSizes(mg,0.05,0.06); 
+   // gm2fieldUtil::Graph::UseTimeDisplay(mg); 
+   // mg->Draw("al");
+   // L->Draw("same"); 
+   // c1->Update();
 
-   c1->cd(2);
+   c1->cd();
    gFPAVG->Draw("alp"); 
    gm2fieldUtil::Graph::SetGraphLabels(gFPAVG,"FXPR Avg","","Frequency (Hz)"); 
-   gm2fieldUtil::Graph::SetGraphLabelSizes(gFPAVG,0.05,0.06); 
+   // gm2fieldUtil::Graph::SetGraphLabelSizes(gFPAVG,0.05,0.06); 
    gm2fieldUtil::Graph::UseTimeDisplay(gFPAVG); 
    gFPAVG->Draw("alp");
-   gFPAVG->Fit("pol1");  
+   // gFPAVG->Fit("pol1");  
    // fxprFit->Draw("same"); 
    c1->Update();
 
