@@ -45,20 +45,21 @@ int CompareResults(){
 
    int rc=0;
 
-   // date_t theDate; 
-   // rc = GetDate(theDate); 
-
    result_t res1,res2; 
-   
-   std::string prefix = "./output/blinded/04-30-18";
+
+   int fxpr_set = -1;
+   std::cout << "Enter fixed probe set (1 or 2): ";
+   std::cin  >> fxpr_set; 
+     
+   std::string prefix = "./output/blinded/05-10-18";
    char path[200]; 
    // run 3077 
-   sprintf(path,"%s/trly-shim-3077/fxpr-set-2/results.csv",prefix.c_str()); 
+   sprintf(path,"%s/trly-shim-3077/fxpr-set-%d/results.csv",prefix.c_str(),fxpr_set); 
    std::string inpath = path; 
    ImportResults(inpath,res1);  
 
    // run 3084 
-   sprintf(path,"%s/trly-shim-3084/fxpr-set-2/results.csv",prefix.c_str()); 
+   sprintf(path,"%s/trly-shim-3084/fxpr-set-%d/results.csv",prefix.c_str(),fxpr_set); 
    inpath = path; 
    ImportResults(inpath,res2);  
    
@@ -74,9 +75,11 @@ int CompareResults(){
    trly.push_back(arg); 
    arg = res2.trly_fxpr + res2.driftShim_fxpr; 
    trly.push_back(arg);
- 
-   trly_err.push_back(res1.trly_fxpr_err); 
-   trly_err.push_back(res2.trly_fxpr_err); 
+
+   double arg_err = TMath::Sqrt( res1.trly_fxpr_err*res1.trly_fxpr_err + res1.driftShim_fxpr_err*res1.driftShim_fxpr_err); 
+   trly_err.push_back(arg_err); 
+   arg_err = TMath::Sqrt( res2.trly_fxpr_err*res2.trly_fxpr_err + res2.driftShim_fxpr_err*res2.driftShim_fxpr_err); 
+   trly_err.push_back(arg_err); 
 
    double diff_stdev = gm2fieldUtil::Math::GetStandardDeviation<double>(diff);                 // add in standard deviation 
    double diffAvg    = gm2fieldUtil::Math::GetMean<double>(diff); 
@@ -88,6 +91,7 @@ int CompareResults(){
    double trlyErr    = gm2fieldUtil::Math::GetMean<double>(trly_err);  // average over the error for each run  
    trlyErr           = TMath::Sqrt( trlyErr*trlyErr + trly_stdev*trly_stdev);  
 
+   std::cout << "==================== FXPR SET " << fxpr_set << "====================" << std::endl;
    std::cout << "PP (uncorrected): " << std::endl;
    std::cout << Form("raw  = %.3lf +/- %.3lf Hz (%.3lf ppb)",res1.ppRaw,res1.ppRaw_err,res1.ppRaw_err/0.06179) << std::endl; 
    std::cout << Form("fxpr = %.3lf +/- %.3lf Hz (%.3lf ppb)",res1.ppRaw_fxpr,res1.ppRaw_fxpr_err,res1.ppRaw_fxpr_err/0.06179) << std::endl; 

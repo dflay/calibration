@@ -13,8 +13,16 @@ debug = False
 
 json_prefix = "./input/json"
 
-filename = os.getcwd()+"/input/json/calib_02-28-18.json"
-filename = os.getcwd()+"/input/json/calib-alt_02-28-18.json"
+Nargs = len(sys.argv) 
+if(Nargs!=2): 
+  print("[run_analysis]: Invalid input!")
+  print("[run_analysis]: Usage: python run_analysis.py calib-filename") 
+  sys.exit(0) 
+
+calib_filename = sys.argv[1] 
+
+filename = os.getcwd()+ "/input/json/{0}".format(calib_filename) 
+# filename = os.getcwd()+ "/input/json/calib-alt_02-28-18.json"
 # filename = os.getcwd()+"/input/json/calib_04-25-18.json"
 inData   = json.loads(open(filename).read())
 

@@ -10,4 +10,15 @@ typedef struct fixedProbeEvent{
    double freqErr; 
 } fixedProbeEvent_t; 
 
+// a data struct that contains the probe's physical location
+
+typedef struct fxpr{
+   char yokeID;  // A, B, C,...
+   char layerID; // top (T), bottom (B)
+   char radID;   // inner (I), middle (M), outer (O) 
+   int aziID;    // 1, 2, 3,...
+   int probeID;  // 0--377
+   double freq; 
+} fxpr_t; 
+
 #endif 

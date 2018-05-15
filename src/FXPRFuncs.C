@@ -470,3 +470,119 @@ int FitFXPR(int lo,int hi,std::vector<fixedProbeEvent_t> fxprData,double *par){
 
    return 0;
 }
+//______________________________________________________________________________
+int FilterSingle(int nev,double T,std::vector<fixedProbeEvent_t> in,std::vector<fixedProbeEvent_t> &out){
+
+   std::vector<double> ff,tt;
+   const int N = in.size();
+   for(int i=0;i<N;i++){
+      tt.push_back(in[i].time); 
+      ff.push_back(in[i].freq); 
+   }
+
+   int lo=0,hi=0;
+   gm2fieldUtil::Algorithm::BinarySearch(tt,T,lo,hi); 
+   int end = lo-10;
+   int start = end-nev;
+   for(int i=start;i<end;i++){
+      out.push_back(in[i]);
+   } 
+
+   return 0;
+
+}
+// //______________________________________________________________________________
+// int Filter(int type,std::vector<double> T,
+//            std::vector<fixedProbeEvent_t> in,std::vector<fixedProbeEvent_t> &out){
+// 
+//    const int N = in.size();
+//    const int M = T.size();  
+// 
+//    std::vector<double> ff,tt;
+//    for(int i=0;i<N;i++){
+//       tt.push_back(in[i].time); 
+//       ff.push_back(in[i].freq); 
+//    }
+//    double mean = gm2fieldUtil::Math::GetMean<double>(x); 
+// 
+//    int lo=0,hi=0;
+//    int eventNum=0;
+//    double aTime=0; 
+//    for(int i=0;i<M;i++){     // transition loop
+//       gm2fieldUtil::Algorithm::BinarySearch(tt,T[i],lo,hi); 
+//       end = lo;
+//       start = lo-30;
+//       for(int j=start;j<end;j++){
+// 	 out.push_back(in[j]);
+//       } 
+//  
+//    }
+// 
+//    return 0;
+// 
+// }
+//______________________________________________________________________________
+int FindTransitionTimes(double thr,std::vector<fixedProbeEvent_t> fxprData,
+                        std::vector<double> &timeLo,std::vector<double> &timeHi){
+
+   std::string theTime;
+   double aTime=0,aFreq=0,diff=0,freq=0;
+   double freq_last = fxprData[0].freq;
+
+   // find the mean 
+   std::vector<double> x;
+   const int N = fxprData.size(); 
+   for(int i=0;i<N;i++) x.push_back( fxprData[i].freq ); 
+   double mean = gm2fieldUtil::Math::GetMean<double>(x); 
+
+   // split into a low list and a high list 
+   std::vector<double> tHi,fHi,tLo,fLo; 
+   for(int i=0;i<N;i++){
+      aTime = fxprData[i].time; 
+      aFreq = fxprData[i].freq; 
+      if(aFreq>mean){
+	 tHi.push_back(aTime);  
+	 fHi.push_back(aFreq);
+      }else{
+	 tLo.push_back(aTime);  
+	 fLo.push_back(aFreq);
+      }  
+   }
+
+   int cntr=0;
+
+   // find peaks 
+   int NH = tHi.size();
+   int i=1;
+   do{
+      diff = TMath::Abs(fHi[i]-fHi[i-1]);
+      if(diff<thr){
+	 // probably good data; keep moving 
+	 i++;
+      }else{
+	 // probably an endpoint! mark it 
+	 cntr++;
+	 if(cntr>1) timeHi.push_back(tHi[i]);
+	 i += 30;
+      }
+   }while(i<NH+1); 
+
+   cntr=0; 
+   // find peaks
+   i=0;
+   int NL = tLo.size();
+   do{
+      diff = TMath::Abs(fLo[i]-fLo[i-1]);
+      if(diff<thr){
+	 // probably good data; keep moving 
+	 i++;
+      }else{
+	 // probably an endpoint! mark it 
+	 cntr++;
+	 if(cntr>1) timeLo.push_back(tLo[i]);
+	 i += 30;
+      }
+   }while(i<NL+1); 
+
+   return 0;
+}

@@ -24,6 +24,10 @@
 #include "plungingProbeAnaEvent.h"
 #include "trolleyAnaEvent.h"
 
+int FilterSingle(int nev,double T,std::vector<fixedProbeEvent_t> in,std::vector<fixedProbeEvent_t> &out);
+
+int FindTransitionTimes(double thr,std::vector<fixedProbeEvent_t> fxprData,std::vector<double> &tLo,std::vector<double> &tHi);
+
 int GetAverageFXPR(int method,unsigned long long time,std::vector<int> probe,
                    std::vector<gm2field::fixedProbeFrequency_t> fxprData,double &mean,double &stdev);
 

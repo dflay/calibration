@@ -88,7 +88,7 @@ int PlotFXPR(){
    // TLegend *L      = new TLegend(0.6,0.6,0.8,0.8); 
    // rc = gm2fieldUtil::Graph::FillMultiGraph(fxprList,method,"GpsTimeStamp","Frequency",fxprData,mg,L);
 
-   TCanvas *c1 = new TCanvas("c1","TRLY Data",1200,600);
+   TCanvas *c1 = new TCanvas("c1","FXPR Data",1200,600);
    // c1->Divide(1,2);  
    
    // c1->cd(1);
