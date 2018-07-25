@@ -36,12 +36,105 @@ def writeConfigFile(data,tag,keyList,isFullAnalysis,isFinalLocation,axis,fitData
       outData['fit'] = data[tag]['fit']  
    else: 
       outData['fit'] = "NONE"
+   outData['is-simple']  = False 
    outData['full-ana']   = isFullAnalysis 
    outData['final-loc']  = isFinalLocation 
    outData['nruns']      = len(runList) 
    outData['run-list']   = runList   
    outData['run-label']  = labelList  
+   outData['fxpr-set']   = data['fxpr-set'] 
    outData['axis']       = axis 
+   # print("{0}".format(outData) )
+   outfile = open(outpath,'w')
+   json.dump(outData,outfile)
+   outfile.close()
+#_______________________________________________________________________________
+def writeConfigFileProd(data,tag,keyList,axis,fitData,outpath): 
+   # write a JSON file for the ROOT script defined by tag 
+   # get the run list 
+   runList   = []
+   labelList = []  
+   subList   = []
+   i=0
+   for key in keyList: 
+      if(key=="ppx" or key=="ppy" or key=="ppz" or key=="midas-runs"):
+         # for PP NMR-DAQ runs  
+         subList = data[tag][key] # this is a list!  
+         for subRun in subList: 
+            runList.append(subRun) 
+            labelList.append("sr{0}".format(i+1))
+            i = i + 1 
+      else: 
+         # single MIDAS runs 
+         runList.append(data[tag][key])   
+         labelList.append(key) 
+   outData = {} 
+   outData['type']       = data['type'] 
+   outData['date']       = data['date']
+   outData['blinding']   = data['blinding'] 
+   outData['trly-probe'] = data['trly-probe'] 
+   outData['fxpr-set']   = data['fxpr-set'] 
+   if(fitData): 
+      outData['fit'] = data[tag]['fit']  
+   else: 
+      outData['fit'] = "NONE"
+   outData['nruns']      = len(runList) 
+   outData['run-list']   = runList   
+   outData['run-label']  = labelList  
+   outData['axis']       = axis 
+   # print("{0}".format(outData) )
+   outfile = open(outpath,'w')
+   json.dump(outData,outfile)
+   outfile.close()
+#_______________________________________________________________________________
+def writeConfigFileSingleRun(data,tag,label,runNumber,isFullAnalysis,isFinalLocation,axis,fitData,outpath): 
+   # write a JSON file for the ROOT script defined by tag 
+   # get the run list 
+   runList   = []
+   labelList = []  
+   runList.append(runNumber)   
+   labelList.append(label)  
+   outData = {} 
+   outData['date']       = data['date']
+   outData['blinding']   = data['blinding'] 
+   outData['trly-probe'] = data['trly-probe'] 
+   outData['p2p-fit']    = data['p2p-fit'] 
+   if(fitData): 
+      outData['fit'] = data[tag]['fit']  
+   else: 
+      outData['fit'] = "NONE"
+   outData['is-simple']  = False 
+   outData['full-ana']   = isFullAnalysis 
+   outData['final-loc']  = isFinalLocation 
+   outData['nruns']      = len(runList) 
+   outData['run-list']   = runList   
+   outData['run-label']  = labelList  
+   outData['fxpr-set']   = data['fxpr-set']  
+   outData['axis']       = axis 
+   # print("{0}".format(outData) )
+   outfile = open(outpath,'w')
+   json.dump(outData,outfile)
+   outfile.close()
+#_______________________________________________________________________________
+def writeConfigFileSimple(inData,tag,outpath): 
+   # write a JSON file for a ROOT script 
+   # obtain a run list defined by tag, write to outpath  
+   # get the run list 
+   runList   = inData[tag]
+   NRUN = len(runList)
+   labelList = [] 
+   for i in xrange(0,NRUN): 
+      labelList.append("{0}".format(i+1)) 
+   # build output object  
+   outData = {} 
+   outData['date']       = inData['date']
+   outData['blinding']   = inData['blinding']
+   outData['is-simple']  = True  
+   outData['trly-probe'] = inData['trly-probe'] 
+   outData['nruns']      = len(runList) 
+   outData['run-list']   = runList   
+   outData['run-label']  = labelList 
+   outData['fxpr-set']   = inData['fxpr-set']  
    # print("{0}".format(outData) )
    outfile = open(outpath,'w')
    json.dump(outData,outfile)

@@ -1,5 +1,73 @@
 #include "../include/DeltaBFuncs.h"
 //______________________________________________________________________________
+int CalculatePPDeltaB_ABA(bool correctDrift,
+                          plungingProbeAnaEvent_t bare,plungingProbeAnaEvent_t grad,plungingProbeAnaEvent_t bare2,
+                          double &deltaB,double &deltaB_err){
+   // compute delta B for PP measurements
+   // if correcting for drift, we use the ABA scheme 
+
+   if(correctDrift){
+      std::cout << "Correcting for field drift (ABA): " << std::endl;
+   }
+ 
+   // recall: a PP event has N sub events corresponding to taking a number of shots.  
+   // first, average over these. 
+   std::vector<double> fb,fg,fb2; 
+   
+   int NB = bare.numTraces;
+   for(int i=0;i<NB;i++) fb.push_back(bare.freq[i]); 
+   
+   int NG = grad.numTraces;
+   for(int i=0;i<NG;i++) fg.push_back(grad.freq[i]); 
+ 
+   int NB2 = bare2.numTraces;
+   for(int i=0;i<NB2;i++) fb2.push_back(bare2.freq[i]); 
+
+   double mean_bare   = gm2fieldUtil::Math::GetMean<double>(fb); 
+   double mean_grad   = gm2fieldUtil::Math::GetMean<double>(fg); 
+   double mean_bare2  = gm2fieldUtil::Math::GetMean<double>(fb2); 
+
+   double stdev_bare  = gm2fieldUtil::Math::GetStandardDeviation<double>(fb); 
+   double stdev_grad  = gm2fieldUtil::Math::GetStandardDeviation<double>(fg); 
+   double stdev_bare2 = gm2fieldUtil::Math::GetStandardDeviation<double>(fb2); 
+
+   double deltaB_raw     = mean_grad - mean_bare;
+   double deltaB_raw_err = TMath::Sqrt( stdev_bare*stdev_bare + stdev_grad*stdev_grad ); 
+
+   double deltaB_raw2     = mean_grad - mean_bare2; 
+   double deltaB_raw_err2 = TMath::Sqrt( stdev_bare2*stdev_bare2 + stdev_grad*stdev_grad ); 
+
+   unsigned long long timeBare  = bare.time[NB-1];
+   unsigned long long timeGrad  = grad.time[0]; 
+   unsigned long long timeBare2 = bare.time[NB2-1];
+
+   std::string timeStamp_bare  = gm2fieldUtil::GetStringTimeStampFromUTC(timeBare/1E+9); 
+   std::string timeStamp_grad  = gm2fieldUtil::GetStringTimeStampFromUTC(timeGrad/1E+9); 
+   std::string timeStamp_bare2 = gm2fieldUtil::GetStringTimeStampFromUTC(timeBare2/1E+9); 
+
+   std::cout << Form("%s mean bare = %.3lf +/- %.3lf Hz",timeStamp_bare.c_str(),mean_bare,stdev_bare) << std::endl;
+   std::cout << Form("%s mean grad = %.3lf +/- %.3lf Hz",timeStamp_grad.c_str(),mean_grad,stdev_grad) << std::endl;
+   std::cout << Form("dB (raw)     = %.3lf +/- %.3lf Hz",deltaB_raw,deltaB_raw_err) << std::endl;
+   if(correctDrift){
+      std::cout << Form("%s mean bare 2 = %.3lf +/- %.3lf Hz",timeStamp_bare2.c_str(),mean_bare2,stdev_bare2) << std::endl;
+      std::cout << Form("dB2 (raw)      = %.3lf +/- %.3lf Hz",deltaB_raw2,deltaB_raw_err2) << std::endl;
+   }
+
+   // now factor in the drift if necessary 
+   if(correctDrift){
+      deltaB     = 0.5*(deltaB_raw+deltaB_raw2);          
+      deltaB_err = 0.5*(deltaB_raw_err+deltaB_raw_err2);  // TMath::Sqrt(deltaB_raw_err*deltaB_raw_err + drift_err*drift_err); 
+   }else{
+      deltaB     = deltaB_raw;
+      deltaB_err = deltaB_raw_err; 
+   }
+   
+   if(correctDrift) std::cout << Form("dB (ABA)  = %.3lf +/- %.3lf Hz",deltaB,deltaB_err) << std::endl;
+   std::cout << "-----------------------" << std::endl; 
+
+   return 0; 
+}
+//______________________________________________________________________________
 int CalculatePPDeltaB(bool correctDrift,int method,
                       TGraph *gDrift,
                       plungingProbeAnaEvent_t bare,plungingProbeAnaEvent_t grad,
@@ -135,6 +203,75 @@ int CalculatePPDeltaB(bool correctDrift,int method,std::vector<int> trlyList,
    }
 
    return 0; 
+}
+//______________________________________________________________________________
+int CalculateTRLYDeltaB_Stationary_ABA(bool correctDrift,int probe,
+                                       std::vector<trolleyAnaEvent_t> bare,
+                                       std::vector<trolleyAnaEvent_t> grad,
+                                       std::vector<trolleyAnaEvent_t> bare2,
+                                       double &deltaB,double &deltaB_err){
+
+   // for a stationary trolley run, ABA method  
+
+   if(correctDrift){
+      std::cout << "Correcting for field drift: " << std::endl;
+   }
+
+   std::vector<double> fb,fg,fb2;
+
+   const int NB = bare.size();
+   std::cout << NB << " events" << std::endl;
+   for(int i=0;i<NB;i++) fb.push_back( bare[i].freq[probe] );  
+
+   const int NG = grad.size();
+   for(int i=0;i<NG;i++) fg.push_back( grad[i].freq[probe] );
+
+   const int NB2 = bare2.size();
+   for(int i=0;i<NB2;i++) fb2.push_back( bare2[i].freq[probe] );  
+
+   double mean_bare   = gm2fieldUtil::Math::GetMean<double>(fb);  
+   double mean_grad   = gm2fieldUtil::Math::GetMean<double>(fg); 
+   double mean_bare2  = gm2fieldUtil::Math::GetMean<double>(fb2);  
+
+   double stdev_bare  = gm2fieldUtil::Math::GetStandardDeviation<double>(fb);  
+   double stdev_grad  = gm2fieldUtil::Math::GetStandardDeviation<double>(fg);  
+   double stdev_bare2 = gm2fieldUtil::Math::GetStandardDeviation<double>(fb2); 
+
+   double deltaB_raw     = mean_grad - mean_bare; 
+   double deltaB_raw_err = TMath::Sqrt( stdev_bare*stdev_bare + stdev_grad*stdev_grad );
+ 
+   double deltaB_raw2     = mean_grad - mean_bare2; 
+   double deltaB_raw_err2 = TMath::Sqrt( stdev_bare2*stdev_bare2 + stdev_grad*stdev_grad );
+
+   unsigned long long timeBare  = bare[NB-1].time[probe];   // want the last event of the bare data! 
+   unsigned long long timeGrad  = grad[0].time[probe];
+   unsigned long long timeBare2 = bare[NB2-1].time[probe];  // want the last event of the bare data! 
+
+   std::string timeStamp_bare  = gm2fieldUtil::GetStringTimeStampFromUTC(timeBare/1E+9); 
+   std::string timeStamp_grad  = gm2fieldUtil::GetStringTimeStampFromUTC(timeGrad/1E+9); 
+   std::string timeStamp_bare2 = gm2fieldUtil::GetStringTimeStampFromUTC(timeBare2/1E+9); 
+
+   std::cout << Form("%s mean bare = %.3lf +/- %.3lf Hz",timeStamp_bare.c_str(),mean_bare,stdev_bare) << std::endl;
+   std::cout << Form("%s mean grad = %.3lf +/- %.3lf Hz",timeStamp_grad.c_str(),mean_grad,stdev_grad) << std::endl;
+   std::cout << Form("dB (raw)     = %.3lf +/- %.3lf Hz",deltaB_raw,deltaB_raw_err) << std::endl;
+   if(correctDrift){
+      std::cout << Form("%s mean bare 2 = %.3lf +/- %.3lf Hz",timeStamp_bare2.c_str(),mean_bare2,stdev_bare2) << std::endl;
+      std::cout << Form("dB2 (raw)      = %.3lf +/- %.3lf Hz",deltaB_raw2,deltaB_raw_err2) << std::endl;
+   }
+
+   // now factor in the drift if necessary 
+   if(correctDrift){
+      deltaB     = 0.5*(deltaB_raw+deltaB_raw2);
+      deltaB_err = 0.5*(deltaB_raw_err+deltaB_raw_err2);  
+   }else{
+      deltaB     = deltaB_raw;
+      deltaB_err = deltaB_raw_err; 
+   }
+   
+   if(correctDrift) std::cout << Form("dB (ABA) = %.3lf +/- %.3lf Hz",deltaB,deltaB_err) << std::endl;
+   std::cout << "-----------------------" << std::endl; 
+
+   return 0;
 }
 //______________________________________________________________________________
 int CalculateTRLYDeltaB_Stationary(bool correctDrift,int method,int probe,

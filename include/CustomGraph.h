@@ -12,10 +12,16 @@
 
 #include "gm2fieldGraph.h"
 
+#include "grad_meas.h"
 #include "plungingProbeAnaEvent.h"
 #include "trolleyAnaEvent.h"
+#include "sccEvent.h"
 
 #include "FXPRFuncs.h"
+#include "TRLYFuncs.h"
+
+// gradient plots
+TGraphErrors *GetTGraphErrors(std::vector<imposed_gradient_t> data); 
 
 // plunging probe plots 
 TGraph *GetPPTGraph1(TString xAxis,TString yAxis,std::vector<plungingProbeAnaEvent_t> data); 
@@ -28,12 +34,15 @@ int FillPPVector2(TString axis,std::vector<plungingProbeAnaEvent_t> ppData,std::
 int FillPPVector3(TString axis,plungingProbeAnaEvent_t ppData,std::vector<double> &x);
 
 // trolley plots
+TGraph *GetTRLYPositionsGraph(); 
 TGraph *GetTRLYTGraph(int probe,TString xAxis,TString yAxis,std::vector<trolleyAnaEvent_t> data);
 TGraphErrors *GetSlicePlot(char axis,std::vector<trolleyAnaEvent_t> trlyData); 
 TGraphErrors *GetSlicePlot(char axis,std::vector<trolleyAnaEvent_t> trlyData,
                            std::vector<double> &X,std::vector<double> &Y,std::vector<double> &EY); 
 TGraph2D *GetAzimuthalProjection(std::vector<trolleyAnaEvent_t> data,int units=gm2fieldUtil::Constants::Hz); 
 int FillTRVector(int probe,TString axis,std::vector<trolleyAnaEvent_t> data,std::vector<double> &x);
+
+TGraphErrors *GetSCCTestGraphTRLY(int probe,TString xAxis,TString yAxis,std::vector< std::vector<sccTrlyEvent_t> > data);
 
 // fixed probe plots 
 TGraph *GetTGraphNew(int method,unsigned long long timeStart,unsigned long long timeStop,unsigned long long timeStep,

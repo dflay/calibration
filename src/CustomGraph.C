@@ -1,5 +1,17 @@
 #include "../include/CustomGraph.h"
 //______________________________________________________________________________
+TGraphErrors *GetTGraphErrors(std::vector<imposed_gradient_t> data){
+   std::vector<double> x,y,ey;
+   const int N = data.size();
+   for(int i=0;i<N;i++){
+      x.push_back( data[i].pos ); 
+      y.push_back( data[i].grad ); 
+      ey.push_back( data[i].grad_err ); 
+   }
+   TGraphErrors *g = gm2fieldUtil::Graph::GetTGraphErrors(x,y,ey); 
+   return g;
+}
+//______________________________________________________________________________
 TGraph *GetPPTGraph1(TString xAxis,TString yAxis,std::vector<plungingProbeAnaEvent_t> data){
    // a custom plotter for the plunging probe analysis event
    // treat all sub-events as a regular event 
@@ -313,11 +325,13 @@ TGraphErrors *GetSlicePlot(char axis,std::vector<trolleyAnaEvent_t> trlyData){
    for(int j=0;j<NP;j++){
       k = probe[j];
       for(int i=0;i<N;i++) f.push_back( trlyData[i].freq[k] );
-      // for a given orobe, get the mean frequency over all events  
+      // for a given probe, get the mean frequency over all events  
       mean_freq  = gm2fieldUtil::Math::GetMean<double>(f);
       stdev_freq = gm2fieldUtil::Math::GetStandardDeviation<double>(f);
       Y.push_back(mean_freq);
       EY.push_back(stdev_freq);
+      // std::cout << Form("PROBE %02d DETAILS: r = %.3lf, y = %.3lf, f = %.3lf +/- %.3lf",
+      //                   k,trlyData[0].r[k],trlyData[0].y[k],mean_freq,stdev_freq) << std::endl;
       if(axis=='r') X.push_back( trlyData[0].r[k] );
       if(axis=='v') X.push_back( trlyData[0].y[k] );
       // clean up for next probe 
@@ -382,6 +396,45 @@ TGraph2D *GetAzimuthalProjection(std::vector<trolleyAnaEvent_t> data,int units){
       w.clear();
    }
    TGraph2D *g = new TGraph2D(NUM_TRLY,&x[0],&y[0],&z[0]);
+   return g;
+}
+//______________________________________________________________________________
+TGraphErrors *GetSCCTestGraphTRLY(int probe,TString xAxis,TString yAxis,std::vector< std::vector<sccTrlyEvent_t> > data){
+   std::vector<double> x,y,ey;
+   const int N = data[probe].size();
+   for(int i=0;i<N;i++){
+      if(xAxis=="trial") x.push_back( (double)i+1 );  
+      if(xAxis=="bare")  x.push_back( (double)data[probe][i].freq_bare );  
+      if(xAxis=="scc")   x.push_back( (double)data[probe][i].freq_scc  );  
+      if(xAxis=="diff")  x.push_back( (double)data[probe][i].freq_diff );  
+      if(yAxis=="trial") y.push_back( (double)i+1 );  
+      if(yAxis=="bare")  y.push_back( (double)data[probe][i].freq_bare );  
+      if(yAxis=="scc")   y.push_back( (double)data[probe][i].freq_scc  );  
+      if(yAxis=="diff")  y.push_back( (double)data[probe][i].freq_diff );  
+      if(yAxis=="bare")  ey.push_back( (double)data[probe][i].freq_bare_err );  
+      if(yAxis=="scc")   ey.push_back( (double)data[probe][i].freq_scc_err  );  
+      if(yAxis=="diff")  ey.push_back( (double)data[probe][i].freq_diff_err );  
+   }
+   TGraphErrors *g = gm2fieldUtil::Graph::GetTGraphErrors(x,y,ey); 
+   return g; 
+}
+//______________________________________________________________________________
+TGraph *GetTRLYPositionsGraph(){
+   // get a plot of trolley positions 
+   trolleyProbePosition_t trlyPos;
+   int rc = GetTrolleyProbePositions(trlyPos);
+   if(rc!=0) return NULL; 
+
+   std::vector<double> x,y;
+   for(int i=0;i<NUM_TRLY;i++){
+      x.push_back( trlyPos.r[i]*0.99 );
+      y.push_back( trlyPos.y[i]*0.99 );
+   }
+
+   TGraph *g = gm2fieldUtil::Graph::GetTGraph(x,y);
+   g->SetMarkerStyle(20);
+   g->SetMarkerSize(1.0);
+
    return g;
 }
 //______________________________________________________________________________

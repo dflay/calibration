@@ -1,5 +1,97 @@
 #include "../include/CustomImport.h"
 //______________________________________________________________________________
+int LoadImposedGradientData(const char *inpath,std::vector<imposed_gradient_t> &data){
+
+   int i=0;
+   std::string sp,sgrad,sgrad_err;
+
+   imposed_gradient_t dataPt;
+
+   ifstream infile;
+   infile.open(inpath);
+   if( infile.fail() ){
+      cout << "Cannot open the file: " << inpath << endl;
+      return 1;
+   }else{
+      while( !infile.eof() ){
+         std::getline(infile,sp,',');
+         std::getline(infile,sgrad,',');
+         std::getline(infile,sgrad_err);
+	 dataPt.pos      = std::atof( sp.c_str()        );
+	 dataPt.grad     = std::atof( sgrad.c_str()     );
+	 dataPt.grad_err = std::atof( sgrad_err.c_str() );
+	 data.push_back(dataPt); 
+      }
+      infile.close();
+      data.pop_back();
+   }
+
+   return 0;
+}
+//______________________________________________________________________________
+int LoadTrolleyDeltaBData(const char *inpath,trolleyDeltaB_t &data){
+
+   int i=0;
+   std::string sp,snq,snqE,ssq,ssqE;
+
+   ifstream infile;
+   infile.open(inpath);
+   if( infile.fail() ){
+      cout << "Cannot open the file: " << inpath << endl;
+      return 1;
+   }else{
+      while( !infile.eof() ){
+         std::getline(infile,sp  ,',');
+         std::getline(infile,snq ,',');
+         std::getline(infile,snqE,',');
+         std::getline(infile,ssq ,',');
+         std::getline(infile,ssqE);
+         data.probeID[i]      = i+1; 
+	 data.normQuad[i]     = std::atof( snq.c_str()  );
+	 data.normQuad_err[i] = std::atof( snqE.c_str() );
+	 data.skewQuad[i]     = std::atof( ssq.c_str()  );
+	 data.skewQuad_err[i] = std::atof( ssqE.c_str() );
+	 i++;
+      }
+      infile.close();
+   }
+
+   return 0;
+}
+//______________________________________________________________________________
+int LoadTrolleyPositionData(const char *inpath,trolleyProbePosition_t &data){
+
+   int i=0;
+   std::string sp,sr,sdr,sy,sdy,sphi,sdphi;
+
+   ifstream infile;
+   infile.open(inpath);
+   if( infile.fail() ){
+      cout << "Cannot open the file: " << inpath << endl;
+      return 1;
+   }else{
+      while( !infile.eof() ){
+         std::getline(infile,sp,',');
+         std::getline(infile,sr,',');
+         std::getline(infile,sdr,',');
+         std::getline(infile,sy,',');
+         std::getline(infile,sdy,',');
+         std::getline(infile,sphi,',');
+         std::getline(infile,sdphi);
+	 data.r[i]    = std::atof( sr.c_str()    );
+	 data.dr[i]   = std::atof( sdr.c_str()   );
+	 data.y[i]    = std::atof( sy.c_str()    );
+	 data.dy[i]   = std::atof( sdy.c_str()   );
+	 data.phi[i]  = std::atof( sphi.c_str()  );
+	 data.dphi[i] = std::atof( sdphi.c_str() );
+	 i++;
+      }
+      infile.close();
+   }
+
+   return 0;
+}
+//______________________________________________________________________________
 int ImportNMRANAData(const char *inpath,std::vector<nmrAnaEvent_t> &Data){
    // load data from the NMR-ANA framework 
 
@@ -152,6 +244,7 @@ int LoadPerturbationData(const char *inpath,perturbation_t &pert){
   
    return 0;
 }
+
 //______________________________________________________________________________
 int LoadFieldData(const char *inpath,nmr_meas_t &data){
 
@@ -411,6 +504,33 @@ int SortRuns(std::vector<std::string> label,std::vector<int> allRuns,
    // drift runs 
    driftRun.push_back( allRuns[bareIndex]  ); 
    driftRun.push_back( allRuns[bare2Index] );
+
+   // save indices 
+   index.push_back( bareIndex  );  
+   index.push_back( gradIndex  );  
+   index.push_back( bare2Index );  
+
+   return 0;
+
+}
+//______________________________________________________________________________
+int SortRunsAlt(std::vector<std::string> label,std::vector<int> allRuns,
+             std::vector<int> &run,std::vector<int> &index){
+
+   const int NRUN = allRuns.size(); 
+   int bareRun=0,bareIndex=0;
+   int gradRun=0,gradIndex=0;
+   int bare2Run=0,bare2Index=0;
+   for(int i=0;i<NRUN;i++){
+      if(label[i].compare("bare")==0){
+         bareIndex = i;
+      }else if(label[i].compare("bare-2")==0){
+         bare2Index = i;
+      }else{
+         gradIndex = i;
+      }
+      run.push_back(allRuns[i]);
+   }
 
    // save indices 
    index.push_back( bareIndex  );  

@@ -36,7 +36,23 @@ TGraph *GetDiffPlot(TGraphErrors *g1,TGraphErrors *g2);
 TGraph *GetDriftTGraph(int method,std::vector<int> driftRun,std::vector<int> fxprList,std::vector<double> &stats); 
 TGraph *GetDriftTGraphR2R(int method,std::vector<int> driftRun,std::vector<int> fxprList,std::vector<double> &stats);
 
+int FindTransitionTimes(int type,double thr,double delta,std::vector<gm2field::surfaceCoils_t> data,
+                        std::vector<double> &timeOff,std::vector<double> &timeOn); 
+
 int CalculateTRLYAvg_Stationary(int probeNumber,std::vector<trolleyAnaEvent_t> Event,double &mean,double &stdev);
+
+// Difference calculations 
+int GetDifference(std::vector<double> scc ,std::vector<double> scc_err,
+                  std::vector<double> bare,std::vector<double> bare_err,
+                  std::vector<double> &diff,std::vector<double> &diff_err); 
+
+int GetDifference_ABA(std::vector<double> scc ,std::vector<double> scc_err,
+                      std::vector<double> bare,std::vector<double> bare_err,
+                      std::vector<double> &diff_aba,std::vector<double> &diff_aba_err); 
+
+int GetDifference_ABA_sccFirst(std::vector<double> scc ,std::vector<double> scc_err,
+                               std::vector<double> bare,std::vector<double> bare_err,
+                               std::vector<double> &diff_aba,std::vector<double> &diff_aba_err); 
 
 // PP functions 
 int CalculateAveragePP(std::vector<plungingProbeAnaEvent_t> ppData,double &B,double &B_err); 

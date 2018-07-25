@@ -7,6 +7,7 @@
 #include <vector>
 #include <string> 
 
+#include "trolleyAnaEvent.h"
 #include "results.h"
 #include "nmrAnaEvent.h"
 #include "perturbation.h"
@@ -20,6 +21,9 @@ int ImportDeltaBFileList_csv(const char *inpath,
                     std::vector<int> &x1,std::vector<std::string> &x2,
                     std::vector<double> &x3); 
 
+int LoadImposedGradientData(const char *inpath,std::vector<imposed_gradient_t> &data);
+int LoadTrolleyDeltaBData(const char *inpath,trolleyDeltaB_t &data); 
+int LoadTrolleyPositionData(const char *inpath,trolleyProbePosition_t &data);
 int LoadPerturbationData(const char *inpath,perturbation_t &pert);
 int LoadFieldData(const char *inpath,nmr_meas_t &x); 
 int LoadGradientData(const char *inpath,std::vector<grad_meas_t> &x);
@@ -29,8 +33,9 @@ int FindStartIndexTRLY(std::string date,int runNumber);
 int LoadBlinding(blind_t *data); 
 int SortRuns(std::vector<std::string> label,std::vector<int> allRuns,
              std::vector<int> &run,std::vector<int> &driftRun,std::vector<int> &index);
+int SortRunsAlt(std::vector<std::string> label,std::vector<int> allRuns,
+             std::vector<int> &run,std::vector<int> &index);
 
 int ImportResults(std::string inpath,result_t &data); 
- 
 
 #endif 

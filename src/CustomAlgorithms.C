@@ -1,5 +1,130 @@
 #include "../include/CustomAlgorithms.h"
 //______________________________________________________________________________
+int FindTransitionTimes(int type,double thr,double delta,std::vector<gm2field::surfaceCoils_t> data,
+                        std::vector<double> &timeOff,std::vector<double> &timeOn){
+   // find the transition times of turning off and on the surface coils 
+   // use the sum of the coils to determine if they're on or off 
+   // type: 0 (bottom), 1 (top), -1 (azi)
+   // thr: threshold above which we consider the SCC to be on 
+   // delta: how much time to delay marking the transition (for downstream analysis) 
+   int rc=0,i=0,cntr=0,M=4;
+   if(type==0||type==1) M = 100;
+   if( TMath::Abs(type)>1 ) return -1;  
+   double theTime=0,diff=0,sum=0,sum_prev=0; 
+   const int NEV = data.size();
+   do{ 
+      for(int j=0;j<M;j++){
+	 if(type==0)  sum += data[i].BotCurrents[j]; 
+	 if(type==1)  sum += data[i].TopCurrents[j]; 
+	 if(type==-1) sum  = data[i].AzCurrents[0];   // these coils are set symmetrically, so we don't want to sum! 
+      }
+      if(type==0)  theTime = data[i].BotTime[0]/1E+9; 
+      if(type==1)  theTime = data[i].TopTime[0]/1E+9; 
+      if(type==-1) theTime = data[i].TopTime[0]/1E+9; // we don't have an Azi time  
+      if( TMath::Abs(sum-sum_prev)>thr ){
+	 // found a transition
+	 cntr++;
+	 if(cntr>2){ 
+	    // now is it a time off or time on? 
+	    if( TMath::Abs(sum)<10E-3 ){  // 10 mA 
+	       timeOff.push_back(theTime+delta); 
+	    }else{
+	       timeOn.push_back(theTime+delta); 
+	    }
+	 }
+	 i += 75;   // jump ahead 
+      }else{
+	 // no transition 
+         i++; 
+      }
+      // set up for next event 
+      sum_prev = sum;
+      sum      = 0;
+   }while(i<NEV); 
+
+   const int Non  = timeOn.size();
+   const int Noff = timeOff.size();
+   std::cout << Form("Transition Times: off = %d, on = %d",Noff,Non) << std::endl;
+
+   // determine if we start analysis with SCC on or off
+   // rc = 1, SCC on to start 
+   if(timeOff[0]>timeOn[0])  rc = 1; 
+
+   return rc;  
+}
+//______________________________________________________________________________
+int GetDifference(std::vector<double> scc ,std::vector<double> scc_err,
+                  std::vector<double> bare,std::vector<double> bare_err,
+                  std::vector<double> &diff,std::vector<double> &diff_err){
+   double arg=0,arg_err=0;
+   const int N = bare.size();
+   for(int i=0;i<N;i++){
+      arg     = scc[i] - bare[i];
+      arg_err = TMath::Sqrt(scc_err[i]*scc_err[i] + bare_err[i]*bare_err[i]);
+      std::cout << Form("Trial %d: bare = %.3lf +/- %.3lf Hz, scc = %.3lf +/- %.3lf Hz, diff = %.3lf +/- %.3lf Hz",
+                        i,bare[i],bare_err[i],scc[i],scc_err[i],arg,arg_err) << std::endl;
+      diff.push_back(arg);
+      diff_err.push_back(arg_err);
+   }
+   return 0;
+}
+//______________________________________________________________________________
+int GetDifference_ABA(std::vector<double> scc ,std::vector<double> scc_err,
+                      std::vector<double> bare,std::vector<double> bare_err,
+                      std::vector<double> &diff_aba,std::vector<double> &diff_aba_err){
+
+   // WARNING: This assumes that the bare measurement comes first!
+
+   double diff=0,diff_err=0;
+   double diff_prev=0,diff_prev_err=0;
+   double arg=0,arg_err=0;
+   const int N = bare.size();
+   for(int i=1;i<N;i++){
+      // first compute the difference 
+      diff_prev     = scc[i-1] - bare[i-1];
+      diff_prev_err = TMath::Sqrt(scc_err[i-1]*scc_err[i-1] + bare_err[i-1]*bare_err[i-1]);
+      diff          = scc[i-1] - bare[i];
+      diff_err      = TMath::Sqrt(scc_err[i-1]*scc_err[i-1] + bare_err[i]*bare_err[i]);
+      // now get the ABA difference 
+      arg     = 0.5*(diff + diff_prev);
+      arg_err = 0.5*(diff_err + diff_prev_err);
+      // std::cout << Form("Trial %d: bare1 = %.3lf +/- %.3lf Hz, scc = %.3lf +/- %.3lf Hz, bare2 = %.3lf +/- %.3lf Hz, diff = %.3lf +/- %.3lf Hz",
+      //                   i,bare[i-1],bare_err[i-1],scc[i-1],scc_err[i-1],bare[i],bare_err[i],arg,arg_err) << std::endl;
+      // store result 
+      diff_aba.push_back(arg);
+      diff_aba_err.push_back(arg_err);
+   }
+   return 0;
+}
+//______________________________________________________________________________
+int GetDifference_ABA_sccFirst(std::vector<double> scc ,std::vector<double> scc_err,
+                               std::vector<double> bare,std::vector<double> bare_err,
+                               std::vector<double> &diff_aba,std::vector<double> &diff_aba_err){
+
+   // WARNING: This assumes that the scc measurement comes first!
+
+   double diff=0,diff_err=0;
+   double diff_prev=0,diff_prev_err=0;
+   double arg=0,arg_err=0;
+   const int N = bare.size();
+   for(int i=1;i<N;i++){
+      // first compute the difference 
+      diff_prev     = scc[i-1] - bare[i-1];
+      diff_prev_err = TMath::Sqrt(scc_err[i-1]*scc_err[i-1] + bare_err[i-1]*bare_err[i-1]);
+      diff          = scc[i] - bare[i-1];
+      diff_err      = TMath::Sqrt(scc_err[i]*scc_err[i] + bare_err[i-1]*bare_err[i-1]);
+      // now get the ABA difference 
+      arg     = 0.5*(diff + diff_prev);
+      arg_err = 0.5*(diff_err + diff_prev_err);
+      // std::cout << Form("Trial %d: scc1 = %.3lf +/- %.3lf Hz, bare = %.3lf +/- %.3lf Hz, scc2 = %.3lf +/- %.3lf Hz, diff = %.3lf +/- %.3lf Hz",
+      //                   i,scc[i-1],scc_err[i-1],bare[i-1],bare_err[i-1],scc[i],scc_err[i],arg,arg_err) << std::endl;
+      // store result 
+      diff_aba.push_back(arg);
+      diff_aba_err.push_back(arg_err);
+   }
+   return 0;
+}
+//______________________________________________________________________________
 TGraph *RemoveTrend(TGraph *g1,TF1 *func,double &mean,double &stdev){
    // subtract off a trend in the data   
 

@@ -37,6 +37,8 @@
 #include "./src/CustomUtilities.C"
 #include "./src/DeltaBFuncs.C"
 
+double GetFitDerivativeError(std::string fitFunc,TF1 *fit);
+
 int GetShimmedTransGrad(std::string configFile){
 
    std::cout << "----------------------------------" << std::endl;
@@ -53,6 +55,7 @@ int GetShimmedTransGrad(std::string configFile){
    std::string fitFunc = inputMgr->GetFitFunction();
    bool isBlind        = inputMgr->IsBlind();
    int probeNumber     = inputMgr->GetTrolleyProbe();
+   int fxprSet         = inputMgr->GetFixedProbeListTag(); 
 
    date_t theDate; 
    GetDate(theDate);
@@ -79,8 +82,7 @@ int GetShimmedTransGrad(std::string configFile){
    // Trolley data
    std::vector<trolleyAnaEvent_t> trlyData; // for drift  
    std::vector<trolleyAnaEvent_t> Data,DataCor,DataCorAlt;    
-
-   for(int i=0;i<NRUN;i++) rc = GetTrolleyData(date,run[i],method,Data);
+   for(int i=0;i<NRUN;i++) rc = GetTrolleyData("",run[i],method,Data);
    if(rc!=0){
       std::cout << "No data!" << std::endl;
       return 1;
@@ -89,7 +91,9 @@ int GetShimmedTransGrad(std::string configFile){
    if(isBlind) rc = ApplyBlindingTRLY(blindValue,Data); 
 
    // fixed probe data
-   std::string fxprPath = "./input/probe-lists/fxpr-list.csv";
+   char fxpr_path[500];
+   sprintf(fxpr_path,"./input/probe-lists/fxpr-list_set-%d.csv",fxprSet); 
+   std::string fxprPath = fxpr_path;
    std::vector<int> fxprList;
    gm2fieldUtil::Import::ImportData1<int>(fxprPath,"csv",fxprList);
 
@@ -238,21 +242,26 @@ int GetShimmedTransGrad(std::string configFile){
    TF1 *fitVB_fxpr = gVB_fxpr->GetFunction( fitFunc.c_str() );
    TF1 *fitVB_trly = gVB_trly->GetFunction( fitFunc.c_str() );
 
-   PR[0] = fitRB->GetParameter(1);
-   PR[1] = fitRB_fxpr->GetParameter(1);
-   PR[2] = fitRB_trly->GetParameter(1);
+   // evaluate the gradient as the first derivative of the fit 
 
-   ER[0] = fitRB->GetParError(1);
-   ER[1] = fitRB_fxpr->GetParError(1);
-   ER[2] = fitRB_trly->GetParError(1);
+   double r_coord = Data[0].r[probeNumber]; 
+   double y_coord = Data[0].y[probeNumber]; 
 
-   PV[0] = fitVB->GetParameter(1);
-   PV[1] = fitVB_fxpr->GetParameter(1);
-   PV[2] = fitVB_trly->GetParameter(1);
+   PR[0] = fitRB->Derivative(r_coord);                // fitRB->GetParameter(1);
+   PR[1] = fitRB_fxpr->Derivative(r_coord);           // fitRB_fxpr->GetParameter(1);
+   PR[2] = fitRB_trly->Derivative(r_coord);           // fitRB_trly->GetParameter(1);
 
-   EV[0] = fitVB->GetParError(1);
-   EV[1] = fitVB_fxpr->GetParError(1);
-   EV[2] = fitVB_trly->GetParError(1);
+   ER[0] = GetFitDerivativeError(fitFunc,fitRB);      // fitRB->GetParError(1);
+   ER[1] = GetFitDerivativeError(fitFunc,fitRB_fxpr); // fitRB_fxpr->GetParError(1);
+   ER[2] = GetFitDerivativeError(fitFunc,fitRB_trly); // fitRB_trly->GetParError(1);
+
+   PV[0] = fitVB->Derivative(y_coord);                // fitVB->GetParameter(1);
+   PV[1] = fitVB_fxpr->Derivative(y_coord);           // fitVB_fxpr->GetParameter(1);
+   PV[2] = fitVB_trly->Derivative(y_coord);           // fitVB_trly->GetParameter(1);
+
+   EV[0] = GetFitDerivativeError(fitFunc,fitVB);      // fitVB->GetParError(1);
+   EV[1] = GetFitDerivativeError(fitFunc,fitVB_fxpr); // fitVB_fxpr->GetParError(1);
+   EV[2] = GetFitDerivativeError(fitFunc,fitVB_trly); // fitVB_trly->GetParError(1);
 
    // convert to Hz/mm 
    for(int i=0;i<3;i++){
@@ -280,13 +289,34 @@ int GetShimmedTransGrad(std::string configFile){
    if(isBlind)  sprintf(outdir,"./output/blinded/%02d-%02d-%02d"  ,theDate.month,theDate.day,theDate.year-2000); 
    if(!isBlind) sprintf(outdir,"./output/unblinded/%02d-%02d-%02d",theDate.month,theDate.day,theDate.year-2000); 
    rc = MakeDirectory(outdir);
-   sprintf(outpath,"%s/rad-grad_final-location_pr-%02d_%s.csv"    ,outdir,probeNumber,date.c_str()); 
+   sprintf(outpath,"%s/rad-grad_final-location_pr-%02d_run-%05d_%s.csv"    ,outdir,probeNumber,run[0],date.c_str()); 
    PrintToFile(outpath,"rad-grad",PR,ER,drift,drift_err); 
-   sprintf(outpath,"%s/vert-grad_final-location_pr-%02d_%s.csv"   ,outdir,probeNumber,date.c_str()); 
+   sprintf(outpath,"%s/vert-grad_final-location_pr-%02d_run-%05d_%s.csv"   ,outdir,probeNumber,run[0],date.c_str()); 
    PrintToFile(outpath,"vert-grad",PV,EV,drift,drift_err); 
 
    delete inputMgr; 
 
    return 0;
+}
+//______________________________________________________________________________
+double GetFitDerivativeError(std::string fitFunc,TF1 *fit){
+   // compute the error on the derivative of the fit 
+   double err=0;
+   const int npar = fit->GetNpar();
+   double dp[npar]; 
+   for(int i=0;i<npar;i++){
+      dp[i] = fit->GetParError(i);
+   } 
+   if( fitFunc.compare("pol1")==0 ){
+      err = dp[1];
+   }else if( fitFunc.compare("pol2")==0 ) {
+      err = TMath::Sqrt( dp[1]*dp[1] + 4.*dp[2]*dp[2] );
+   }else if( fitFunc.compare("pol3")==0 ){
+      err = TMath::Sqrt( dp[1]*dp[1] + 4.*dp[2]*dp[2] + 9.*dp[3]*dp[3] );
+   }else{
+      std::cout << "[GetFitDerivativeError]: Unknown fit function!" << std::endl;
+      return 0;
+   }
+   return err; 
 }
 

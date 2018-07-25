@@ -108,7 +108,7 @@ int GetTrolleyData(std::string date,int runNumber,int freqMethod,std::vector<tro
       return 1;
    }
 
-   int startIndex = 5; 
+   int startIndex = 10; 
    if( date.compare("")!=0 ){
       // only if we have a valid date do we go look for a start index 
       startIndex = FindStartIndexTRLY(date,runNumber);
@@ -116,6 +116,7 @@ int GetTrolleyData(std::string date,int runNumber,int freqMethod,std::vector<tro
 
    // FIXME: special case...
    if(runNumber==3030) startIndex = 10; 
+   if(runNumber==4911) startIndex = 35; 
 
    rc = ConsolidateTrolleyData(startIndex,freqMethod,trlyTime,trlyPos,trlyMon,trlyFreq,trlyEvent);
 

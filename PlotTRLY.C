@@ -1,4 +1,4 @@
-// Compute DeltaB for TRLY data sets  
+// Plot TRLY data   
 
 #include <cstdlib> 
 #include <iostream>
@@ -39,12 +39,14 @@ int PlotTRLY(){
    int rc=0;
    int method = gm2fieldUtil::Constants::kPhaseDerivative;
 
-   int run=0;
+   int run=0,probe=0;
    std::cout << "Enter run: ";
    std::cin  >> run; 
+   std::cout << "Enter probe: "; 
+   std::cin  >> probe; 
 
    // fixed probe data
-   std::string fxprPath = "./input/probe-lists/fxpr-list.csv"; 
+   std::string fxprPath = "./input/probe-lists/fxpr-list_set-2.csv"; 
    std::vector<int> fxprList; 
    gm2fieldUtil::Import::ImportData1<int>(fxprPath,"csv",fxprList);
 
@@ -56,6 +58,22 @@ int PlotTRLY(){
       return 1;
    }
 
+   // now average over the fixed probe data
+   int NN  = fxprData.size();
+   int NFP = fxprList.size();
+   int startIndex = fxprList[0];
+   int stopIndex  = fxprList[NFP-1];
+   unsigned long long t0     = 0;
+   unsigned long long tStart = fxprData[0].GpsTimeStamp[startIndex];
+   unsigned long long tStop  = fxprData[NN-1].GpsTimeStamp[stopIndex];
+   unsigned long long tStep  = 1E+9;
+
+   double xMin = tStart/1E+9 - 5; 
+   double xMax = tStop/1E+9  + 5; 
+
+   std::vector<fixedProbeEvent_t> fxprDataAvg;
+   GetAverageFXPRVectorsNew(method,t0,tStart,tStop,tStep,fxprList,fxprData,fxprDataAvg);
+
    // Trolley data 
    std::vector<trolleyAnaEvent_t> trlyData,trlyDataCor;   
 
@@ -65,18 +83,20 @@ int PlotTRLY(){
       return 1;
    }
 
+   std::cout << Form("Analyzing probe %d, r = %.3lf cm, y = %.3lf cm",probe,trlyData[0].r[probe],trlyData[0].y[probe]) << std::endl;
+
    std::cout << "Applying field drift corrections (during measurement)..." << std::endl;
    // correct for field drift [fxpr]  
-   rc = CorrectTRLYForDriftDuringMeasurement(method,fxprList,fxprData,trlyData,trlyDataCor);
+   rc = CorrectTRLYForDriftDuringMeasurement(fxprDataAvg,trlyData,trlyDataCor);
    if(rc!=0) return 1;
    std::cout << "--> Done" << std::endl; 
 
    std::vector<double> fb,fa;
    const int NB = trlyData.size();
-   for(int i=0;i<NB;i++) fb.push_back( trlyData[i].freq[0] );
+   for(int i=0;i<NB;i++) fb.push_back( trlyData[i].freq[probe] );
 
    const int NA = trlyData.size();
-   for(int i=0;i<NA;i++) fa.push_back( trlyDataCor[i].freq[0] );
+   for(int i=0;i<NA;i++) fa.push_back( trlyDataCor[i].freq[probe] );
 
    double mean_before  = gm2fieldUtil::Math::GetMean<double>(fb); 
    double stdev_before = gm2fieldUtil::Math::GetStandardDeviation<double>(fb); 
@@ -93,17 +113,12 @@ int PlotTRLY(){
    TGraph *gAfter  = GetTRLYTGraph(0,"GpsTimeStamp","freq",trlyDataCor);
    gm2fieldUtil::Graph::SetGraphParameters(gAfter,20,kRed);
 
-   const int NFXPR = fxprList.size();
-   int startIndex  = fxprList[0];
-   int stopIndex   = fxprList[NFXPR-1];
-
    // Fixed probe average plot 
-   const int NFP = fxprData.size();
-   TGraph *gFPAVG = GetTGraph(method,fxprData[0].GpsTimeStamp[startIndex],fxprData[NFP-1].GpsTimeStamp[stopIndex],1E+9,fxprList,fxprData);
+   TGraph *gFPAVG = GetTGraphNew(fxprDataAvg);
    gm2fieldUtil::Graph::SetGraphParameters(gFPAVG,20,kBlack); 
 
-   const int NPAR = 6;
-   TF1 *fxprFit = GetFitToFXPR("myFit",MyFitFunc_pol4,NPAR,method,fxprList,fxprData);
+   // const int NPAR = 6;
+   // TF1 *fxprFit = GetFitToFXPR("myFit",MyFitFunc_pol4,NPAR,method,fxprList,fxprData);
 
    TMultiGraph *mg = new TMultiGraph();
    mg->Add(gBefore,"lp"); 
@@ -126,6 +141,7 @@ int PlotTRLY(){
    gm2fieldUtil::Graph::SetGraphLabels(mg,"TRLY Data","","Frequency (Hz)");
    gm2fieldUtil::Graph::SetGraphLabelSizes(mg,0.05,0.06); 
    gm2fieldUtil::Graph::UseTimeDisplay(mg); 
+   mg->GetXaxis()->SetLimits(xMin,xMax); 
    mg->Draw("a");
    L->Draw("same"); 
    c1->Update();
@@ -135,8 +151,9 @@ int PlotTRLY(){
    gm2fieldUtil::Graph::SetGraphLabels(gFPAVG,"FXPR Avg","","Frequency (Hz)"); 
    gm2fieldUtil::Graph::SetGraphLabelSizes(gFPAVG,0.05,0.06); 
    gm2fieldUtil::Graph::UseTimeDisplay(gFPAVG); 
+   gFPAVG->GetXaxis()->SetLimits(xMin,xMax); 
    gFPAVG->Draw("alp"); 
-   fxprFit->Draw("same"); 
+   // fxprFit->Draw("same"); 
    c1->Update();
 
    // c1->cd(3);

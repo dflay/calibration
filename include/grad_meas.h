@@ -19,4 +19,12 @@ typedef struct grad_meas {
    double r2r_err;           // run-to-run drift correction error 
 } grad_meas_t;
 
+// imposed gradient 
+
+typedef struct imposed_gradient{
+   double pos;
+   double grad;
+   double grad_err;
+} imposed_gradient_t; 
+
 #endif  

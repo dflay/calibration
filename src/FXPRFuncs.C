@@ -482,7 +482,7 @@ int FilterSingle(int nev,double T,std::vector<fixedProbeEvent_t> in,std::vector<
 
    int lo=0,hi=0;
    gm2fieldUtil::Algorithm::BinarySearch(tt,T,lo,hi); 
-   int end = lo-10;
+   int end   = lo-10;
    int start = end-nev;
    for(int i=start;i<end;i++){
       out.push_back(in[i]);
@@ -553,7 +553,7 @@ int FindTransitionTimes(double thr,std::vector<fixedProbeEvent_t> fxprData,
 
    // find peaks 
    int NH = tHi.size();
-   int i=1;
+   int i=0;
    do{
       diff = TMath::Abs(fHi[i]-fHi[i-1]);
       if(diff<thr){

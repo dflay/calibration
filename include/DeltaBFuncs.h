@@ -22,6 +22,10 @@
 #include "trolleyAnaEvent.h"
 #include "FXPRFuncs.h"
 
+int CalculatePPDeltaB_ABA(bool correctDrift,
+                          plungingProbeAnaEvent_t bare,plungingProbeAnaEvent_t grad,plungingProbeAnaEvent_t bare2,
+                          double &deltaB,double &deltaB_err);
+
 int CalculatePPDeltaB(bool correctDrift,int method,
                       TGraph *gDrift,
                       plungingProbeAnaEvent_t bare,plungingProbeAnaEvent_t grad,
@@ -33,6 +37,12 @@ int CalculatePPDeltaB(bool correctDrift,int method,std::vector<int> trlyList,
                       plungingProbeAnaEvent_t bare,plungingProbeAnaEvent_t grad,
                       double &deltaB,double &deltaB_err,
                       double &drift ,double &drift_err);
+
+int CalculateTRLYDeltaB_Stationary_ABA(bool correctDrift,int probe,
+                                       std::vector<trolleyAnaEvent_t> bare,
+                                       std::vector<trolleyAnaEvent_t> grad,
+                                       std::vector<trolleyAnaEvent_t> bare2,
+                                       double &deltaB,double &deltaB_err);
 
 int CalculateTRLYDeltaB_Stationary(bool correctDrift,int method,int probe,
                                    TGraph *gDrift,

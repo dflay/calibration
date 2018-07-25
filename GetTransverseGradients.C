@@ -71,13 +71,6 @@ int GetTransverseGradients(std::string configFile){
    ImportBlinding(blind);
    double blindValue = blind.value_tr;
 
-   // char inpath[200];
-   // sprintf(inpath,"./input/runlists/%s/trans-grad_%s.csv",date.c_str(),date.c_str());
-   // std::vector<int> allRuns,run,vRun,rRun,aRun,bRun,b2Run;
-   // std::vector<double> sf;
-   // std::vector<std::string> label;
-   // ImportDeltaBFileList_csv(inpath,allRuns,label,sf);
-
    std::vector<int> allRuns,run,vRun,rRun,aRun,bRun,b2Run;
    std::vector<std::string> label;
    inputMgr->GetRunList(allRuns);

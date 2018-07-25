@@ -4,8 +4,23 @@
 #include <cstdlib> 
 #include <vector>
 
-// useful trolley functions 
+#include "trolleyAnaEvent.h"
 
-int GetTrolleyProbePosition(int index,double *pos);
+#include "gm2fieldMath.h"
+
+// useful trolley functions
+
+// int GetTrolleyProbePosition(int index,double *pos);
+int GetTrolleyProbePositions(trolleyProbePosition_t &data);
+
+int FindTransitionTimes(int step,double thr,std::vector<trolleyAnaEvent_t> Data,
+                        std::vector< std::vector<double> > &timeLo,std::vector< std::vector<double> > &timeHi);
+int FindTransitionTimes(int probe,int step,double thr,std::vector<trolleyAnaEvent_t> Data,
+                        std::vector<double> &timeLo,std::vector<double> &timeHi);
+
+int FilterSingle(int probe,int nev,double T,std::vector<trolleyAnaEvent_t> in,std::vector<trolleyAnaEvent_t> &out); 
+
+int GetTRLYStats_sccToggle(int probe,int nev,std::vector<double> time,std::vector<trolleyAnaEvent_t> Data,
+                           std::vector<double> &TIME,std::vector<double> &MEAN,std::vector<double> &STDEV); 
 
 #endif 
