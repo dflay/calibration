@@ -1,0 +1,14 @@
+{
+"date"            : "07-10-18",
+"blinding"        : true,
+"trly-probe"      : 9,
+"fxpr-set"        : 3,
+"type"            : "calib-prod",
+"dB-pp_x"         : {"midas-runs": [5461] },   
+"dB-pp_y"         : {"midas-runs": [5462] },   
+"dB-pp_z"         : {"midas-runs": [5463] },   
+"dB-trly_z"       : {"midas-runs": [5469] },    
+"calib-run"       : {"midas-run" : 5471 },
+"local-shim-scan" : {"midas-run" : 5467, "ppx": [570,572,573], "ppy": [569,570,571], "ppz": [-1], "fit": "pol2" },
+"trly_z-scan"     : {"midas-runs": [-1] } 
+}
