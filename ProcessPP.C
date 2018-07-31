@@ -126,6 +126,8 @@ int ProcessPP(std::string configFile){
    // PP data 
    std::vector<plungingProbeAnaEvent_t> ppData,ppDataCor;
 
+   int NPP=0;
+
    // main analysis loop 
    for(int i=0;i<NRUNS;i++){
       std::cout << "------------------ RUN " << run[i] << " ------------------" << std::endl;
@@ -143,6 +145,10 @@ int ProcessPP(std::string configFile){
 	 std::cout << "No data!" << std::endl;
 	 return 1;
       }
+      // bring in your frequencies 
+      NPP = ppData.size();
+      for(int j=0;j<NPP;j++) rc = ModifyPlungingProbeData(kLeastSquaresPhase,ppData[j]);
+      // apply blinding 
       if(isBlind) ApplyBlindingPP(blindValue,ppData);
       std::cout << "--> Done." << std::endl;
       // apply P2P drift correction

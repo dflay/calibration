@@ -54,6 +54,7 @@ int DeltaB_pp_prod(std::string configFile){
    int method = gm2fieldUtil::Constants::kPhaseDerivative;
 
    InputManager *inputMgr = new InputManager();
+   inputMgr->UseAxis(); 
    inputMgr->Load(configFile);
    inputMgr->Print();
 
@@ -97,6 +98,7 @@ int DeltaB_pp_prod(std::string configFile){
    double delta = 2.*60. + 40.;  // 2 min 40 sec   
    std::vector<double> sccOff,sccOn;
    rc = FindTransitionTimes(coilSet,thr,delta,sccData,sccOff,sccOn);
+   if(rc<0) return 1; 
 
    bool sccStartOn = false; 
    if(rc==1) sccStartOn = true;
@@ -107,9 +109,15 @@ int DeltaB_pp_prod(std::string configFile){
       std::cout << "SCC was OFF to start the sequence" << std::endl;
    } 
 
+   const int NSCC = sccOn.size();
+   for(int i=0;i<NSCC;i++){
+      std::cout << "on = "   << gm2fieldUtil::GetStringTimeStampFromUTC( (unsigned long)sccOn[i] ) 
+                << " off = " << gm2fieldUtil::GetStringTimeStampFromUTC( (unsigned long)sccOff[i] ) << std::endl; 
+   }
+
    // PP data 
    const int N3 = run.size(); 
-   std::vector<plungingProbeAnaEvent_t> ppEvent; 
+   std::vector<plungingProbeAnaEvent_t> PP,ppEvent; 
    for(int i=0;i<N3;i++){
       std::cout << "Getting run " << run[i] << std::endl; 
       rc = GetPlungingProbeData(run[i],method,ppEvent);
@@ -122,6 +130,18 @@ int DeltaB_pp_prod(std::string configFile){
    const int NPP = ppEvent.size();
    for(int i=0;i<NPP;i++) rc = ModifyPlungingProbeData(kLeastSquaresPhase,ppEvent[i]);
 
+   // int rejIndex=500; 
+   // for(int i=0;i<NPP;i++){
+   //    rc = ModifyPlungingProbeData(kLeastSquaresPhase,PP[i]);
+   //    if( abs(i-rejIndex)<2 ) continue; //reject pairs of events if necessary  
+   //    if(rc==0){
+   //       ppEvent.push_back(PP[i]);
+   //    }else{
+   //       std::cout << Form("Event rejected (NMR-DAQ run %d)",PP[i].run) << std::endl; 
+   //       rejIndex = i;
+   //    }
+   // }
+
    if(isBlind) ApplyBlindingPP(blindValue,ppEvent);
 
    // gather the PP DAQ runs to analyze
@@ -131,7 +151,16 @@ int DeltaB_pp_prod(std::string configFile){
    // do delta B calcs
    // raw difference 
    std::vector<double> diff,diffErr;
-   rc = GetDifference(scc,sccErr,bare,bareErr,diff,diffErr);  
+   rc = GetDifference(scc,sccErr,bare,bareErr,diff,diffErr);
+  
+   rc = CheckDifference(diff,diffErr);
+   if(rc!=-1){
+      SwapEntries(rc,scc,bare); 
+      diff.clear();
+      diffErr.clear();
+      rc = GetDifference(scc,sccErr,bare,bareErr,diff,diffErr);
+   }
+
    double mean  = gm2fieldUtil::Math::GetMean<double>(diff); 
    double stdev = gm2fieldUtil::Math::GetStandardDeviation<double>(diff); 
 
@@ -159,11 +188,17 @@ int DeltaB_pp_prod(std::string configFile){
 
    const int ND = diff.size();
    std::vector<double> trial; 
-   for(int i=0;i<ND;i++) trial.push_back(i+1);
+   for(int i=0;i<ND;i++){
+      trial.push_back(i+1);
+      std::cout << Form("RAW trial %d: %.3lf +/- %.3lf Hz",i+1,diff[i],diffErr[i]) << std::endl;
+   }
    
    const int NDA = diff_aba.size();
    std::vector<double> trial_aba;
-   for(int i=0;i<NDA;i++) trial_aba.push_back(i+1);
+   for(int i=0;i<NDA;i++){
+      trial_aba.push_back(i+1);
+      std::cout << Form("ABA trial %d: %.3lf +/- %.3lf Hz",i+1,diff_aba[i],diffErr_aba[i]) << std::endl;
+   }
    
    // Plots
  
@@ -202,18 +237,17 @@ int DeltaB_pp_prod(std::string configFile){
    std::cout << Form("dB (%s): %.3lf +/- %.3lf Hz (%.3lf +/- %.3lf ppb)",gradName.c_str(),
                      dB[1],dB_err[1],dB[1]/0.06179,dB_err[1]/0.06179) << std::endl;
 
-   char outpath[200],outdir[200],datedir[50];
-   sprintf(datedir,"%02d-%02d-%02d",theDate.month,theDate.day,theDate.year-2000); 
+   char outpath[200],outdir[200];
 
-   if(isBlind)  sprintf(outdir,"./output/blinded/%s"  ,datedir); 
-   if(!isBlind) sprintf(outdir,"./output/unblinded/%s",datedir); 
+   if(isBlind)  sprintf(outdir,"./output/blinded/%s"  ,theDate.getDateString().c_str()); 
+   if(!isBlind) sprintf(outdir,"./output/unblinded/%s",theDate.getDateString().c_str()); 
 
    rc = MakeDirectory(outdir); 
    sprintf(outpath,"%s/dB-pp_final-location_%s-grad_pr-%02d_%s.csv"  ,outdir,gradName.c_str(),probeNumber,date.c_str());
    rc = PrintToFile(outpath,gradName,dB,dB_err,drift,drift_err); 
 
    char plotDir[200];
-   sprintf(plotDir,"./plots/%s",datedir); 
+   sprintf(plotDir,"./plots/%s",theDate.getDateString().c_str()); 
    rc = MakeDirectory(plotDir); 
 
    // draw some plots 
@@ -241,6 +275,30 @@ int DeltaB_pp_prod(std::string configFile){
    TString plotPath = Form("%s/pp_dB_%s-grad_run-%d_pr-%02d.png",plotDir,gradName.c_str(),run[0],probeNumber); 
    c1->Print(plotPath);
    delete c1;  
+
+   TGraph *gSCCb = GetSCCPlot(0,sccData);
+   TGraph *gSCCt = GetSCCPlot(1,sccData);
+
+   gm2fieldUtil::Graph::SetGraphParameters(gSCCb,20,kBlack);
+   gm2fieldUtil::Graph::SetGraphParameters(gSCCt,20,kRed  );
+
+   TMultiGraph *mgSCC = new TMultiGraph();
+   mgSCC->Add(gSCCb,"lp"); 
+   mgSCC->Add(gSCCt,"lp");
+
+   TCanvas *c2 = new TCanvas("c2","SCC Data",1200,600);
+   c2->cd();
+
+   mgSCC->Draw("a");
+   gm2fieldUtil::Graph::SetGraphLabels(mgSCC,"SCC Data","","Current (A)");
+   gm2fieldUtil::Graph::UseTimeDisplay(mgSCC);
+   mgSCC->Draw("a");
+   c2->Update(); 
+
+   c2->cd();
+   plotPath = Form("%s/pp_dB_scc-currents_%s-grad_run-%d_pr-%02d.png",plotDir,gradName.c_str(),run[0],probeNumber); 
+   c2->Print(plotPath);
+   delete c2;  
 
    delete inputMgr; 
 

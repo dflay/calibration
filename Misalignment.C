@@ -73,14 +73,14 @@ int Misalignment(std::string configFile){
    GetDate(theDate);
 
    char plotDir[200];
-   sprintf(plotDir,"./plots/%02d-%02d-%02d",theDate.month,theDate.day,theDate.year-2000);
+   sprintf(plotDir,"./plots/%s",theDate.getDateString().c_str());
    rc = MakeDirectory(plotDir);
 
    char outDir[200];
    sprintf(outDir,"./output"); 
    if(isBlind)  sprintf(outDir,"%s/blinded"  ,outDir);
    if(!isBlind) sprintf(outDir,"%s/unblinded",outDir);
-   sprintf(outDir,"%s/%02d-%02d-%02d",outDir,theDate.month,theDate.day,theDate.year-2000); 
+   sprintf(outDir,"%s/%s",outDir,theDate.getDateString().c_str()); 
    rc = MakeDirectory(outDir);
 
    char outPath[500],outPath_fxpr[500]; 

@@ -14,6 +14,7 @@ int InputManager::Init(){
    fIsBlind         = false; 
    fUseP2PFit       = false; 
    fIsFinalLocation = false;
+   fIsFreeProton    = false; 
    fUseAxis         = false; 
    fTrolleyProbe    = -1; 
    fAxis            = -1;
@@ -30,6 +31,15 @@ int InputManager::ClearVectors(){
    fRunList.clear();
    fRunLabel.clear();
    return 0;
+}
+//______________________________________________________________________________
+bool InputManager::DoesKeyExist(std::string keyName){
+   auto it_key = fParams.find(keyName);  // this is an iterator 
+   if (it_key!=fParams.end() ){ 
+      return true;  // not at the end of fParams -- found the key 
+   }else{
+      return false;  // at the end of fParams -- didn't find the key 
+   }
 }
 //______________________________________________________________________________
 int InputManager::GetRunList(std::vector<int> &v){
@@ -57,45 +67,71 @@ int InputManager::GetRunLabels(std::vector<std::string> &v){
 }
 //______________________________________________________________________________
 int InputManager::Load(std::string inpath){
-   json params;
    int NRUNS=0; 
-   int rc = gm2fieldUtil::Import::ImportJSON(inpath,params);
-
-   if(rc==0){
-      fType = params["type"]; 
+   int rc = gm2fieldUtil::Import::ImportJSON(inpath,fParams);
+ 
+   bool typeKeyExist = DoesKeyExist("type"); 
+   if(typeKeyExist){
+      fType = fParams["type"]; 
+      Parse();
    }else{
-      std::cout << "[InputManager::Load]: Cannot load data from " << inpath << std::endl;
-      return 1; 
+      std::cout << "[InputManager::Load]: Cannot find the key 'type'.  Exiting" << std::endl;
+      return 1;
+   }
+
+   return rc; 
+}
+//______________________________________________________________________________
+int InputManager::Parse(){
+   int NRUNS=0; 
+
+   // parse all the parameters we want
+   bool axisStatus  = DoesKeyExist("axis"); 
+   bool anaStatus   = DoesKeyExist("full-ana"); 
+   bool locStatus   = DoesKeyExist("final-loc"); 
+   bool p2pStatus   = DoesKeyExist("p2p-fit"); 
+   bool protStatus  = DoesKeyExist("free-proton-cor");
+   bool runStatus   = DoesKeyExist("nruns"); 
+   bool dateStatus  = DoesKeyExist("date"); 
+   bool blindStatus = DoesKeyExist("blinding"); 
+   bool trlyStatus  = DoesKeyExist("trly-probe");
+   bool fxprStatus  = DoesKeyExist("fxpr-set"); 
+   bool fitStatus   = DoesKeyExist("fit");  
+
+   // parameters common to all 
+   if(dateStatus)  fAnaDate      = fParams["date"];
+   if(blindStatus) fIsBlind      = (bool)( (int)fParams["blinding"]  ); 
+   if(trlyStatus)  fTrolleyProbe = (int)fParams["trly-probe"]; 
+   if(fxprStatus)  fFXPRListTag  = (int)fParams["fxpr-set"]; 
+
+   if(runStatus){ 
+      NRUNS = (int)fParams["nruns"];
+      for(int i=0;i<NRUNS;i++){
+	 fRunList.push_back( (int)fParams["run-list"][i] ); 
+	 fRunLabel.push_back( fParams["run-label"][i] ); 
+      }
    }
    
-   // parameters common to all 
-   fAnaDate      = params["date"];
-   fIsBlind      = (bool)( (int)params["blinding"]  ); 
-   fTrolleyProbe = (int)params["trly-probe"]; 
-   NRUNS = (int)params["nruns"];
-   for(int i=0;i<NRUNS;i++){
-      fRunList.push_back( (int)params["run-list"][i] ); 
-      fRunLabel.push_back( params["run-label"][i] ); 
-   }
-
    // calibration: production 
    if( fType.compare("calib-prod")==0 ){
-      if(fUseAxis) fAxis = (int)params["axis"];
-      fFXPRListTag = (int)params["fxpr-set"];   
+      if(axisStatus) fAxis         = (int)fParams["axis"];
+      if(protStatus) fIsFreeProton = (bool)( (int)fParams["free-proton-cor"] );  
+      if(fitStatus) fFitFunc       = fParams["fit"]; 
    }
-
+  
    // simple input format (i.e., rapid swapping data from 6/1)  
    if( fType.compare("is-simple")==0 ){
-      fIsSimple        = true;
-      fFXPRListTag     = (int)params["fxpr-set"];   
+      fIsSimple                      = true;
+      if(axisStatus) fAxis           = (int)fParams["axis"]; 
+      if(anaStatus) fIsFullAnalysis  = (bool)( (int)fParams["full-ana"]  );    
+      if(fitStatus) fFitFunc         = fParams["fit"]; 
    }else if( fType.compare("is-complex")==0 ){
-      fIsSimple        = false;
-      fIsFullAnalysis  = (bool)( (int)params["full-ana"]  );    
-      fIsFinalLocation = (bool)( (int)params["final-loc"] );   
-      fUseP2PFit       = (bool)( (int)params["p2p-fit"]   ); 
-      fFitFunc         = params["fit"]; 
-      fAxis            = (int)params["axis"];
-      fFXPRListTag     = (int)params["fxpr-set"];   
+      fIsSimple                      = false;
+      if(axisStatus) fAxis           = (int)fParams["axis"]; 
+      if(anaStatus) fIsFullAnalysis  = (bool)( (int)fParams["full-ana"]  );    
+      if(locStatus) fIsFinalLocation = (bool)( (int)fParams["final-loc"] );   
+      if(p2pStatus) fUseP2PFit       = (bool)( (int)fParams["p2p-fit"]   ); 
+      if(fitStatus) fFitFunc         = fParams["fit"]; 
    }
 
    return 0; 
@@ -110,7 +146,7 @@ int InputManager::Print(){
    std::cout << "Is blinded:        " << fIsBlind         << std::endl;
    std::cout << "Trolley probe:     " << fTrolleyProbe    << std::endl;
    if(fType.compare("calib-prod")==0){
-	 if(fUseAxis) std::cout << "Axis:              " << fAxis << " (" << axis << ")" << std::endl;
+	 std::cout << "Axis:              " << fAxis << " (" << axis << ")" << std::endl;
    }else{
       if(fIsSimple){
 	 std::cout << "FXPR set:          " << fFXPRListTag     << std::endl;

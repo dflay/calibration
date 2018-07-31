@@ -52,7 +52,7 @@ int GetShimmedTransGrad(std::string configFile){
    inputMgr->Print();
 
    std::string date    = inputMgr->GetAnalysisDate();
-   std::string fitFunc = inputMgr->GetFitFunction();
+   std::string fitFunc = inputMgr->GetValue("fit");
    bool isBlind        = inputMgr->IsBlind();
    int probeNumber     = inputMgr->GetTrolleyProbe();
    int fxprSet         = inputMgr->GetFixedProbeListTag(); 

@@ -14,6 +14,7 @@
 #include "TCanvas.h"
 #include "TLegend.h"
 #include "TSpline.h"
+#include "TLine.h"
 
 #include "RootTreeStructs.h"
 #include "gm2fieldMath.h"
@@ -32,6 +33,7 @@
 #include "./src/InputManager.C"
 #include "./src/FitFuncs.C"
 #include "./src/FXPRFuncs.C"
+#include "./src/TRLYFuncs.C"
 #include "./src/Consolidate.C"
 #include "./src/CustomMath.C"
 #include "./src/CustomGraph.C"
@@ -50,6 +52,7 @@ int DeltaB_trly_prod(std::string configFile){
    int method = gm2fieldUtil::Constants::kPhaseDerivative;
 
    InputManager *inputMgr = new InputManager();
+   inputMgr->UseAxis(); 
    inputMgr->Load(configFile);
    inputMgr->Print();
 
@@ -90,9 +93,14 @@ int DeltaB_trly_prod(std::string configFile){
    if(axis==2) coilSet = -1;
  
    double thr   = 10E-3;         // in A 
-   double delta = 2.*60. + 40.;  // 2 min 40 sec   
+   double delta = 2.*60. + 40.;  // 2 min 40 sec   // for x, y 
+   if(axis==2) delta = 60.;  
    std::vector<double> sccOff,sccOn;
    rc = FindTransitionTimes(coilSet,thr,delta,sccData,sccOff,sccOn);
+   if(rc<0){
+      std::cout << "No SCC transitions!" << std::endl;
+      return 1;
+   }
 
    bool sccStartOn = false; 
    if(rc==1) sccStartOn = true;
@@ -111,6 +119,30 @@ int DeltaB_trly_prod(std::string configFile){
 	 std::cout << "No data!" << std::endl;
 	 return 1;
       }
+   }
+
+   std::vector<double> X; 
+   int NEV = trlyData.size();
+   for(int i=0;i<NEV;i++) X.push_back( trlyData[i].freq[probeNumber-1] );
+   double MEAN  = gm2fieldUtil::Math::GetMean<double>(X); 
+   double STDEV = gm2fieldUtil::Math::GetStandardDeviation<double>(X); 
+
+   double yMin = MEAN - 3.*STDEV;   
+   double yMax = MEAN + 3.*STDEV;   
+
+   const int NL = sccOn.size();
+   TLine **tON  = new TLine*[NL];
+   TLine **tOFF = new TLine*[NL];
+   for(int i=0;i<NL;i++){
+      tON[i] = new TLine(sccOn[i],yMin,sccOn[i],yMax);
+      tON[i]->SetLineColor(kGreen+1);
+      tON[i]->SetLineWidth(2);
+      tON[i]->SetLineStyle(2);
+      tOFF[i] = new TLine(sccOff[i],yMin,sccOff[i],yMax);
+      tOFF[i]->SetLineColor(kRed);
+      tOFF[i]->SetLineWidth(2);
+      tOFF[i]->SetLineStyle(2);
+
    }
 
    if(isBlind) ApplyBlindingTRLY(blindValue,trlyData);
@@ -159,12 +191,15 @@ int DeltaB_trly_prod(std::string configFile){
    for(int i=0;i<NDA;i++) trial_aba.push_back(i+1);
    
    // Plots
- 
+
+   TGraph *gTR               = GetTRLYTGraph(probeNumber-1,"GpsTimeStamp","freq",trlyData);
+  
    TGraphErrors *gTRLY_bare  = gm2fieldUtil::Graph::GetTGraphErrors(bareTime ,bare      ,bareErr      );
    TGraphErrors *gTRLY_scc   = gm2fieldUtil::Graph::GetTGraphErrors(sccTime  ,scc       ,sccErr       );
    TGraphErrors *gDiff       = gm2fieldUtil::Graph::GetTGraphErrors(trial    ,diff      ,diffErr      );  
    TGraphErrors *gDiff_aba   = gm2fieldUtil::Graph::GetTGraphErrors(trial_aba,diff_aba  ,diffErr_aba  );  
 
+   gm2fieldUtil::Graph::SetGraphParameters(gTR        ,20,kBlack  );
    gm2fieldUtil::Graph::SetGraphParameters(gTRLY_bare ,20,kBlack  );
    gm2fieldUtil::Graph::SetGraphParameters(gTRLY_scc  ,20,kRed    );
    gm2fieldUtil::Graph::SetGraphParameters(gDiff      ,20,kBlue   );
@@ -195,18 +230,17 @@ int DeltaB_trly_prod(std::string configFile){
    std::cout << Form("dB (%s): %.3lf +/- %.3lf Hz (%.3lf +/- %.3lf ppb)",gradName.c_str(),
                      dB[1],dB_err[1],dB[1]/0.06179,dB_err[1]/0.06179) << std::endl;
 
-   char outpath[200],outdir[200],datedir[50];
-   sprintf(datedir,"%02d-%02d-%02d",theDate.month,theDate.day,theDate.year-2000); 
+   char outpath[200],outdir[200];
 
-   if(isBlind)  sprintf(outdir,"./output/blinded/%s"  ,datedir); 
-   if(!isBlind) sprintf(outdir,"./output/unblinded/%s",datedir); 
+   if(isBlind)  sprintf(outdir,"./output/blinded/%s"  ,theDate.getDateString().c_str()); 
+   if(!isBlind) sprintf(outdir,"./output/unblinded/%s",theDate.getDateString().c_str()); 
 
    rc = MakeDirectory(outdir); 
    sprintf(outpath,"%s/dB-trly_final-location_%s-grad_pr-%02d_%s.csv"  ,outdir,gradName.c_str(),probeNumber,date.c_str());
    rc = PrintToFile(outpath,gradName,dB,dB_err,drift,drift_err); 
 
    char plotDir[200];
-   sprintf(plotDir,"./plots/%s",datedir); 
+   sprintf(plotDir,"./plots/%s",theDate.getDateString().c_str()); 
    rc = MakeDirectory(plotDir); 
 
    // draw some plots 
@@ -215,7 +249,7 @@ int DeltaB_trly_prod(std::string configFile){
 
    c1->cd(1);
    mgTRLY->Draw("alp");
-   gm2fieldUtil::Graph::SetGraphLabels(mgTRLY,"PP Data","","Frequency (Hz)"); 
+   gm2fieldUtil::Graph::SetGraphLabels(mgTRLY,"TRLY Data","","Frequency (Hz)"); 
    gm2fieldUtil::Graph::UseTimeDisplay(mgTRLY);
    // mgTRLY_bare->GetXaxis()->SetLimits(xMin_bare,xMax_bare); 
    mgTRLY->Draw("alp");
@@ -234,6 +268,24 @@ int DeltaB_trly_prod(std::string configFile){
    TString plotPath = Form("%s/trly_dB_%s-grad_run-%d_pr-%02d.png",plotDir,gradName.c_str(),run[0],probeNumber); 
    c1->Print(plotPath);
    delete c1;  
+
+   TCanvas *c2 = new TCanvas("c1","Data",1200,600);
+
+   c2->cd();
+   gTR->Draw("alp");
+   gm2fieldUtil::Graph::SetGraphLabels(gTR,Form("TRLY %02d Data",probeNumber),"","Frequency (Hz)"); 
+   gm2fieldUtil::Graph::UseTimeDisplay(gTR);
+   gTR->Draw("alp");
+   for(int i=0;i<NL;i++){
+      tON[i]->Draw("same"); 
+      tOFF[i]->Draw("same"); 
+   }
+   c2->Update();
+
+   c2->cd();
+   plotPath = Form("%s/trly_dB_%s-grad_run-%d_pr-%02d_all-data.png",plotDir,gradName.c_str(),run[0],probeNumber); 
+   c2->Print(plotPath);
+   delete c2;  
 
    delete inputMgr; 
 

@@ -1,5 +1,80 @@
 #include "../include/CustomAlgorithms.h"
 //______________________________________________________________________________
+int FindGalilEvent(int probe,unsigned long long trlyTime,
+                   std::vector<trolleyAnaEvent_t> trly,
+                   std::vector<gm2field::galilTrolley_t> galil){
+   // need to apply an offset to the galil data set 
+   double sf = 2597./2658.; // scale factor for galil data
+   double dt = trly[0].time[probe]/1E+9 - sf*galil[0].TimeStamp/1E+3;
+
+
+   // now search through Galil data to find the right event that's 
+   // within a few seconds on the trolley time
+   int theEvent=-1; 
+   double thr = 2.;
+   double arg_tr=trlyTime/1E+9,arg_ga=0;
+   const int N = galil.size();
+   double DT   = (galil[N-1].TimeStamp-galil[0].TimeStamp)/1E+3;
+   int eventRate = N/( (int)DT ); 
+   for(int i=0;i<N;i++){
+      arg_ga = sf*galil[i].TimeStamp/1E+3 + dt;
+      if( TMath::Abs(arg_tr-arg_ga)<thr ){
+         theEvent = i;
+         break;
+      }
+   }
+   return theEvent;
+}
+//______________________________________________________________________________
+int FindTRLYStopTimes(int probe,double angle,std::vector<trolleyAnaEvent_t> trlyData,
+                      std::vector<gm2field::galilTrolley_t> trlyGalil,
+                      std::vector<double> &time){
+   // find the time at which the trolley stops at the azimuthal location 
+   // indicated by the angle variable
+
+   int i=0,j=0,cntr=0;
+   double theTime=0; 
+   double z=0,vFish=0,vSig=0;
+   double dphi = 0.2; 
+   double delta = 30;
+   double angle_min = angle - dphi; 
+   double angle_max = angle + dphi;
+
+   std::string timeStr; 
+
+   const int N = trlyData.size(); 
+   std::cout << Form("[FindTRLYStopTimes]: Scanning through %d trolley probe %02d events...",N,probe+1) << std::endl;
+   do{ 
+      // get trolley speeds 
+      j       = FindGalilEvent(probe,trlyData[i].time[probe],trlyData,trlyGalil);
+      vFish   = trlyGalil[j].Velocities[0]; 
+      vSig    = trlyGalil[j].Velocities[1]; 
+      // get trolley position 
+      z  = trlyData[i].phi[probe]; 
+      if( (z>angle_min)&&(z<angle_max)  
+         &&(TMath::Abs(vFish)==0)&&(TMath::Abs(vSig)==0) ){
+	 cntr++;
+         if(cntr>1){
+	    delta = 55.;
+         }else{
+	    delta = 30.;
+         }
+	 // the trolley is stopped at the target location 
+         theTime = trlyData[i].time[probe]/1E+9 + delta;
+         timeStr = gm2fieldUtil::GetStringTimeStampFromUTC( (unsigned long)theTime ); 
+	 time.push_back(theTime); 
+	 std::cout << Form("Found stop at %s for event number %d",timeStr.c_str(),i) << std::endl;
+	 i += 300; 
+      }else{
+	 i++;
+      }
+   }while(i<N); 
+ 
+   std::cout << "--> Done." << std::endl;
+
+   return 0;
+}
+//______________________________________________________________________________
 int FindTransitionTimes(int type,double thr,double delta,std::vector<gm2field::surfaceCoils_t> data,
                         std::vector<double> &timeOff,std::vector<double> &timeOn){
    // find the transition times of turning off and on the surface coils 
@@ -24,7 +99,7 @@ int FindTransitionTimes(int type,double thr,double delta,std::vector<gm2field::s
       if( TMath::Abs(sum-sum_prev)>thr ){
 	 // found a transition
 	 cntr++;
-	 if(cntr>2){ 
+	 if( (type>=0&&cntr>2) || type==-1){ 
 	    // now is it a time off or time on? 
 	    if( TMath::Abs(sum)<10E-3 ){  // 10 mA 
 	       timeOff.push_back(theTime+delta); 
@@ -44,13 +119,84 @@ int FindTransitionTimes(int type,double thr,double delta,std::vector<gm2field::s
 
    const int Non  = timeOn.size();
    const int Noff = timeOff.size();
-   std::cout << Form("Transition Times: off = %d, on = %d",Noff,Non) << std::endl;
+   std::cout << Form("Number of SCC transition times: off = %d, on = %d",Noff,Non) << std::endl;
+
+   // no transitions?! return an error 
+   if(Non==0 || Noff==0) return -1; 
 
    // determine if we start analysis with SCC on or off
    // rc = 1, SCC on to start 
-   if(timeOff[0]>timeOn[0])  rc = 1; 
+   if(timeOff[0]>timeOn[0])  rc = 1;
+
+   for(int i=0;i<Non;i++){
+      std::cout << "on: "  << gm2fieldUtil::GetStringTimeStampFromUTC( timeOn[i] ) << " "  
+                << "off: " << gm2fieldUtil::GetStringTimeStampFromUTC( timeOff[i] ) << std::endl;
+   } 
 
    return rc;  
+}
+//______________________________________________________________________________
+int SwapEntries(int i,std::vector<double> &x,std::vector<double> &y){
+   double val_x = x[i]; 
+   double val_y = y[i]; 
+   y[i] = val_x; 
+   x[i] = val_y; 
+   return 0; 
+}
+//______________________________________________________________________________
+int CheckDifference(std::vector<double> &x,std::vector<double> &dx){
+   // check for bad entries
+   int rc=-1;
+   int cntr_pos=0,cntr_neg=0;
+   std::vector<double> sign;
+   const int N = x.size();
+   for(int i=0;i<N;i++){
+      if(x[i]>=0){
+	 cntr_pos++;
+	 sign.push_back(1); 
+      }else{ 
+	 cntr_neg++;
+	 sign.push_back(-1); 
+      } 
+   }
+
+   if(cntr_pos==0||cntr_neg==0){
+      // no changes needed, exit
+      return rc;
+   }else{
+      std::cout << "[CheckDifference]: Will adjust computed difference!" << std::endl;
+   }
+ 
+   // determine which sign is dominant 
+   // if positive, domSign = 1, -1 otherwise
+   int domSign = -1;  
+   if(cntr_pos>cntr_neg) domSign = 1; 
+
+   double val=0;
+   for(int i=0;i<N;i++){
+      if(domSign==1){
+	 // OK, we're expecting a positive value.  check entries, flip sign if necessary 
+	 if( x[i]<0 ){
+	    val = (-1.)*x[i];
+	    x.erase(x.begin()+i);
+	    x.insert(x.begin()+i,val);
+	    std::cout << "[CheckDifference]: Change made at entry " << i << std::endl;
+	    rc = i;
+	 }
+      }else{
+	 // OK, we're expecting a negative value.  check entries, flip sign if necessary 
+	 if( x[i]>0 ){
+	    val = (-1.)*x[i];
+	    x.erase(x.begin()+i);
+	    x.insert(x.begin()+i,val);
+	    std::cout << "[CheckDifference]: Change made at entry " << i << std::endl;
+	    rc = i;
+	 }
+      }
+   }
+
+   return rc; 
+
 }
 //______________________________________________________________________________
 int GetDifference(std::vector<double> scc ,std::vector<double> scc_err,

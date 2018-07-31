@@ -36,8 +36,6 @@
 #include "./src/CustomExport.C"
 #include "./src/CustomAlgorithms.C"
 
-TGraph *GetSCCPlot(int type,std::vector<gm2field::surfaceCoils_t> data); 
-
 int PrintToFile_avg(const char *outpath,int probe,double scc_on,double scc_on_err,double bare,double bare_err);
 int PrintToFile_avg(const char *outpath,int probe,double diff,double diff_err,double diff_aba,double diff_aba_err);
 int PrintToFile_scc(const char *outpath,int probe,int trial,double scc_on,double scc_on_err,double bare,double bare_err); 
@@ -418,30 +416,3 @@ int GetStats(int probe,int nev,std::vector<double> time,std::vector<trolleyAnaEv
 
    return 0;
 }
-//______________________________________________________________________________
-TGraph *GetSCCPlot(int type,std::vector<gm2field::surfaceCoils_t> data){
-   // construct the sum of the top (type=1), bottom (type=0) or azi (type=-1) coil currents 
-   // to see what the SCC config is
-   double sum=0;
-   std::vector<double> x,y;  
-   int M=4; // for azi coils
-   if(type==0||type==1) M = 100;
-   if( TMath::Abs(type)>1 ) return NULL;  
-   int NEV = data.size();
-   for(int i=0;i<NEV;i++){
-      for(int j=0;j<M;j++){
-	 if(type==0)  sum += data[i].BotCurrents[j];
-	 if(type==1)  sum += data[i].TopCurrents[j];
-	 if(type==-1) sum += data[i].AzCurrents[j];
-      }
-      if(type==0)  x.push_back( data[i].BotTime[0]/1E+9 ); 
-      if(type==1)  x.push_back( data[i].TopTime[0]/1E+9 ); 
-      if(type==-1) x.push_back( data[i].TopTime[0]/1E+9 ); // don't have an associated Az time...  
-      y.push_back(sum); 
-      // set up for next event 
-      sum = 0;
-   }
-   TGraph *g = gm2fieldUtil::Graph::GetTGraph(x,y); 
-   return g;
-}
-

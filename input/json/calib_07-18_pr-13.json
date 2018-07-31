@@ -4,6 +4,7 @@
 "trly-probe"      : 13,
 "fxpr-set"        : 3,
 "type"            : "calib-prod",
+"free-proton-cor" : false,
 "dB-pp_x"         : {"midas-runs": [5644] },
 "dB-pp_y"         : {"midas-runs": [5643] },
 "dB-pp_z"         : {"midas-runs": [5645] },

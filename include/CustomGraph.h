@@ -20,6 +20,9 @@
 #include "FXPRFuncs.h"
 #include "TRLYFuncs.h"
 
+// scc plots
+TGraph *GetSCCPlot(int type,std::vector<gm2field::surfaceCoils_t> data); 
+
 // gradient plots
 TGraphErrors *GetTGraphErrors(std::vector<imposed_gradient_t> data); 
 

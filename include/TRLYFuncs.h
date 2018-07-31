@@ -23,4 +23,7 @@ int FilterSingle(int probe,int nev,double T,std::vector<trolleyAnaEvent_t> in,st
 int GetTRLYStats_sccToggle(int probe,int nev,std::vector<double> time,std::vector<trolleyAnaEvent_t> Data,
                            std::vector<double> &TIME,std::vector<double> &MEAN,std::vector<double> &STDEV); 
 
+int GetTRLYStatsAtTime(int probe,int nev,double fLO,std::vector<double> time,std::vector<trolleyAnaEvent_t> Data,
+                       std::vector<double> &MEAN,std::vector<double> &STDEV);
+
 #endif 

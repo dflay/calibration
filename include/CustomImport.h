@@ -21,6 +21,7 @@ int ImportDeltaBFileList_csv(const char *inpath,
                     std::vector<int> &x1,std::vector<std::string> &x2,
                     std::vector<double> &x3); 
 
+int LoadCalibSwapData(const char *inpath,std::vector<calibSwap_t> &data);
 int LoadImposedGradientData(const char *inpath,std::vector<imposed_gradient_t> &data);
 int LoadTrolleyDeltaBData(const char *inpath,trolleyDeltaB_t &data); 
 int LoadTrolleyPositionData(const char *inpath,trolleyProbePosition_t &data);

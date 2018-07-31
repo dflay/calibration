@@ -52,7 +52,7 @@ int LocalScanGrad_pp_prod(std::string configFile){
    inputMgr->Print(); 
 
    std::string date    = inputMgr->GetAnalysisDate(); 
-   std::string fitFunc = inputMgr->GetFitFunction();
+   std::string fitFunc = inputMgr->GetValue("fit");
    bool isBlind        = inputMgr->IsBlind();
    int probeNumber     = inputMgr->GetTrolleyProbe(); 
    int axis            = inputMgr->GetAxis();
@@ -71,14 +71,13 @@ int LocalScanGrad_pp_prod(std::string configFile){
    if( Axis.compare("z")==0 ) gradType = "azi";
 
    // make output directories 
-   char outdir[200],datedir[200];
-   sprintf(datedir,"%02d-%02d-%02d",theDate.month,theDate.day,theDate.year-2000); 
-   if(isBlind)  sprintf(outdir,"./output/blinded/%s"  ,datedir);
-   if(!isBlind) sprintf(outdir,"./output/unblinded/%s",datedir);
+   char outdir[200];
+   if(isBlind)  sprintf(outdir,"./output/blinded/%s"  ,theDate.getDateString().c_str());
+   if(!isBlind) sprintf(outdir,"./output/unblinded/%s",theDate.getDateString().c_str());
    rc = MakeDirectory(outdir);
 
    char plotDir[200];
-   sprintf(plotDir,"./plots/%s",datedir);
+   sprintf(plotDir,"./plots/%s",theDate.getDateString().c_str());
    MakeDirectory(plotDir);
 
    blind_t blind;
@@ -212,11 +211,11 @@ int LocalScanGrad_pp_prod(std::string configFile){
    TCanvas *c2 = new TCanvas("c2","FXPR Data",1200,600);
 
    c2->cd(); 
-   gFXPR->Draw("ap");
+   gFXPR->Draw("alp");
    gm2fieldUtil::Graph::SetGraphLabels(gFXPR,"Fixed Probe Average","","Frequency (Hz)"); 
    gm2fieldUtil::Graph::UseTimeDisplay(gFXPR);  
    gm2fieldUtil::Graph::SetGraphLabelSizes(gFXPR,0.04,0.04); 
-   gFXPR->Draw("ap");
+   gFXPR->Draw("alp");
    c2->Update(); 
 
    plotPath = Form("%s/pp-shimmed-scan_fxpr-avg_run-%d.png",plotDir,midasRun); 

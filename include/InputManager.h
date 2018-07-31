@@ -13,11 +13,14 @@
 class InputManager{
 
    private:
-      bool fIsSimple,fIsFullAnalysis,fIsBlind,fUseP2PFit,fIsFinalLocation,fUseAxis;
+      json fParams; 
+      bool fIsSimple,fIsFullAnalysis,fIsBlind,fUseP2PFit,fIsFinalLocation,fUseAxis,fIsFreeProton;
       int fTrolleyProbe,fAxis,fFXPRListTag;  
       std::string fType,fDevice,fAnaDate,fFitFunc;
       std::vector<int> fRunList; 
       std::vector<std::string> fRunLabel; 
+
+      int Parse(); 
 
    public: 
       InputManager();
@@ -33,10 +36,13 @@ class InputManager{
       int GetRunList(std::vector<int> &v);        
       int GetRunLabels(std::vector<std::string> &v);       
 
+      bool DoesKeyExist(std::string keyName); 
+
       bool IsFullAnalysis()         const { return fIsFullAnalysis;  } 
       bool IsBlind()                const { return fIsBlind;         } 
       bool IsFinalLocation()        const { return fIsFinalLocation; } 
       bool UseP2PFit()              const { return fUseP2PFit;       } 
+      bool GetFreeProtonStatus()    const { return fIsFreeProton;    } 
      
       int GetTrolleyProbe()         const { return fTrolleyProbe;    } 
       int GetAxis()                 const { return fAxis;            }
@@ -46,6 +52,9 @@ class InputManager{
       std::string GetDevice()       const { return fDevice;          } 
       std::string GetAnalysisDate() const { return fAnaDate;         } 
       std::string GetFitFunction()  const { return fFitFunc;         } 
+
+      std::string GetValue(std::string key)                       const { return fParams[key]; }  
+      std::string GetValue(std::string key,std::string subKey)    const { return fParams[key][subKey]; } 
 
 }; 
 

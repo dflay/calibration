@@ -36,6 +36,16 @@ TGraph *GetDiffPlot(TGraphErrors *g1,TGraphErrors *g2);
 TGraph *GetDriftTGraph(int method,std::vector<int> driftRun,std::vector<int> fxprList,std::vector<double> &stats); 
 TGraph *GetDriftTGraphR2R(int method,std::vector<int> driftRun,std::vector<int> fxprList,std::vector<double> &stats);
 
+int FindGalilEvent(int probe,unsigned long long trlyTime,
+                   std::vector<trolleyAnaEvent_t> trly,
+                   std::vector<gm2field::galilTrolley_t> galil);
+int SwapEntries(int i,std::vector<double> &x,std::vector<double> &y); 
+int CheckDifference(std::vector<double> &x,std::vector<double> &dx);
+
+int FindTRLYStopTimes(int probe,double angle,std::vector<trolleyAnaEvent_t> trlyData,
+                      std::vector<gm2field::galilTrolley_t> trlyGalil,
+                      std::vector<double> &time); 
+
 int FindTransitionTimes(int type,double thr,double delta,std::vector<gm2field::surfaceCoils_t> data,
                         std::vector<double> &timeOff,std::vector<double> &timeOn); 
 

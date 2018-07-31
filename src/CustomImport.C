@@ -1,5 +1,36 @@
 #include "../include/CustomImport.h"
 //______________________________________________________________________________
+int LoadCalibSwapData(const char *inpath,std::vector<calibSwap_t> &data){
+
+   int i=0;
+   std::string stime,sf,sfe,st,ste;
+
+   calibSwap_t dataPt;
+
+   ifstream infile;
+   infile.open(inpath);
+   if( infile.fail() ){
+      cout << "Cannot open the file: " << inpath << endl;
+      return 1;
+   }else{
+      while( !infile.eof() ){
+         std::getline(infile,stime,',');
+         std::getline(infile,sf   ,',');
+         std::getline(infile,sfe  ,',');
+         std::getline(infile,st   ,',');
+         std::getline(infile,ste);
+	 dataPt.time    = std::atof( stime.c_str() );
+	 dataPt.freq    = std::atof( sf.c_str()    );
+	 dataPt.freqErr = std::atof( sfe.c_str()   );
+	 data.push_back(dataPt); 
+      }
+      infile.close();
+      data.pop_back();
+   }
+
+   return 0;
+}
+//______________________________________________________________________________
 int LoadImposedGradientData(const char *inpath,std::vector<imposed_gradient_t> &data){
 
    int i=0;

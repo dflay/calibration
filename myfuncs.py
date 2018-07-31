@@ -29,6 +29,7 @@ def writeConfigFile(data,tag,keyList,isFullAnalysis,isFinalLocation,axis,fitData
          labelList.append(key)  
    outData = {} 
    outData['date']       = data['date']
+   outData['type']       = data['type'] 
    outData['blinding']   = data['blinding'] 
    outData['trly-probe'] = data['trly-probe'] 
    outData['p2p-fit']    = data['p2p-fit'] 
@@ -36,7 +37,6 @@ def writeConfigFile(data,tag,keyList,isFullAnalysis,isFinalLocation,axis,fitData
       outData['fit'] = data[tag]['fit']  
    else: 
       outData['fit'] = "NONE"
-   outData['is-simple']  = False 
    outData['full-ana']   = isFullAnalysis 
    outData['final-loc']  = isFinalLocation 
    outData['nruns']      = len(runList) 
@@ -69,11 +69,12 @@ def writeConfigFileProd(data,tag,keyList,axis,fitData,outpath):
          runList.append(data[tag][key])   
          labelList.append(key) 
    outData = {} 
-   outData['type']       = data['type'] 
-   outData['date']       = data['date']
-   outData['blinding']   = data['blinding'] 
-   outData['trly-probe'] = data['trly-probe'] 
-   outData['fxpr-set']   = data['fxpr-set'] 
+   outData['type']            = data['type'] 
+   outData['date']            = data['date']
+   outData['blinding']        = data['blinding'] 
+   outData['trly-probe']      = data['trly-probe'] 
+   outData['fxpr-set']        = data['fxpr-set']
+   outData['free-proton-cor'] = data['free-proton-cor']  
    if(fitData): 
       outData['fit'] = data[tag]['fit']  
    else: 
@@ -96,6 +97,7 @@ def writeConfigFileSingleRun(data,tag,label,runNumber,isFullAnalysis,isFinalLoca
    labelList.append(label)  
    outData = {} 
    outData['date']       = data['date']
+   outData['type']       = data['type'] 
    outData['blinding']   = data['blinding'] 
    outData['trly-probe'] = data['trly-probe'] 
    outData['p2p-fit']    = data['p2p-fit'] 
@@ -103,7 +105,6 @@ def writeConfigFileSingleRun(data,tag,label,runNumber,isFullAnalysis,isFinalLoca
       outData['fit'] = data[tag]['fit']  
    else: 
       outData['fit'] = "NONE"
-   outData['is-simple']  = False 
    outData['full-ana']   = isFullAnalysis 
    outData['final-loc']  = isFinalLocation 
    outData['nruns']      = len(runList) 
@@ -129,7 +130,7 @@ def writeConfigFileSimple(inData,tag,outpath):
    outData = {} 
    outData['date']       = inData['date']
    outData['blinding']   = inData['blinding']
-   outData['is-simple']  = True  
+   outData['type']       = inData['type'] 
    outData['trly-probe'] = inData['trly-probe'] 
    outData['nruns']      = len(runList) 
    outData['run-list']   = runList   

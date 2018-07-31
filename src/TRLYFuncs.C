@@ -67,75 +67,6 @@ int GetTrolleyProbePositions(trolleyProbePosition_t &data){
     return 0;
 
 }
-// //______________________________________________________________________________
-// int GetTrolleyProbePosition(int index,double *pos){
-//    // get the trolley probe position relative to the center probe
-//    // array pos is indexed as (0,1) = (x,y) 
-//    double spacing = 17.5;
-//    double thr     = 30.*TMath::Pi()/180.; 
-//    double thr2    = 60.*TMath::Pi()/180.; 
-//    double xx      = 17.5*TMath::Cos(thr); 
-//    double xx2     = 35.*TMath::Cos(thr2); 
-//    if(index==0){
-//       return 1;
-//    }else if(index==1){
-//       pos[0] = 0;
-//       pos[1] = 0;
-//    }else if(index==2){
-//       pos[0] = 0;
-//       pos[1] = -17.5;
-//    }else if(index==3){
-//       pos[0] =  17.5;
-//       pos[1] =  0;
-//    }else if(index==4){
-//       pos[0] =  0;
-//       pos[1] =  17.5;
-//    }else if(index==5){
-//       pos[0] = -17.5;
-//       pos[1] =  0.;
-//    }else if(index==6){
-//       pos[0] =  0.;
-//       pos[1] = -35.;
-//    }else if(index==7){
-//       pos[0] =  17.5;
-//       pos[1] = -30.3;
-//    }else if(index==8){
-//       pos[0] =  xx2;
-//       pos[1] = -17.5;
-//    }else if(index==9){
-//       pos[0] =  35.0;
-//       pos[1] =  0.;
-//    }else if(index==10){
-//       pos[0] =  xx2;
-//       pos[1] =  17.5;
-//    }else if(index==11){
-//       pos[0] =  17.5;
-//       pos[1] =  xx;
-//    }else if(index==12){
-//       pos[0] =  0;
-//       pos[1] =  35.0;
-//    }else if(index==13){
-//       pos[0] = -17.5;
-//       pos[1] =  xx;
-//    }else if(index==14){
-//       pos[0] = -xx2;
-//       pos[1] =  17.5;
-//    }else if(index==15){
-//       pos[0] = -35.0;
-//       pos[1] =  0.;
-//    }else if(index==15){
-//       pos[0] = -35.0;
-//       pos[1] =  0.;
-//    }else if(index==16){
-//       pos[0] = -xx2;
-//       pos[1] = -17.5;
-//    }else if(index==17){
-//       pos[0] = -17.5;
-//       pos[1] = -xx;
-//    }
-// 
-//    return 0;
-// }
 //______________________________________________________________________________
 int FindTransitionTimes(int step,double thr,std::vector<trolleyAnaEvent_t> Data,
                         std::vector< std::vector<double> > &timeLo,std::vector< std::vector<double> > &timeHi){
@@ -244,6 +175,32 @@ int FilterSingle(int probe,int nev,double T,std::vector<trolleyAnaEvent_t> in,st
 
    return 0;
 
+}
+//______________________________________________________________________________
+int GetTRLYStatsAtTime(int probe,int nev,double fLO,std::vector<double> time,std::vector<trolleyAnaEvent_t> Data,
+                       std::vector<double> &MEAN,std::vector<double> &STDEV){
+
+   // find the mean field at the times specified in the time vector 
+
+   const int N = time.size();
+   int M=0,rc=0;
+   double mean=0,stdev=0;
+   std::vector<double> freq;
+   for(int i=0;i<N;i++){
+      // std::cout << "Looking for time " << gm2fieldUtil::GetStringTimeStampFromUTC(time[i]) << std::endl;
+      // find events 
+      rc = FilterSingle(probe,nev,time[i],Data,freq);
+      // now get mean of events 
+      mean  = gm2fieldUtil::Math::GetMean<double>(freq);
+      stdev = gm2fieldUtil::Math::GetStandardDeviation<double>(freq);
+      // store result
+      MEAN.push_back(mean+fLO);
+      STDEV.push_back(stdev);
+      // set up for next time 
+      freq.clear();
+   }
+
+   return 0;
 }
 //______________________________________________________________________________
 int GetTRLYStats_sccToggle(int probe,int nev,std::vector<double> time,std::vector<trolleyAnaEvent_t> Data,

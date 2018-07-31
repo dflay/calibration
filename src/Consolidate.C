@@ -196,6 +196,7 @@ int ConsolidatePPData(int method,std::vector<gm2field::plungingProbeFrequency_t>
    for(int i=0;i<N;i++){
       theTemp   = tempSensor->GetTemperature( ppInfo[i].Temperature );
       timeStamp = gm2fieldUtil::GetStringTimeStampFromUTC( ppInfo[i].TimeStamp/1E+9 ); 
+      std::cout << "Processing NMR-DAQ run " << ppInfo[i].FlayRunNumber << std::endl;
       if( ppInfo[i].FlayRunNumber==lastRun ){ 
          // gather frequencies and temperatures for each NMR-DAQ run to average over  
          data.run           = ppInfo[i].FlayRunNumber; 
@@ -245,6 +246,10 @@ int ConsolidatePPData(int method,std::vector<gm2field::plungingProbeFrequency_t>
    data.numTraces  = cntr; 
    ppEvent.push_back(data);
 
+   const int NN = ppEvent.size();
+   std::cout << "NMR-DAQ runs: " << endl;
+   for(int i=0;i<NN;i++) std::cout << ppEvent[i].run << endl;
+
    delete tempSensor; 
 
    return 0;
@@ -274,19 +279,21 @@ int ModifyPlungingProbeData(int method,plungingProbeAnaEvent_t &Data){
    // replace the frequency values with those calculated by the NMR-ANA framework  
    int runNumber = Data.run;
    std::vector<nmrAnaEvent_t> inData;
+   std::cout << "Trying NMR-DAQ run " << runNumber << std::endl; 
    char inpath[512];
    sprintf(inpath,"./input/NMR-ANA/run-%05d/results_pulse-stats.dat",runNumber);
    int rc = ImportNMRANAData(inpath,inData);
    if(rc!=0){
-      std::cout << "No data!" << std::endl;
+      std::cout << "[ModifyPlungingProbeData]: No data for NMR-DAQ run " << runNumber << "!" << std::endl;
       return 1;
    }
-   
+  
    const int N = inData.size();
    if(N!=Data.numTraces){
       std::cout << "[ModifyPlungingProbeData]: Inconsistent number of traces for MIDAS and NMR-ANA!" << std::endl;
-      std::cout << "MIDAS:   " << Data.numTraces << " traces" << std::endl;
-      std::cout << "NMR-ANA: " << N              << " traces" << std::endl;
+      std::cout << "NMR-DAQ run: " << Data.run       << std::endl;
+      std::cout << "MIDAS:       " << Data.numTraces << " traces" << std::endl;
+      std::cout << "NMR-ANA:     " << N              << " traces" << std::endl;
       return 1;
    }
 

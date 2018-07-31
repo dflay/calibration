@@ -16,4 +16,15 @@ typedef struct nmr_meas{
    double T;                   // temperature  
 } nmr_meas_t;
 
+// a calibration multiswap event 
+
+typedef struct calibSwap{
+   double time;                // UTC time stamp 
+   double freq;                // frequency (Hz) 
+   double freqErr;             // frequency uncertainty (Hz) 
+   double temp;                // temperature (deg C) 
+   double tempErr;             // temperature uncertainty (deg C) 
+   int type;                   // 0 = PP, 1 = TRLY 
+} calibSwap_t; 
+
 #endif 
