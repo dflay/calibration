@@ -247,30 +247,34 @@ int LocalScanGrad_pp_prod(std::string configFile){
    // get gradient based on fit type and which trolley probe we're looking at  
    double dBdr=0,dBdr_err=0,dBdr_cor=0,dBdr_cor_err=0;
    double PR[3],ER[3];
-   int slopeIndex=0; 
-   if( fitFunc.compare("pol1")==0 ){
-      dBdr         = par[1];  
-      dBdr_err     = parErr[1]; 
-      dBdr_cor     = parCor[1];  
-      dBdr_cor_err = parCorErr[1]; 
-   }else if( fitFunc.compare("pol2")==0 ){
-      dBdr         = par[1]    + 2.*par[2]*trly_pr_pos; 
-      dBdr_err     = TMath::Sqrt( parErr[1]*parErr[1] + parErr[2]*parErr[2] );  
-      dBdr_cor     = parCor[1] + 2.*parCor[2]*trly_pr_pos;  
-      dBdr_cor_err = TMath::Sqrt( parCorErr[1]*parCorErr[1] + parCorErr[2]*parErr[2] );  
-   }else if( fitFunc.compare("pol3")==0 ){
-      dBdr         = par[1]    + 2.*par[2]*trly_pr_pos + 3.*par[3]*TMath::Power(trly_pr_pos,2.);  
-      dBdr_err     = TMath::Sqrt( parErr[1]*parErr[1] + parErr[2]*parErr[2] + parErr[3]*parErr[3] );  
-      dBdr_cor     = parCor[1] + 2.*parCor[2]*trly_pr_pos + 3.*parCor[3]*TMath::Power(trly_pr_pos,2.);  
-      dBdr_cor_err = TMath::Sqrt( parCorErr[1]*parCorErr[1] + parCorErr[2]*parCorErr[2] + parCorErr[3]*parCorErr[3] );  
-   }
+   int slopeIndex=0;
+
+   dBdr = myFit->Derivative(trly_pr_pos);  // evaluate at the trolley probe position of interest   
  
+   if( fitFunc.compare("pol1")==0 ){
+      // dBdr         = par[1];  
+      dBdr_err     = parErr[1]; 
+      // dBdr_cor     = parCor[1];  
+      // dBdr_cor_err = parCorErr[1]; 
+   }else if( fitFunc.compare("pol2")==0 ){
+      // dBdr         = par[1]    + 2.*par[2]*trly_pr_pos; 
+      dBdr_err     = TMath::Sqrt( parErr[1]*parErr[1] + parErr[2]*parErr[2] );  
+      // dBdr_cor     = parCor[1] + 2.*parCor[2]*trly_pr_pos;  
+      // dBdr_cor_err = TMath::Sqrt( parCorErr[1]*parCorErr[1] + parCorErr[2]*parErr[2] );  
+   }else if( fitFunc.compare("pol3")==0 ){
+      // dBdr         = par[1]    + 2.*par[2]*trly_pr_pos + 3.*par[3]*TMath::Power(trly_pr_pos,2.);  
+      dBdr_err     = TMath::Sqrt( parErr[1]*parErr[1] + parErr[2]*parErr[2] + parErr[3]*parErr[3] );  
+      // dBdr_cor     = parCor[1] + 2.*parCor[2]*trly_pr_pos + 3.*parCor[3]*TMath::Power(trly_pr_pos,2.);  
+      // dBdr_cor_err = TMath::Sqrt( parCorErr[1]*parCorErr[1] + parCorErr[2]*parCorErr[2] + parCorErr[3]*parCorErr[3] );  
+   }
+
+   // WARNING: not using the drift-corrected result.  Those probes are too far away!  
    PR[0] = dBdr; 
-   PR[1] = dBdr_cor;  
+   PR[1] = dBdr;  
    PR[2] = 0;
 
    ER[0] = dBdr_err; 
-   ER[1] = dBdr_cor_err; 
+   ER[1] = dBdr_err; 
    ER[2] = 0;
 
    double drift[3]     = {0,0,0};

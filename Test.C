@@ -12,7 +12,6 @@ int Test(){
    std::string inpath = "test.json";
    InputManager *inputMgr = new InputManager(); 
    inputMgr->Load(inpath);
-
    // inputMgr->Print();
 
    std::string testKey = "my-key"; 

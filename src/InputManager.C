@@ -116,7 +116,7 @@ int InputManager::Parse(){
    if( fType.compare("calib-prod")==0 ){
       if(axisStatus) fAxis         = (int)fParams["axis"];
       if(protStatus) fIsFreeProton = (bool)( (int)fParams["free-proton-cor"] );  
-      if(fitStatus) fFitFunc       = fParams["fit"]; 
+      if(fitStatus)  fFitFunc      = fParams["fit"]; 
    }
   
    // simple input format (i.e., rapid swapping data from 6/1)  

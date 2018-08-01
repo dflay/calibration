@@ -104,9 +104,9 @@ int Misalignment(std::string configFile){
    char inpath[500];  
    std::vector<deltab_t> pp,trly;
    for(int i=0;i<NG;i++){
-      sprintf(inpath,"%s/dB-pp_final-location_%s-grad_%s.csv",outDir,gradName[i].c_str(),anaDate.c_str());
+      sprintf(inpath,"%s/dB-pp_%s-grad_%s.csv",outDir,gradName[i].c_str(),anaDate.c_str());
       LoadDeltaBData(inpath,pp);
-      sprintf(inpath,"%s/dB-trly_final-location_%s-grad_pr-%02d_%s.csv",outDir,gradName[i].c_str(),probe,anaDate.c_str());
+      sprintf(inpath,"%s/dB-trly_%s-grad_pr-%02d_%s.csv",outDir,gradName[i].c_str(),probe,anaDate.c_str());
       LoadDeltaBData(inpath,trly);
    }
 

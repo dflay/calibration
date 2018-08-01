@@ -1,5 +1,13 @@
 #include "../include/CalibFuncs.h"
 //______________________________________________________________________________
+int GetOmegaP_err(perturbation_t pert,double &err){
+   // error on delta_t  
+   double err_sq   = pert.sigma_err*pert.sigma_err + pert.delta_m_err*pert.delta_m_err 
+                   + pert.delta_eps_err*pert.delta_eps_err + pert.delta_mag_err*pert.delta_mag_err;
+   err = TMath::Sqrt(err_sq)*0.06179;  // convert to Hz
+   return 0;
+}
+//______________________________________________________________________________
 int GetOmegaP_free(perturbation_t pert,double freq,double freqErr,double temp,double tempErr,
                    double &freqFree,double &freqFreeErr){
    // calculate delta_t 

@@ -31,6 +31,31 @@ int LoadCalibSwapData(const char *inpath,std::vector<calibSwap_t> &data){
    return 0;
 }
 //______________________________________________________________________________
+int LoadImposedGradientData(const char *inpath,imposed_gradient_t &data){
+
+   int i=0;
+   std::string sp,sgrad,sgrad_err;
+
+   ifstream infile;
+   infile.open(inpath);
+   if( infile.fail() ){
+      cout << "Cannot open the file: " << inpath << endl;
+      return 1;
+   }else{
+      while( !infile.eof() ){
+         std::getline(infile,sp,',');
+         std::getline(infile,sgrad,',');
+         std::getline(infile,sgrad_err);
+	 data.pos      = std::atof( sp.c_str()        );
+	 data.grad     = std::atof( sgrad.c_str()     );
+	 data.grad_err = std::atof( sgrad_err.c_str() );
+      }
+      infile.close();
+   }
+
+   return 0;
+}
+//______________________________________________________________________________
 int LoadImposedGradientData(const char *inpath,std::vector<imposed_gradient_t> &data){
 
    int i=0;
@@ -55,6 +80,33 @@ int LoadImposedGradientData(const char *inpath,std::vector<imposed_gradient_t> &
       }
       infile.close();
       data.pop_back();
+   }
+
+   return 0;
+}
+//______________________________________________________________________________
+int LoadImposedAziGradData(const char *inpath,int probe,double &dBdz){
+
+   int ipr=0;
+   std::string stp,sbg,sig_82,sg,sg_per_A,ssc;  // bare grad, grad at 0.82 A, grad, grad/Amp,shim current (A) 
+
+   ifstream infile;
+   infile.open(inpath);
+   if( infile.fail() ){
+      cout << "Cannot open the file: " << inpath << endl;
+      return 1;
+   }else{
+      while( !infile.eof() ){
+         std::getline(infile,stp     ,',');
+         std::getline(infile,sbg     ,',');
+         std::getline(infile,sig_82  ,',');
+         std::getline(infile,sg      ,',');
+         std::getline(infile,sg_per_A,',');
+         std::getline(infile,ssc);
+         ipr = std::atoi( stp.c_str() ); 
+         if(ipr==probe) dBdz = std::atof( sg.c_str() ); 
+      }
+      infile.close();
    }
 
    return 0;
@@ -327,6 +379,59 @@ int LoadFieldData(const char *inpath,nmr_meas_t &data){
    return 0;
 }
 //______________________________________________________________________________
+int LoadGradientData(const char *inpath,grad_meas_t &x){
+
+   grad_meas_t data;
+
+   std::string sL,s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11,s12;
+
+   ifstream infile;
+   infile.open(inpath);
+   if( infile.fail() ){
+      cout << "Cannot open the file: " << inpath << endl;
+      return 1;
+   }else{
+      while( !infile.eof() ){
+         std::getline(infile,sL,',');
+         std::getline(infile,s1,',');
+         std::getline(infile,s2,',');
+         std::getline(infile,s3,',');
+         std::getline(infile,s4,',');
+         std::getline(infile,s5,',');
+         std::getline(infile,s6,',');
+         std::getline(infile,s7,',');
+         std::getline(infile,s8,',');
+         std::getline(infile,s9,',');
+         std::getline(infile,s10,',');
+         std::getline(infile,s11,',');
+         std::getline(infile,s12);
+	 x.name           = sL;
+         x.grad           = std::atof( s1.c_str() );
+         x.grad_err       = std::atof( s2.c_str() );
+         x.grad_fxpr      = std::atof( s3.c_str() );
+         x.grad_fxpr_err  = std::atof( s4.c_str() );
+         x.grad_trly      = std::atof( s5.c_str() );
+	 x.grad_trly_err  = std::atof( s6.c_str() );
+         x.drift_fxpr     = std::atof( s9.c_str() );
+         x.drift_fxpr_err = std::atof( s10.c_str() );
+         x.drift_trly     = std::atof( s11.c_str() );
+	 x.drift_trly_err = std::atof( s12.c_str() );
+      }
+      infile.close();
+   }
+
+   // const int N = x.size();
+   // for(int i=0;i<N;i++){
+   //    std::cout << x[i].name << " " 
+   //              << x[i].grad      << " +/- " << x[i].grad_err      << " " 
+   //              << x[i].grad_fxpr << " +/- " << x[i].grad_fxpr_err << " " 
+   //              << x[i].grad_trly << " +/- " << x[i].grad_trly_err << std::endl;
+   // }
+   // std::cout << "--------------" << std::endl; 
+
+   return 0;
+}
+//______________________________________________________________________________
 int LoadGradientData(const char *inpath,std::vector<grad_meas_t> &x){
 
    grad_meas_t data;
@@ -370,14 +475,79 @@ int LoadGradientData(const char *inpath,std::vector<grad_meas_t> &x){
       x.pop_back();
    }
 
-   const int N = x.size();
-   for(int i=0;i<N;i++){
-      std::cout << x[i].name << " " 
-                << x[i].grad      << " +/- " << x[i].grad_err      << " " 
-                << x[i].grad_fxpr << " +/- " << x[i].grad_fxpr_err << " " 
-                << x[i].grad_trly << " +/- " << x[i].grad_trly_err << std::endl;
+   // const int N = x.size();
+   // for(int i=0;i<N;i++){
+   //    std::cout << x[i].name << " " 
+   //              << x[i].grad      << " +/- " << x[i].grad_err      << " " 
+   //              << x[i].grad_fxpr << " +/- " << x[i].grad_fxpr_err << " " 
+   //              << x[i].grad_trly << " +/- " << x[i].grad_trly_err << std::endl;
+   // }
+   // std::cout << "--------------" << std::endl; 
+
+   return 0;
+}
+//______________________________________________________________________________
+int LoadDeltaBData_trlyXY(const char *inpath,int probe,std::vector<deltab_t> &x){
+
+   int ipr=0;
+   deltab_t data;
+   std::string stp,s1,s2,s3,s4,s5,s6,s7,s8,s9;
+
+   ifstream infile;
+   infile.open(inpath);
+   if( infile.fail() ){
+      cout << "Cannot open the file: " << inpath << endl;
+      return 1;
+   }else{
+      while( !infile.eof() ){
+         std::getline(infile,stp,',');
+         std::getline(infile,s1 ,',');
+         std::getline(infile,s2 ,',');
+         std::getline(infile,s3 ,',');
+         std::getline(infile,s4 ,',');
+         std::getline(infile,s5 ,',');
+         std::getline(infile,s6 ,',');
+         std::getline(infile,s7 ,',');
+         std::getline(infile,s8);
+         ipr = std::atoi( stp.c_str() );
+	 // std::cout << "PROBE " << ipr << std::endl;
+         if(ipr==probe){
+	    // std::cout << "--> MATCH" << std::endl;
+	    // radial 
+	    data.name = "rad-grad";
+	    data.dB             = std::atof( s1.c_str()  );
+	    data.dB_err         = std::atof( s2.c_str()  );
+	    data.dB_fxpr        = std::atof( s3.c_str()  );
+	    data.dB_fxpr_err    = std::atof( s4.c_str()  );
+	    data.dB_trly        = 0;
+	    data.dB_trly_err    = 0;
+	    x.push_back(data);
+	    // vertical 
+	    data.name = "vert-grad";
+	    data.dB             = std::atof( s5.c_str()  );
+	    data.dB_err         = std::atof( s6.c_str()  );
+	    data.dB_fxpr        = std::atof( s7.c_str()  );
+	    data.dB_fxpr_err    = std::atof( s8.c_str()  );
+	    data.dB_trly        = 0;
+	    data.dB_trly_err    = 0;
+	    x.push_back(data);
+	 }
+      }
+      infile.close();
+      // x.pop_back();
    }
-   std::cout << "--------------" << std::endl; 
+
+   // const int N = x.size();
+   // std::cout << N << " entries found" << std::endl;
+   // for(int i=0;i<N;i++){
+   //    std::cout << x[i].name << " " 
+   //              << x[i].dB         << " +/- " << x[i].dB_err         << " " 
+   //              << x[i].dB_fxpr    << " +/- " << x[i].dB_fxpr_err    << " " 
+   //              << x[i].dB_trly    << " +/- " << x[i].dB_trly_err    << " " 
+   //              << x[i].drift_fxpr << " +/- " << x[i].drift_fxpr_err << " " 
+   //              << x[i].drift_trly << " +/- " << x[i].drift_trly_err << std::endl;
+   // }
+   // std::cout << "--------------" << std::endl; 
 
    return 0;
 }

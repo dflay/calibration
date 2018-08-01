@@ -64,6 +64,8 @@ def writeConfigFileProd(data,tag,keyList,axis,fitData,outpath):
             runList.append(subRun) 
             labelList.append("sr{0}".format(i+1))
             i = i + 1 
+      elif(key=="NONE"): 
+         print("No runs to use!") 
       else: 
          # single MIDAS runs 
          runList.append(data[tag][key])   

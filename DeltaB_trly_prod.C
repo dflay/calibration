@@ -148,7 +148,7 @@ int DeltaB_trly_prod(std::string configFile){
    if(isBlind) ApplyBlindingTRLY(blindValue,trlyData);
 
    // get the mean field with SCC off and on 
-   int nev = 20;  // keep 20 events in the analysis
+   int nev = 30;  // keep 30 events in the analysis
    std::vector<double> bareTime,bare,bareErr,sccTime,scc,sccErr;  
    rc = GetTRLYStats_sccToggle(probeNumber-1,nev,sccOff,trlyData,bareTime,bare,bareErr); 
    rc = GetTRLYStats_sccToggle(probeNumber-1,nev,sccOn ,trlyData,sccTime ,scc ,sccErr ); 
@@ -171,6 +171,20 @@ int DeltaB_trly_prod(std::string configFile){
    double mean_aba  = gm2fieldUtil::Math::GetMean<double>(diff_aba); 
    double stdev_aba = gm2fieldUtil::Math::GetStandardDeviation<double>(diff_aba); 
  
+   const int ND = diff.size();
+   std::vector<double> trial; 
+   for(int i=0;i<ND;i++) trial.push_back(i+1);
+   
+   const int NDA = diff_aba.size();
+   std::vector<double> trial_aba;
+   for(int i=0;i<NDA;i++) trial_aba.push_back(i+1);
+
+   if(ND==1){
+      stdev     = diffErr[0]; 
+      mean_aba  = 0;
+      stdev_aba = 0;
+   }
+
    double dB[3]        = {0,0,0}; 
    double dB_err[3]    = {0,0,0};
    double drift[3]     = {0,0,0};  
@@ -182,13 +196,6 @@ int DeltaB_trly_prod(std::string configFile){
    dB[1]     = mean_aba;
    dB_err[1] = stdev_aba;  
 
-   const int ND = diff.size();
-   std::vector<double> trial; 
-   for(int i=0;i<ND;i++) trial.push_back(i+1);
-   
-   const int NDA = diff_aba.size();
-   std::vector<double> trial_aba;
-   for(int i=0;i<NDA;i++) trial_aba.push_back(i+1);
    
    // Plots
 

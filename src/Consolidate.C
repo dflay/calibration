@@ -65,7 +65,7 @@ int ConsolidateTrolleyData(int startIndex,int method,std::vector<gm2field::troll
 	    data.r[j]    = trlyPos[i].X[j];  
 	    data.y[j]    = trlyPos[i].Y[j];  
 	    data.phi[j]  = arg_phi; 
-	    data.temp[j] = trlyMon[i].TemperatureIn[j];
+	    data.temp[j] = trlyMon[i].TemperatureExt[j];
 	 }
          // if(data.freq[j]<20E+3){
 	 //    std::cout << gm2fieldUtil::GetStringTimeStampFromUTC( data.time[j]/1E+9 ) << " " << data.freq[j] << std::endl; 
@@ -196,7 +196,7 @@ int ConsolidatePPData(int method,std::vector<gm2field::plungingProbeFrequency_t>
    for(int i=0;i<N;i++){
       theTemp   = tempSensor->GetTemperature( ppInfo[i].Temperature );
       timeStamp = gm2fieldUtil::GetStringTimeStampFromUTC( ppInfo[i].TimeStamp/1E+9 ); 
-      std::cout << "Processing NMR-DAQ run " << ppInfo[i].FlayRunNumber << std::endl;
+      // std::cout << "Processing NMR-DAQ run " << ppInfo[i].FlayRunNumber << std::endl;
       if( ppInfo[i].FlayRunNumber==lastRun ){ 
          // gather frequencies and temperatures for each NMR-DAQ run to average over  
          data.run           = ppInfo[i].FlayRunNumber; 
@@ -279,7 +279,7 @@ int ModifyPlungingProbeData(int method,plungingProbeAnaEvent_t &Data){
    // replace the frequency values with those calculated by the NMR-ANA framework  
    int runNumber = Data.run;
    std::vector<nmrAnaEvent_t> inData;
-   std::cout << "Trying NMR-DAQ run " << runNumber << std::endl; 
+   // std::cout << "Trying NMR-DAQ run " << runNumber << std::endl; 
    char inpath[512];
    sprintf(inpath,"./input/NMR-ANA/run-%05d/results_pulse-stats.dat",runNumber);
    int rc = ImportNMRANAData(inpath,inData);

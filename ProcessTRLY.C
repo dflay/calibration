@@ -43,7 +43,10 @@
 double gMarkerSize = 0.8; 
 
 int CheckTrolleyData(std::vector<fixedProbeEvent_t> fxprData,std::vector<trolleyAnaEvent_t> &trlyData);
-int GetStatsForSingleProbe(int probe,std::vector<trolleyAnaEvent_t> data,double &mean,double &stdev,double &min,double &max);
+int GetStatsForSingleProbe(int probe,std::vector<trolleyAnaEvent_t> data,
+                           double &mean_freq,double &stdev_freq,
+                           double &mean_temp,double &stdev_temp,
+                           double &min,double &max);
 // int GetStatsForAllProbes(std::vector<trolleyAnaEvent_t> data,std::vector<double> &MEAN,std::vector<double> &STDEV);
 
 int PrintToFileSingle(std::string outpath,int run,double time,double t,double x,double dx,double y,double dy);
@@ -120,7 +123,7 @@ int ProcessTRLY(std::string configFile){
    double xMin = tStart/1E+9;
    double xMax = tStop/1E+9;
 
-   double time,freq,freqErr,freq_cor,freqErr_cor; 
+   double time,freq,freqErr,temp,tempErr,freq_cor,freqErr_cor,temp_cor,tempErr_cor; 
    std::vector<double> FREQ,FREQERR,FREQ_cor,FREQERR_cor; 
    std::vector<trolleyAnaEvent_t> trlyData,trlyDataCor;     
 
@@ -169,12 +172,12 @@ int ProcessTRLY(std::string configFile){
       for(int j=0;j<NTRLY;j++){ 
          // get stats
          time = trlyData[i].time[j]/1E+9; 
-	 rc = GetStatsForSingleProbe(j,trlyData   ,freq    ,freqErr    ,yMin,yMax);
-	 rc = GetStatsForSingleProbe(j,trlyDataCor,freq_cor,freqErr_cor,yMin,yMax);
+	 rc = GetStatsForSingleProbe(j,trlyData   ,freq    ,freqErr    ,temp    ,tempErr    ,yMin,yMax);
+	 rc = GetStatsForSingleProbe(j,trlyDataCor,freq_cor,freqErr_cor,temp_cor,tempErr_cor,yMin,yMax);
          // print to file for a single probe
 	 sprintf(outPath,"%s/trly-data_pr-%02d_%s.csv",outDir,j,anaDate.c_str());
 	 outpath = outPath;
-	 rc = PrintToFileSingle(outpath,run[i],time,0,freq,freqErr,freq_cor,freqErr_cor); 
+	 rc = PrintToFileSingle(outpath,run[i],time,temp,freq,freqErr,freq_cor,freqErr_cor); 
          // get probe positions
          rr.push_back( trlyData[0].r[j] ); 
          yy.push_back( trlyData[0].y[j] ); 
@@ -263,19 +266,26 @@ int ProcessTRLY(std::string configFile){
    return 0;
 }
 //______________________________________________________________________________
-int GetStatsForSingleProbe(int probe,std::vector<trolleyAnaEvent_t> data,double &mean,double &stdev,double &min,double &max){
+int GetStatsForSingleProbe(int probe,std::vector<trolleyAnaEvent_t> data,
+                           double &mean_freq,double &stdev_freq,
+                           double &mean_temp,double &stdev_temp,
+                           double &min,double &max){
    min = 60E+3;
    max = 0;
    double fLO = 61.74E+6; 
    const int N = data.size();
-   std::vector<double> x; 
+   std::vector<double> x,y; 
    for(int i=0;i<N;i++){
       x.push_back( fLO + data[i].freq[probe] );
+      y.push_back( data[i].temp[probe] );
       if(min>data[i].freq[probe]) min = data[i].freq[probe]; 
       if(max<data[i].freq[probe]) max = data[i].freq[probe]; 
    } 
-   mean  = gm2fieldUtil::Math::GetMean<double>(x); 
-   stdev = gm2fieldUtil::Math::GetStandardDeviation<double>(x); 
+   mean_freq  = gm2fieldUtil::Math::GetMean<double>(x); 
+   stdev_freq = gm2fieldUtil::Math::GetStandardDeviation<double>(x); 
+   mean_temp  = gm2fieldUtil::Math::GetMean<double>(y); 
+   stdev_temp = gm2fieldUtil::Math::GetStandardDeviation<double>(y); 
+
    min  -= 5; 
    max  += 5; 
    return 0;
