@@ -41,4 +41,15 @@ typedef struct result{
    double diff_trly_err;
 } result_t; 
 
+typedef struct result_prod{
+   double diff;
+   double diffErr;         // shot error 
+   double mErr;            // misalignment error 
+   double pErr;            // free-proton error  
+   double diff_aba;
+   double diffErr_aba;
+   double mErr_aba;
+   double pErr_aba;       
+} result_prod_t; 
+
 #endif 

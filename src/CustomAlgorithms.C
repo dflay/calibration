@@ -7,7 +7,6 @@ int FindGalilEvent(int probe,unsigned long long trlyTime,
    double sf = 2597./2658.; // scale factor for galil data
    double dt = trly[0].time[probe]/1E+9 - sf*galil[0].TimeStamp/1E+3;
 
-
    // now search through Galil data to find the right event that's 
    // within a few seconds on the trolley time
    int theEvent=-1; 

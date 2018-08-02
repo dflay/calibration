@@ -1,5 +1,81 @@
 #include "../include/CustomImport.h"
 //______________________________________________________________________________
+int LoadResultsProdData(const char *inpath,result_prod_t &data){
+
+   const int NLines = 1;
+   const int SIZE = 2048;  
+   char buf[SIZE]; 
+
+   int cntr=0;
+   std::string sx,sdx;
+
+   ifstream infile;
+   infile.open(inpath);
+   if( infile.fail() ){
+      cout << "Cannot open the file: " << inpath << endl;
+      return 1;
+   }else{
+      for(int i=0;i<NLines;i++) infile.getline(buf,SIZE); 
+      while( !infile.eof() ){
+         std::getline(infile,sx,',');
+         std::getline(infile,sdx);
+	 cntr++;
+	 if(cntr==1){
+	    data.diff    = std::atof( sx.c_str() ); 
+	    data.diffErr = std::atof( sdx.c_str() );
+         }else if(cntr==2){
+	    data.diff_aba    = std::atof( sx.c_str() ); 
+	    data.diffErr_aba = std::atof( sdx.c_str() );
+         } 
+      }
+      infile.close();
+   }
+
+   std::cout << data.diff     << " +/- " << data.diffErr     << std::endl; 
+   std::cout << data.diff_aba << " +/- " << data.diffErr_aba << std::endl; 
+
+   return 0;
+}
+//______________________________________________________________________________
+int LoadMisalignmentData(const char *inpath,misalignment_t &data){
+
+   std::string sname,sdq,sdB_q,sdq_aba,sdB_q_aba;
+
+   ifstream infile;
+   infile.open(inpath);
+   if( infile.fail() ){
+      cout << "Cannot open the file: " << inpath << endl;
+      return 1;
+   }else{
+      while( !infile.eof() ){
+         std::getline(infile,sname  ,',');
+         std::getline(infile,sdq    ,',');
+         std::getline(infile,sdB_q  ,',');
+         std::getline(infile,sdq_aba,',');
+         std::getline(infile,sdB_q_aba);
+         if( sname.compare("r")==0 ){
+	    data.dx       = std::atof( sdq.c_str()       );
+	    data.dB_x     = std::atof( sdB_q.c_str()     );
+	    data.dx_aba   = std::atof( sdq_aba.c_str()   );
+	    data.dB_x_aba = std::atof( sdB_q_aba.c_str() );
+         }else if( sname.compare("y")==0 ) {
+	    data.dy       = std::atof( sdq.c_str()       );
+	    data.dB_y     = std::atof( sdB_q.c_str()     );
+	    data.dy_aba   = std::atof( sdq_aba.c_str()   );
+	    data.dB_y_aba = std::atof( sdB_q_aba.c_str() );
+	 }else if( sname.compare("z")==0 ){
+	    data.dz       = std::atof( sdq.c_str()       );
+	    data.dB_z     = std::atof( sdB_q.c_str()     );
+	    data.dz_aba   = std::atof( sdq_aba.c_str()   );
+	    data.dB_z_aba = std::atof( sdB_q_aba.c_str() );
+	 }
+      }
+      infile.close();
+   }
+
+   return 0;
+}
+//______________________________________________________________________________
 int LoadCalibSwapData(const char *inpath,std::vector<calibSwap_t> &data){
 
    int i=0;

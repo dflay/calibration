@@ -9,6 +9,7 @@
 
 #include "trolleyAnaEvent.h"
 #include "results.h"
+#include "misalignment.h"
 #include "nmrAnaEvent.h"
 #include "perturbation.h"
 #include "nmr_meas.h"
@@ -21,6 +22,8 @@ int ImportDeltaBFileList_csv(const char *inpath,
                     std::vector<int> &x1,std::vector<std::string> &x2,
                     std::vector<double> &x3); 
 
+int LoadResultsProdData(const char *inpath,result_prod_t &data); 
+int LoadMisalignmentData(const char *inpath,misalignment_t &data); 
 int LoadCalibSwapData(const char *inpath,std::vector<calibSwap_t> &data);
 int LoadImposedGradientData(const char *inpath,imposed_gradient_t &data); 
 int LoadImposedGradientData(const char *inpath,std::vector<imposed_gradient_t> &data);
