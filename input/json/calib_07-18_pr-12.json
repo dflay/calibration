@@ -1,15 +1,16 @@
 {
-"date"            : "07-13-18",
-"blinding"        : true,
-"trly-probe"      : 12,
-"fxpr-set"        : 3,
-"type"            : "calib-prod",
-"free-proton-cor" : false,
-"dB-pp_x"         : {"midas-runs": [5641] },           // order is on,off,...
-"dB-pp_y"         : {"midas-runs": [5640] },           // order is on,off,...
-"dB-pp_z"         : {"midas-runs": [5642] },           // order is on,off,...
-"dB-trly_z"       : {"midas-runs": [-1] },
-"calib-run"       : {"midas-run" : 5636 },
-"local-shim-scan" : {"midas-run" : 5634, "ppx": [1011,1013,1014], "ppy": [1011,1012], "ppz": [1011,1015], "fit": "pol2" },
-"trly_z-scan"     : {"midas-runs": [-1] }
+"date"                : "07-13-18",
+"blinding"            : true,
+"trly-probe"          : 12,
+"fxpr-set"            : 3,
+"type"                : "calib-prod",
+"free-proton-cor"     : true,
+"load-trly-swap-times": true,
+"dB-pp_x"             : {"midas-runs": [5641] }, 
+"dB-pp_y"             : {"midas-runs": [5640] }, 
+"dB-pp_z"             : {"midas-runs": [5642] }, 
+"dB-trly_z"           : {"midas-runs": [-1] },
+"calib-run"           : {"midas-run" : 5636 },
+"local-shim-scan"     : {"midas-run" : 5634, "ppx": [1011,1013,1014], "ppy": [1011,1012], "ppz": [1011,1015], "fit": "pol2" },
+"trly_z-scan"         : {"midas-runs": [-1] }
 }

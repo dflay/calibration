@@ -60,7 +60,6 @@ int ProcessResults_prod(std::string configFile){
 
    std::string anaDate = inputMgr->GetAnalysisDate();
    bool isBlind        = inputMgr->IsBlind();
-   bool isFreeProton   = inputMgr->GetFreeProtonStatus(); 
    int probeNumber     = inputMgr->GetTrolleyProbe(); 
 
    date_t theDate;
@@ -79,11 +78,16 @@ int ProcessResults_prod(std::string configFile){
 
    // results  
    char outPath_result[500]; 
-   sprintf(outPath_result,"%s/results_%s.csv",outDir,anaDate.c_str());
+   sprintf(outPath_result,"%s/results_pr-%02d_%s.csv",outDir,probeNumber,anaDate.c_str());
 
-   // load results
    result_prod_t result;
    rc = LoadResultsProdData(outPath_result,result); 
+
+   char outPath_result_free[500]; 
+   sprintf(outPath_result_free,"%s/results_free-prot_pr-%02d_%s.csv",outDir,probeNumber,anaDate.c_str());
+
+   result_prod_t result_free;
+   rc = LoadResultsProdData(outPath_result_free,result_free); 
 
    double shot_err     = result.diffErr; 
    double shot_err_aba = result.diffErr_aba; 
@@ -105,37 +109,46 @@ int ProcessResults_prod(std::string configFile){
    sprintf(inpath_pert,"./input/perturbation/pp-pert.csv");
    LoadPerturbationData(inpath_pert,ppPert);
 
-   // compute errors from free proton corrections if necessary 
+   // compute errors from free proton corrections 
    double freeProtErr=0;
-   if(isFreeProton){
-      rc        = GetOmegaP_err(ppPert,freeProtErr);
-      std::cout << "Computing uncertainty from free-proton corrections" << std::endl;
-   } 
+   rc = GetOmegaP_err(ppPert,freeProtErr);
 
    char errStr[200],errStr_aba[200];
-   if(isFreeProton){
-      sprintf(errStr    ,"%.3lf +/- %.3lf +/- %.3lf",shot_err    ,tot_misalign_err,freeProtErr); 
-      sprintf(errStr_aba,"%.3lf +/- %.3lf +/- %.3lf",shot_err_aba,tot_misalign_err_aba,freeProtErr); 
-   }else{
-      sprintf(errStr    ,"%.3lf +/- %.3lf",shot_err    ,tot_misalign_err); 
-      sprintf(errStr_aba,"%.3lf +/- %.3lf",shot_err_aba,tot_misalign_err_aba); 
-   } 
+   sprintf(errStr    ,"%.3lf +/- %.3lf",shot_err    ,tot_misalign_err); 
+   sprintf(errStr_aba,"%.3lf +/- %.3lf",shot_err_aba,tot_misalign_err_aba); 
+
+   char errStr_free[200],errStr_free_aba[200];
+   sprintf(errStr_free    ,"%.3lf +/- %.3lf +/- %.3lf",shot_err    ,tot_misalign_err,freeProtErr); 
+   sprintf(errStr_free_aba,"%.3lf +/- %.3lf +/- %.3lf",shot_err_aba,tot_misalign_err_aba,freeProtErr); 
 
    result.mErr     = tot_misalign_err; 
    result.mErr_aba = tot_misalign_err_aba; 
-   result.pErr     = freeProtErr; 
-   result.pErr_aba = freeProtErr; 
+   result.pErr     = 0.; 
+   result.pErr_aba = 0.; 
+
+   result_free.mErr     = tot_misalign_err; 
+   result_free.mErr_aba = tot_misalign_err_aba; 
+   result_free.pErr     = freeProtErr; 
+   result_free.pErr_aba = freeProtErr; 
   
    std::cout << Form("======================= PROBE %02d RESULTS =======================",probeNumber) << std::endl;
+   std::cout << "Bare" << std::endl;
    std::cout << Form("[RAW]: %.3lf +/- %s",result.diff    ,errStr)     << std::endl;
    std::cout << Form("[ABA]: %.3lf +/- %s",result.diff_aba,errStr_aba) << std::endl;
+   std::cout << "Free proton" << std::endl;
+   std::cout << Form("[RAW]: %.3lf +/- %s",result_free.diff    ,errStr_free)     << std::endl;
+   std::cout << Form("[ABA]: %.3lf +/- %s",result_free.diff_aba,errStr_free_aba) << std::endl;
 
    // results  
    char outPath_final[500]; 
-   sprintf(outPath_final,"%s/results_final_%s.csv",outDir,anaDate.c_str());
+   sprintf(outPath_final,"%s/results_final_pr-%02d_%s.csv",outDir,probeNumber,anaDate.c_str());
    std::string outpath_final = outPath_final;  
-
    rc = PrintResults(outpath_final,result);
+
+   char outPath_final_free[500]; 
+   sprintf(outPath_final_free,"%s/results_final_free-prot_pr-%02d_%s.csv",outDir,probeNumber,anaDate.c_str());
+   std::string outpath_final_free = outPath_final_free;  
+   rc = PrintResults(outpath_final_free,result_free);
 
    return 0;
 }

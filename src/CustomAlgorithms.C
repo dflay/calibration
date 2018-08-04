@@ -62,7 +62,7 @@ int FindTRLYStopTimes(int probe,double angle,std::vector<trolleyAnaEvent_t> trly
          theTime = trlyData[i].time[probe]/1E+9 + delta;
          timeStr = gm2fieldUtil::GetStringTimeStampFromUTC( (unsigned long)theTime ); 
 	 time.push_back(theTime); 
-	 std::cout << Form("Found stop at %s for event number %d",timeStr.c_str(),i) << std::endl;
+	 std::cout << Form("Found stop at %s (%d) for event number %d",timeStr.c_str(),(int)theTime,i) << std::endl;
 	 i += 300; 
       }else{
 	 i++;

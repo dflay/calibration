@@ -1,5 +1,34 @@
 #include "../include/CustomImport.h"
 //______________________________________________________________________________
+int LoadTRLYSwapTimes(int probe,std::vector<double> &time){
+   // load in the by-hand determined swap times 
+   std::vector<std::string> stime;
+   unsigned long int aTime;
+   std::string st;
+   char inpath[200];
+   sprintf(inpath,"./input/swap-times/tr-%02d.txt",probe);
+   std::ifstream infile;
+   infile.open(inpath);
+   if( infile.fail() ){
+      std::cout << "Cannot open the file: " << inpath << std::endl;
+      return 1;
+   }else{
+      while( !infile.eof() ){
+         std::getline(infile,st);
+         aTime = gm2fieldUtil::GetUTCTimeStampFromString(st,true);
+         stime.push_back(st);
+         time.push_back(aTime);
+      }
+      time.pop_back();
+      infile.close();
+   }
+
+   const int N = time.size();
+   for(int i=0;i<N;i++) std::cout << Form("%s (%.0lf)",stime[i].c_str(),time[i]) << std::endl;
+
+   return 0;
+}
+//______________________________________________________________________________
 int LoadResultsProdData(const char *inpath,result_prod_t &data){
 
    const int NLines = 1;

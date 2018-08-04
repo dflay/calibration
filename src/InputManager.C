@@ -15,7 +15,8 @@ int InputManager::Init(){
    fUseP2PFit       = false; 
    fIsFinalLocation = false;
    fIsFreeProton    = false; 
-   fUseAxis         = false; 
+   fUseAxis         = false;
+   fLoadSwapTime    = false; 
    fTrolleyProbe    = -1; 
    fAxis            = -1;
    fFXPRListTag     = -1;
@@ -96,7 +97,8 @@ int InputManager::Parse(){
    bool blindStatus = DoesKeyExist("blinding"); 
    bool trlyStatus  = DoesKeyExist("trly-probe");
    bool fxprStatus  = DoesKeyExist("fxpr-set"); 
-   bool fitStatus   = DoesKeyExist("fit");  
+   bool fitStatus   = DoesKeyExist("fit"); 
+   bool swapStatus  = DoesKeyExist("load-trly-swap-times");  
 
    // parameters common to all 
    if(dateStatus)  fAnaDate      = fParams["date"];
@@ -116,9 +118,10 @@ int InputManager::Parse(){
    if( fType.compare("calib-prod")==0 ){
       if(axisStatus) fAxis         = (int)fParams["axis"];
       if(protStatus) fIsFreeProton = (bool)( (int)fParams["free-proton-cor"] );  
-      if(fitStatus)  fFitFunc      = fParams["fit"]; 
+      if(fitStatus)  fFitFunc      = fParams["fit"];
+      if(swapStatus) fLoadSwapTime = (bool)( (int)fParams["load-trly-swap-times"] ); 
    }
-  
+ 
    // simple input format (i.e., rapid swapping data from 6/1)  
    if( fType.compare("is-simple")==0 ){
       fIsSimple                      = true;
@@ -143,20 +146,21 @@ int InputManager::Print(){
    if(fAxis==1) axis = 'y'; 
    if(fAxis==2) axis = 'z'; 
    std::cout << "------------------- Input Manager -------------------" << std::endl;
-   std::cout << "Is blinded:        " << fIsBlind         << std::endl;
-   std::cout << "Trolley probe:     " << fTrolleyProbe    << std::endl;
+   std::cout << "Is blinded:         " << fIsBlind         << std::endl;
+   std::cout << "Trolley probe:      " << fTrolleyProbe    << std::endl;
    if(fType.compare("calib-prod")==0){
-	 std::cout << "Axis:              " << fAxis << " (" << axis << ")" << std::endl;
+	 std::cout << "Axis:               " << fAxis << " (" << axis << ")" << std::endl;
+         std::cout << "Load TRLY swap time " << fLoadSwapTime << std::endl;
    }else{
       if(fIsSimple){
-	 std::cout << "FXPR set:          " << fFXPRListTag     << std::endl;
+	 std::cout << "FXPR set:           " << fFXPRListTag     << std::endl;
       }else if(!fIsSimple){
-	 std::cout << "Is full analysis:  " << fIsFullAnalysis  << std::endl;
-	 std::cout << "Is final location: " << fIsFinalLocation << std::endl;
-	 std::cout << "Use P2P fit:       " << fUseP2PFit       << std::endl;
-	 std::cout << "Analysis date:     " << fAnaDate         << std::endl;
-	 std::cout << "Fit function:      " << fFitFunc         << std::endl;
-	 std::cout << "Axis:              " << fAxis            << " (" << axis << ")" << std::endl;
+	 std::cout << "Is full analysis:   " << fIsFullAnalysis  << std::endl;
+	 std::cout << "Is final location:  " << fIsFinalLocation << std::endl;
+	 std::cout << "Use P2P fit:        " << fUseP2PFit       << std::endl;
+	 std::cout << "Analysis date:      " << fAnaDate         << std::endl;
+	 std::cout << "Fit function:       " << fFitFunc         << std::endl;
+	 std::cout << "Axis:               " << fAxis            << " (" << axis << ")" << std::endl;
       }
    }
    int N = fRunList.size(); 

@@ -25,6 +25,7 @@
 #include "./include/trolleyAnaEvent.h"
 
 #include "./src/FitFuncs.C"
+#include "./src/TRLYFuncs.C"
 #include "./src/FXPRFuncs.C"
 #include "./src/Consolidate.C"
 #include "./src/CustomMath.C"
@@ -44,6 +45,8 @@ int PlotTRLY(){
    std::cin  >> run; 
    std::cout << "Enter probe: "; 
    std::cin  >> probe; 
+
+   probe -= 1; 
 
    // fixed probe data
    std::string fxprPath = "./input/probe-lists/fxpr-list_set-2.csv"; 

@@ -76,7 +76,8 @@ def writeConfigFileProd(data,tag,keyList,axis,fitData,outpath):
    outData['blinding']        = data['blinding'] 
    outData['trly-probe']      = data['trly-probe'] 
    outData['fxpr-set']        = data['fxpr-set']
-   outData['free-proton-cor'] = data['free-proton-cor']  
+   outData['free-proton-cor'] = data['free-proton-cor'] 
+   outData['load-trly-swap-times'] = data['load-trly-swap-times'] 
    if(fitData): 
       outData['fit'] = data[tag]['fit']  
    else: 
