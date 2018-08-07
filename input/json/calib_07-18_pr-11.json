@@ -6,6 +6,8 @@
 "type"                : "calib-prod",
 "free-proton-cor"     : true,
 "load-trly-swap-times": true,
+"load-trly-scc-times" : true,
+"use-aba-time-weight" : true,
 "dB-pp_x"             : {"midas-runs": [5589] }, 
 "dB-pp_y"             : {"midas-runs": [5596] }, 
 "dB-pp_z"             : {"midas-runs": [5591] }, 

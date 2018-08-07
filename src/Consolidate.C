@@ -297,6 +297,7 @@ int ModifyPlungingProbeData(int method,plungingProbeAnaEvent_t &Data){
       return 1;
    }
 
+   Data.numTraces = N; 
    for(int i=0;i<N;i++) Data.freq[i] = inData[i].freq[method];
 
    return 0;

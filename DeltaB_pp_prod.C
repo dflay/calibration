@@ -58,10 +58,11 @@ int DeltaB_pp_prod(std::string configFile){
    inputMgr->Load(configFile);
    inputMgr->Print();
 
-   std::string date = inputMgr->GetAnalysisDate();
-   bool isBlind     = inputMgr->IsBlind();
-   int probeNumber  = inputMgr->GetTrolleyProbe();
-   int axis         = inputMgr->GetAxis();
+   std::string date   = inputMgr->GetAnalysisDate();
+   bool isBlind       = inputMgr->IsBlind();
+   bool useTimeWeight = inputMgr->GetTimeWeightStatus(); 
+   int probeNumber    = inputMgr->GetTrolleyProbe();
+   int axis           = inputMgr->GetAxis();
 
    date_t theDate; 
    GetDate(theDate);
@@ -167,9 +168,9 @@ int DeltaB_pp_prod(std::string configFile){
    // ABA difference (bare first) 
    std::vector<double> diff_aba,diffErr_aba;
    if(sccStartOn){
-      rc = GetDifference_ABA_sccFirst(scc,sccErr,bare,bareErr,diff_aba,diffErr_aba);  
+      rc = GetDifference_ABA_sccFirst(useTimeWeight,sccTime,scc,sccErr,bareTime,bare,bareErr,diff_aba,diffErr_aba);  
    }else{
-      rc = GetDifference_ABA(scc,sccErr,bare,bareErr,diff_aba,diffErr_aba);  
+      rc = GetDifference_ABA(useTimeWeight,sccTime,scc,sccErr,bareTime,bare,bareErr,diff_aba,diffErr_aba);  
    }
 
    double mean_aba  = gm2fieldUtil::Math::GetMean<double>(diff_aba); 
@@ -256,19 +257,21 @@ int DeltaB_pp_prod(std::string configFile){
 
    c1->cd(1);
    mgPP->Draw("alp");
-   gm2fieldUtil::Graph::SetGraphLabels(mgPP,"PP Data","","Frequency (Hz)"); 
+   gm2fieldUtil::Graph::SetGraphLabels(mgPP,"PP Data (Bare = Black, Red = SCC)","","Frequency (Hz)"); 
    gm2fieldUtil::Graph::UseTimeDisplay(mgPP);
+   gm2fieldUtil::Graph::SetGraphLabelSizes(mgPP,0.05,0.06);  
    // mgPP_bare->GetXaxis()->SetLimits(xMin_bare,xMax_bare); 
    mgPP->Draw("alp");
-   L->Draw("same"); 
+   // L->Draw("same"); 
    c1->Update();
 
    c1->cd(2);
    mgDiff->Draw("alp");
-   gm2fieldUtil::Graph::SetGraphLabels(mgDiff,"SCC-Bare","Trial","Frequency Difference (Hz)"); 
+   gm2fieldUtil::Graph::SetGraphLabels(mgDiff,"SCC-Bare (Raw = Blue, ABA = Green)","Trial","Frequency Difference (Hz)");
+   gm2fieldUtil::Graph::SetGraphLabelSizes(mgDiff,0.05,0.06);  
    // mgPP_bare->GetXaxis()->SetLimits(xMin_bare,xMax_bare); 
    mgDiff->Draw("alp");
-   LD->Draw("same"); 
+   // LD->Draw("same"); 
    c1->Update();
 
    c1->cd();
@@ -276,15 +279,18 @@ int DeltaB_pp_prod(std::string configFile){
    c1->Print(plotPath);
    delete c1;  
 
-   TGraph *gSCCb = GetSCCPlot(0,sccData);
-   TGraph *gSCCt = GetSCCPlot(1,sccData);
+   TGraph *gSCCb = GetSCCPlot( 0,sccData);
+   TGraph *gSCCt = GetSCCPlot( 1,sccData);
+   TGraph *gSCCa = GetSCCPlot(-1,sccData);
 
    gm2fieldUtil::Graph::SetGraphParameters(gSCCb,20,kBlack);
    gm2fieldUtil::Graph::SetGraphParameters(gSCCt,20,kRed  );
+   gm2fieldUtil::Graph::SetGraphParameters(gSCCa,20,kBlue );
 
    TMultiGraph *mgSCC = new TMultiGraph();
    mgSCC->Add(gSCCb,"lp"); 
    mgSCC->Add(gSCCt,"lp");
+   mgSCC->Add(gSCCa,"lp");
 
    TCanvas *c2 = new TCanvas("c2","SCC Data",1200,600);
    c2->cd();

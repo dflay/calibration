@@ -54,15 +54,17 @@ int CalculateTRLYAvg_Stationary(int probeNumber,std::vector<trolleyAnaEvent_t> E
 // Difference calculations 
 int GetDifference(std::vector<double> scc ,std::vector<double> scc_err,
                   std::vector<double> bare,std::vector<double> bare_err,
-                  std::vector<double> &diff,std::vector<double> &diff_err); 
+                  std::vector<double> &diff,std::vector<double> &diff_err);
 
-int GetDifference_ABA(std::vector<double> scc ,std::vector<double> scc_err,
-                      std::vector<double> bare,std::vector<double> bare_err,
+int GetDifference_ABA(bool useTimeWeight,
+                      std::vector<double> sccTime ,std::vector<double> scc ,std::vector<double> scc_err,
+                      std::vector<double> bareTime,std::vector<double> bare,std::vector<double> bare_err,
                       std::vector<double> &diff_aba,std::vector<double> &diff_aba_err); 
 
-int GetDifference_ABA_sccFirst(std::vector<double> scc ,std::vector<double> scc_err,
-                               std::vector<double> bare,std::vector<double> bare_err,
-                               std::vector<double> &diff_aba,std::vector<double> &diff_aba_err); 
+int GetDifference_ABA_sccFirst(bool useTimeWeight,
+                               std::vector<double> sccTime ,std::vector<double> scc ,std::vector<double> scc_err,
+                               std::vector<double> bareTime,std::vector<double> bare,std::vector<double> bare_err,
+                               std::vector<double> &diff_aba,std::vector<double> &diff_aba_err);
 
 // PP functions 
 int CalculateAveragePP(std::vector<plungingProbeAnaEvent_t> ppData,double &B,double &B_err); 

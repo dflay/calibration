@@ -22,7 +22,8 @@ int ImportDeltaBFileList_csv(const char *inpath,
                     std::vector<int> &x1,std::vector<std::string> &x2,
                     std::vector<double> &x3); 
 
-int LoadTRLYSwapTimes(int probe,std::vector<double> &time); 
+int LoadTRLYSCCTimes(int probe,std::vector<double> &sccOff,std::vector<double> &sccOn); 
+int LoadTRLYTimes(int probe,std::string type,std::vector<double> &time); 
 int LoadResultsProdData(const char *inpath,result_prod_t &data); 
 int LoadMisalignmentData(const char *inpath,misalignment_t &data); 
 int LoadCalibSwapData(const char *inpath,std::vector<calibSwap_t> &data);
@@ -37,6 +38,7 @@ int LoadGradientData(const char *inpath,grad_meas_t &x);
 int LoadGradientData(const char *inpath,std::vector<grad_meas_t> &x);
 int LoadDeltaBData(const char *inpath,std::vector<deltab_t> &x);
 int LoadDeltaBData_trlyXY(const char *inpath,int probe,std::vector<deltab_t> &x); 
+int LoadDeltaBData_trlyXYZ(const char *inpath,int probe,std::vector<deltab_t> &x); 
 
 int FindStartIndexTRLY(std::string date,int runNumber);
 int LoadBlinding(blind_t *data); 

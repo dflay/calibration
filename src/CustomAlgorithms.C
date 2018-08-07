@@ -214,25 +214,36 @@ int GetDifference(std::vector<double> scc ,std::vector<double> scc_err,
    return 0;
 }
 //______________________________________________________________________________
-int GetDifference_ABA(std::vector<double> scc ,std::vector<double> scc_err,
-                      std::vector<double> bare,std::vector<double> bare_err,
+int GetDifference_ABA(bool useTimeWeight,
+                      std::vector<double> sccTime ,std::vector<double> scc ,std::vector<double> scc_err,
+                      std::vector<double> bareTime,std::vector<double> bare,std::vector<double> bare_err,
                       std::vector<double> &diff_aba,std::vector<double> &diff_aba_err){
 
    // WARNING: This assumes that the bare measurement comes first!
 
+   double w=0,w_prev=0;
+   double dt_tot=0;
    double diff=0,diff_err=0;
    double diff_prev=0,diff_prev_err=0;
    double arg=0,arg_err=0;
    const int N = bare.size();
    for(int i=1;i<N;i++){
+      dt_tot        = bareTime[i]-bareTime[i-1]; 
+      w             = TMath::Abs(sccTime[i-1]-bareTime[i-1])/dt_tot;
+      w_prev        = TMath::Abs(sccTime[i-1]-bareTime[i])/dt_tot;
       // first compute the difference 
       diff_prev     = scc[i-1] - bare[i-1];
       diff_prev_err = TMath::Sqrt(scc_err[i-1]*scc_err[i-1] + bare_err[i-1]*bare_err[i-1]);
       diff          = scc[i-1] - bare[i];
       diff_err      = TMath::Sqrt(scc_err[i-1]*scc_err[i-1] + bare_err[i]*bare_err[i]);
       // now get the ABA difference 
-      arg     = 0.5*(diff + diff_prev);
-      arg_err = 0.5*(diff_err + diff_prev_err);
+      if(useTimeWeight){
+	 arg     = w*diff     + w_prev*diff_prev;
+	 arg_err = w*diff_err + w_prev*diff_prev_err;
+      }else{
+	 arg     = 0.5*(diff     + diff_prev);
+	 arg_err = 0.5*(diff_err + diff_prev_err);
+      }
       // std::cout << Form("Trial %d: bare1 = %.3lf +/- %.3lf Hz, scc = %.3lf +/- %.3lf Hz, bare2 = %.3lf +/- %.3lf Hz, diff = %.3lf +/- %.3lf Hz",
       //                   i,bare[i-1],bare_err[i-1],scc[i-1],scc_err[i-1],bare[i],bare_err[i],arg,arg_err) << std::endl;
       // store result 
@@ -242,25 +253,34 @@ int GetDifference_ABA(std::vector<double> scc ,std::vector<double> scc_err,
    return 0;
 }
 //______________________________________________________________________________
-int GetDifference_ABA_sccFirst(std::vector<double> scc ,std::vector<double> scc_err,
-                               std::vector<double> bare,std::vector<double> bare_err,
+int GetDifference_ABA_sccFirst(bool useTimeWeight,
+                               std::vector<double> sccTime ,std::vector<double> scc ,std::vector<double> scc_err,
+                               std::vector<double> bareTime,std::vector<double> bare,std::vector<double> bare_err,
                                std::vector<double> &diff_aba,std::vector<double> &diff_aba_err){
 
    // WARNING: This assumes that the scc measurement comes first!
-
+   double w=0,w_prev=0,dt_tot=0;
    double diff=0,diff_err=0;
    double diff_prev=0,diff_prev_err=0;
    double arg=0,arg_err=0;
    const int N = bare.size();
    for(int i=1;i<N;i++){
+      dt_tot        = sccTime[i]-sccTime[i-1]; 
+      w             = TMath::Abs(sccTime[i-1]-bareTime[i-1])/dt_tot;
+      w_prev        = TMath::Abs(sccTime[i]-bareTime[i-1])/dt_tot;
       // first compute the difference 
       diff_prev     = scc[i-1] - bare[i-1];
       diff_prev_err = TMath::Sqrt(scc_err[i-1]*scc_err[i-1] + bare_err[i-1]*bare_err[i-1]);
       diff          = scc[i] - bare[i-1];
       diff_err      = TMath::Sqrt(scc_err[i]*scc_err[i] + bare_err[i-1]*bare_err[i-1]);
-      // now get the ABA difference 
-      arg     = 0.5*(diff + diff_prev);
-      arg_err = 0.5*(diff_err + diff_prev_err);
+      // now get the ABA difference
+      if(useTimeWeight){
+	 arg     = w*diff     + w_prev*diff_prev;
+	 arg_err = w*diff_err + w_prev*diff_prev_err;
+      }else{ 
+	 arg     = 0.5*(diff     + diff_prev);
+	 arg_err = 0.5*(diff_err + diff_prev_err);
+      }
       // std::cout << Form("Trial %d: scc1 = %.3lf +/- %.3lf Hz, bare = %.3lf +/- %.3lf Hz, scc2 = %.3lf +/- %.3lf Hz, diff = %.3lf +/- %.3lf Hz",
       //                   i,scc[i-1],scc_err[i-1],bare[i-1],bare_err[i-1],scc[i],scc_err[i],arg,arg_err) << std::endl;
       // store result 

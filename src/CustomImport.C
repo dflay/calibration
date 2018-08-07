@@ -1,12 +1,27 @@
 #include "../include/CustomImport.h"
 //______________________________________________________________________________
-int LoadTRLYSwapTimes(int probe,std::vector<double> &time){
+int LoadTRLYSCCTimes(int probe,std::vector<double> &sccOff,std::vector<double> &sccOn){
+   // load in the by-hand determined SCC times 
+   std::vector<double> time;
+   int rc = LoadTRLYTimes(probe,"scc",time); 
+   // now fill the vectors appropriately 
+   int N = time.size();
+   for(int i=0;i<N;i++){
+      // odd -- SCC is on 
+      if(i%2!=0) sccOn.push_back(time[i]);
+      // even -- SCC is off 
+      if(i%2==0) sccOff.push_back(time[i]);
+   }
+   return 0;
+}
+//______________________________________________________________________________
+int LoadTRLYTimes(int probe,std::string type,std::vector<double> &time){
    // load in the by-hand determined swap times 
    std::vector<std::string> stime;
    unsigned long int aTime;
    std::string st;
    char inpath[200];
-   sprintf(inpath,"./input/swap-times/tr-%02d.txt",probe);
+   sprintf(inpath,"./input/%s-times/tr-%02d.txt",type.c_str(),probe);
    std::ifstream infile;
    infile.open(inpath);
    if( infile.fail() ){
@@ -60,8 +75,8 @@ int LoadResultsProdData(const char *inpath,result_prod_t &data){
       infile.close();
    }
 
-   std::cout << data.diff     << " +/- " << data.diffErr     << std::endl; 
-   std::cout << data.diff_aba << " +/- " << data.diffErr_aba << std::endl; 
+   // std::cout << data.diff     << " +/- " << data.diffErr     << std::endl; 
+   // std::cout << data.diff_aba << " +/- " << data.diffErr_aba << std::endl; 
 
    return 0;
 }
@@ -303,19 +318,24 @@ int ImportNMRANAData(const char *inpath,std::vector<nmrAnaEvent_t> &Data){
       // for(int i=0;i<1;i++) infile.getline(buf,MAX);
       while( !infile.eof() ){
          infile >> irun >> ipulse >> ivmax >> inoise >> izc >> inc >> ifa >> ifb >> ifc >> ifa_ph >> ifb_ph >> ifc_ph;
-         inData.run     = irun;
-         inData.ampl    = ivmax;
-         inData.noise   = inoise;
-         inData.pulse   = ipulse; 
-         inData.zc      = izc; 
-         inData.nc      = inc; 
-         inData.freq[0] = ifa;
-         inData.freq[1] = ifb;
-         inData.freq[2] = ifc;
-         inData.freq[3] = ifa_ph;
-         inData.freq[4] = ifb_ph;
-         inData.freq[5] = ifc_ph;
-         Data.push_back(inData);
+         if( izc>10&&ifc_ph>0 && (ivmax>0.5&&ivmax<1.5) ){
+	    inData.run     = irun;
+	    inData.ampl    = ivmax;
+	    inData.noise   = inoise;
+	    inData.pulse   = ipulse; 
+	    inData.zc      = izc; 
+	    inData.nc      = inc; 
+	    inData.freq[0] = ifa;
+	    inData.freq[1] = ifb;
+	    inData.freq[2] = ifc;
+	    inData.freq[3] = ifa_ph;
+	    inData.freq[4] = ifb_ph;
+	    inData.freq[5] = ifc_ph;
+	    Data.push_back(inData);
+         }else{
+           std::cout << "[ImportData]: Warning: rejected pulse "            << ipulse
+                     << " because number of zero crossings is less than 10" << std::endl;
+         }
       }
       infile.close();
       Data.pop_back();
@@ -586,6 +606,84 @@ int LoadGradientData(const char *inpath,std::vector<grad_meas_t> &x){
    //              << x[i].grad      << " +/- " << x[i].grad_err      << " " 
    //              << x[i].grad_fxpr << " +/- " << x[i].grad_fxpr_err << " " 
    //              << x[i].grad_trly << " +/- " << x[i].grad_trly_err << std::endl;
+   // }
+   // std::cout << "--------------" << std::endl; 
+
+   return 0;
+}
+//______________________________________________________________________________
+int LoadDeltaBData_trlyXYZ(const char *inpath,int probe,std::vector<deltab_t> &x){
+
+   int ipr=0;
+   deltab_t data;
+   std::string stp,s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11,s12;
+
+   ifstream infile;
+   infile.open(inpath);
+   if( infile.fail() ){
+      cout << "Cannot open the file: " << inpath << endl;
+      return 1;
+   }else{
+      while( !infile.eof() ){
+         std::getline(infile,stp,',');
+         std::getline(infile,s1 ,',');
+         std::getline(infile,s2 ,',');
+         std::getline(infile,s3 ,',');
+         std::getline(infile,s4 ,',');
+         std::getline(infile,s5 ,',');
+         std::getline(infile,s6 ,',');
+         std::getline(infile,s7 ,',');
+         std::getline(infile,s8 ,',');
+         std::getline(infile,s9 ,',');
+         std::getline(infile,s10,',');
+         std::getline(infile,s11,',');
+         std::getline(infile,s12);
+         ipr = std::atoi( stp.c_str() );
+	 // std::cout << "PROBE " << ipr << std::endl;
+         if(ipr==probe){
+	    // std::cout << "--> MATCH" << std::endl;
+	    // radial 
+	    data.name = "rad-grad";
+	    data.dB             = std::atof( s1.c_str()  );
+	    data.dB_err         = std::atof( s2.c_str()  );
+	    data.dB_fxpr        = std::atof( s3.c_str()  );
+	    data.dB_fxpr_err    = std::atof( s4.c_str()  );
+	    data.dB_trly        = 0;
+	    data.dB_trly_err    = 0;
+	    x.push_back(data);
+	    // vertical 
+	    data.name = "vert-grad";
+	    data.dB             = std::atof( s5.c_str()  );
+	    data.dB_err         = std::atof( s6.c_str()  );
+	    data.dB_fxpr        = std::atof( s7.c_str()  );
+	    data.dB_fxpr_err    = std::atof( s8.c_str()  );
+	    data.dB_trly        = 0;
+	    data.dB_trly_err    = 0;
+	    x.push_back(data);
+	    // azimuthal 
+	    data.name = "azi";
+	    data.dB             = std::atof( s9.c_str()  );
+	    data.dB_err         = std::atof( s10.c_str()  );
+	    data.dB_fxpr        = std::atof( s11.c_str()  );
+	    data.dB_fxpr_err    = std::atof( s12.c_str()  );
+	    data.dB_trly        = 0;
+	    data.dB_trly_err    = 0;
+	    x.push_back(data);
+	 }
+      }
+      infile.close();
+      // x.pop_back();
+   }
+
+   // const int N = x.size();
+   // std::cout << N << " entries found" << std::endl;
+   // for(int i=0;i<N;i++){
+   //    std::cout << x[i].name << " " 
+   //              << x[i].dB         << " +/- " << x[i].dB_err         << " " 
+   //              << x[i].dB_fxpr    << " +/- " << x[i].dB_fxpr_err    << " " 
+   //              << x[i].dB_trly    << " +/- " << x[i].dB_trly_err    << " " 
+   //              << x[i].drift_fxpr << " +/- " << x[i].drift_fxpr_err << " " 
+   //              << x[i].drift_trly << " +/- " << x[i].drift_trly_err << std::endl;
    // }
    // std::cout << "--------------" << std::endl; 
 

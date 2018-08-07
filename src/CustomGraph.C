@@ -451,7 +451,7 @@ TGraph *GetSCCPlot(int type,std::vector<gm2field::surfaceCoils_t> data){
       for(int j=0;j<M;j++){
          if(type==0)  sum += data[i].BotCurrents[j];
          if(type==1)  sum += data[i].TopCurrents[j];
-         if(type==-1) sum += data[i].AzCurrents[j];
+         if(type==-1) sum  = data[i].AzCurrents[0];
       }
       if(type==0)  x.push_back( data[i].BotTime[0]/1E+9 );
       if(type==1)  x.push_back( data[i].TopTime[0]/1E+9 );

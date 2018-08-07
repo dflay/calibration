@@ -56,22 +56,32 @@ int DeltaB_trly_prod(std::string configFile){
    inputMgr->Load(configFile);
    inputMgr->Print();
 
-   std::string date = inputMgr->GetAnalysisDate();
-   bool isBlind     = inputMgr->IsBlind();
-   int probeNumber  = inputMgr->GetTrolleyProbe();
-   int axis         = inputMgr->GetAxis();
+   std::string date   = inputMgr->GetAnalysisDate();
+   bool isBlind       = inputMgr->IsBlind();
+   bool useTimeWeight = inputMgr->GetTimeWeightStatus();  
+   bool loadTimes     = inputMgr->GetSCCTimeStatus(); 
+   int probeNumber    = inputMgr->GetTrolleyProbe();
+   int axis           = inputMgr->GetAxis();
 
    date_t theDate; 
    GetDate(theDate);
 
-   blind_t blind; 
-   ImportBlinding(blind);
-   double blindValue = blind.value_tr; 
+   char outpath[200],outdir[200];
 
+   if(isBlind)  sprintf(outdir,"./output/blinded/%s"  ,theDate.getDateString().c_str()); 
+   if(!isBlind) sprintf(outdir,"./output/unblinded/%s",theDate.getDateString().c_str());
+ 
    std::string gradName;
    if(axis==0) gradName = "rad"; 
    if(axis==1) gradName = "vert"; 
-   if(axis==2) gradName = "azi"; 
+   if(axis==2) gradName = "azi";
+
+   rc = MakeDirectory(outdir); 
+   sprintf(outpath,"%s/dB-trly_final-location_%s-grad_pr-%02d_%s.csv"  ,outdir,gradName.c_str(),probeNumber,date.c_str());
+
+   blind_t blind; 
+   ImportBlinding(blind);
+   double blindValue = blind.value_tr; 
 
    std::vector<int> run;
    std::vector<std::string> label;
@@ -84,26 +94,65 @@ int DeltaB_trly_prod(std::string configFile){
       return 1;
    }
 
+   bool loadOnline = false; 
+   for(int i=0;i<NRUN;i++){
+      if(run[i]==-1){
+	 loadOnline = true;
+         std::cout << "Will load online Delta-B value" << std::endl;
+      }
+   }
+
+   int coilSet  = 0;
+   double thr   = 10E-3;         // in A 
+   double delta = 2.*60. + 40.;  // 2 min 40 sec   // for x, y 
+   
+   if(axis==2){
+      coilSet = -1;
+      delta = 1.*60.;
+   }
+
    // determine the correct ordering of the SCC on/off cycles 
    std::vector<gm2field::surfaceCoils_t> sccData;
    for(int i=0;i<NRUN;i++) rc = gm2fieldUtil::RootHelper::GetSCCData(run[i],sccData);
    if(rc!=0) return 1; 
-
-   int coilSet  = 0;
-   if(axis==2) coilSet = -1;
- 
-   double thr   = 10E-3;         // in A 
-   double delta = 2.*60. + 40.;  // 2 min 40 sec   // for x, y 
-   if(axis==2) delta = 60.;  
-   std::vector<double> sccOff,sccOn;
-   rc = FindTransitionTimes(coilSet,thr,delta,sccData,sccOff,sccOn);
-   if(rc<0){
-      std::cout << "No SCC transitions!" << std::endl;
-      return 1;
-   }
-
+   
    bool sccStartOn = false; 
-   if(rc==1) sccStartOn = true;
+   std::vector<double> sccOff,sccOn;
+  
+   std::vector<deltab_t> trly_dB; 
+
+   char inpath_db[200];
+   sprintf(inpath_db,"./input/delta-b/trly_xyz_07-18.csv");
+
+   double dB[3]        = {0,0,0}; 
+   double dB_err[3]    = {0,0,0};
+   double drift[3]     = {0,0,0};  
+   double drift_err[3] = {0,0,0};  
+
+   if(loadOnline){
+      // use online results since we don't have a run to work with 
+      rc = LoadDeltaBData_trlyXYZ(inpath_db,probeNumber,trly_dB);
+      dB[0] = trly_dB[axis].dB; 
+      dB[1] = trly_dB[axis].dB_fxpr; 
+      dB[2] = 0.; 
+      dB_err[0] = trly_dB[axis].dB_err; 
+      dB_err[1] = trly_dB[axis].dB_fxpr_err; 
+      dB_err[2] = 0.; 
+      rc = PrintToFile(outpath,gradName,dB,dB_err,drift,drift_err); 
+   }else{
+      if(loadTimes){
+	 // better to use pre-defined transition times   
+	 rc = LoadTRLYSCCTimes(probeNumber,sccOff,sccOn);
+	 if(sccOn[0]<sccOff[0]) sccStartOn = true;
+      }else{
+	 rc = FindTransitionTimes(coilSet,thr,delta,sccData,sccOff,sccOn);
+	 if(rc<0){
+	    std::cout << "No SCC transitions!" << std::endl;
+	    return 1;
+	 }
+	 if(rc==1) sccStartOn = true;
+      }
+   }
 
    if(sccStartOn){
       std::cout << "SCC was ON to start the sequence" << std::endl;
@@ -163,9 +212,9 @@ int DeltaB_trly_prod(std::string configFile){
    // ABA difference (bare first) 
    std::vector<double> diff_aba,diffErr_aba;
    if(sccStartOn){
-      rc = GetDifference_ABA_sccFirst(scc,sccErr,bare,bareErr,diff_aba,diffErr_aba);  
+      rc = GetDifference_ABA_sccFirst(useTimeWeight,sccTime,scc,sccErr,bareTime,bare,bareErr,diff_aba,diffErr_aba);  
    }else{
-      rc = GetDifference_ABA(scc,sccErr,bare,bareErr,diff_aba,diffErr_aba);  
+      rc = GetDifference_ABA(useTimeWeight,sccTime,scc,sccErr,bareTime,bare,bareErr,diff_aba,diffErr_aba);  
    }
 
    double mean_aba  = gm2fieldUtil::Math::GetMean<double>(diff_aba); 
@@ -185,32 +234,25 @@ int DeltaB_trly_prod(std::string configFile){
       stdev_aba = 0;
    }
 
-   double dB[3]        = {0,0,0}; 
-   double dB_err[3]    = {0,0,0};
-   double drift[3]     = {0,0,0};  
-   double drift_err[3] = {0,0,0};  
-
    dB[0]     = mean;
    dB_err[0] = stdev;
 
    dB[1]     = mean_aba;
    dB_err[1] = stdev_aba;  
-
    
    // Plots
 
    TGraph *gTR               = GetTRLYTGraph(probeNumber-1,"GpsTimeStamp","freq",trlyData);
-  
    TGraphErrors *gTRLY_bare  = gm2fieldUtil::Graph::GetTGraphErrors(bareTime ,bare      ,bareErr      );
    TGraphErrors *gTRLY_scc   = gm2fieldUtil::Graph::GetTGraphErrors(sccTime  ,scc       ,sccErr       );
    TGraphErrors *gDiff       = gm2fieldUtil::Graph::GetTGraphErrors(trial    ,diff      ,diffErr      );  
    TGraphErrors *gDiff_aba   = gm2fieldUtil::Graph::GetTGraphErrors(trial_aba,diff_aba  ,diffErr_aba  );  
 
-   gm2fieldUtil::Graph::SetGraphParameters(gTR        ,20,kBlack  );
-   gm2fieldUtil::Graph::SetGraphParameters(gTRLY_bare ,20,kBlack  );
-   gm2fieldUtil::Graph::SetGraphParameters(gTRLY_scc  ,20,kRed    );
-   gm2fieldUtil::Graph::SetGraphParameters(gDiff      ,20,kBlue   );
-   gm2fieldUtil::Graph::SetGraphParameters(gDiff_aba  ,20,kGreen+2);
+   gm2fieldUtil::Graph::SetGraphParameters(gTR       ,20,kBlack  );
+   gm2fieldUtil::Graph::SetGraphParameters(gTRLY_bare,20,kBlack  );
+   gm2fieldUtil::Graph::SetGraphParameters(gTRLY_scc ,20,kRed    );
+   gm2fieldUtil::Graph::SetGraphParameters(gDiff     ,20,kBlue   );
+   gm2fieldUtil::Graph::SetGraphParameters(gDiff_aba ,20,kGreen+2);
 
    TMultiGraph *mgTRLY = new TMultiGraph();
    mgTRLY->Add(gTRLY_bare,"lp");
@@ -219,14 +261,6 @@ int DeltaB_trly_prod(std::string configFile){
    TMultiGraph *mgDiff = new TMultiGraph();
    mgDiff->Add(gDiff      ,"lp");
    mgDiff->Add(gDiff_aba  ,"lp");
-
-   TLegend *L = new TLegend(0.6,0.6,0.8,0.8); 
-   L->AddEntry(gTRLY_bare   ,"Bare","p"); 
-   L->AddEntry(gTRLY_scc    ,"SCC" ,"p");
-   
-   TLegend *LD = new TLegend(0.6,0.6,0.8,0.8); 
-   LD->AddEntry(gDiff      ,"Raw"  ,"p");  
-   LD->AddEntry(gDiff_aba  ,"ABA"  ,"p");  
 
    std::cout << Form("====================== RESULTS FOR PROBE %02d ======================",probeNumber) << std::endl;
    std::cout << "Raw results: " << std::endl;
@@ -237,13 +271,6 @@ int DeltaB_trly_prod(std::string configFile){
    std::cout << Form("dB (%s): %.3lf +/- %.3lf Hz (%.3lf +/- %.3lf ppb)",gradName.c_str(),
                      dB[1],dB_err[1],dB[1]/0.06179,dB_err[1]/0.06179) << std::endl;
 
-   char outpath[200],outdir[200];
-
-   if(isBlind)  sprintf(outdir,"./output/blinded/%s"  ,theDate.getDateString().c_str()); 
-   if(!isBlind) sprintf(outdir,"./output/unblinded/%s",theDate.getDateString().c_str()); 
-
-   rc = MakeDirectory(outdir); 
-   sprintf(outpath,"%s/dB-trly_final-location_%s-grad_pr-%02d_%s.csv"  ,outdir,gradName.c_str(),probeNumber,date.c_str());
    rc = PrintToFile(outpath,gradName,dB,dB_err,drift,drift_err); 
 
    char plotDir[200];
@@ -256,19 +283,19 @@ int DeltaB_trly_prod(std::string configFile){
 
    c1->cd(1);
    mgTRLY->Draw("alp");
-   gm2fieldUtil::Graph::SetGraphLabels(mgTRLY,"TRLY Data","","Frequency (Hz)"); 
+   gm2fieldUtil::Graph::SetGraphLabels(mgTRLY,"TRLY Data (Bare = Black, Red = SCC)","","Frequency (Hz)"); 
    gm2fieldUtil::Graph::UseTimeDisplay(mgTRLY);
+   gm2fieldUtil::Graph::SetGraphLabelSizes(mgTRLY,0.05,0.06); 
    // mgTRLY_bare->GetXaxis()->SetLimits(xMin_bare,xMax_bare); 
    mgTRLY->Draw("alp");
-   L->Draw("same"); 
    c1->Update();
 
    c1->cd(2);
    mgDiff->Draw("alp");
-   gm2fieldUtil::Graph::SetGraphLabels(mgDiff,"SCC-Bare","Trial","Frequency Difference (Hz)"); 
+   gm2fieldUtil::Graph::SetGraphLabels(mgDiff,"SCC-Bare (Blue = Raw, Green = ABA)","Trial","Frequency Difference (Hz)"); 
+   gm2fieldUtil::Graph::SetGraphLabelSizes(mgDiff,0.05,0.06); 
    // mgTRLY_bare->GetXaxis()->SetLimits(xMin_bare,xMax_bare); 
    mgDiff->Draw("alp");
-   LD->Draw("same"); 
    c1->Update();
 
    c1->cd();

@@ -204,7 +204,7 @@ int LocalScanGrad_pp_prod(std::string configFile){
    g_cor->Fit(fitFunc.c_str(),"Q"); 
    c1->Update(); 
 
-   TString plotPath = Form("%s/pp-shimmed-scan-%s_run-%d.png",plotDir,Axis.c_str(),midasRun); 
+   TString plotPath = Form("%s/pp-shimmed-scan-%s_run-%d_pr-%02d.png",plotDir,Axis.c_str(),midasRun,probeNumber); 
    c1->cd();
    c1->Print(plotPath); 
 
@@ -218,7 +218,7 @@ int LocalScanGrad_pp_prod(std::string configFile){
    gFXPR->Draw("alp");
    c2->Update(); 
 
-   plotPath = Form("%s/pp-shimmed-scan_fxpr-avg_run-%d.png",plotDir,midasRun); 
+   plotPath = Form("%s/pp-shimmed-scan_fxpr-avg_run-%d_pr-%02d.png",plotDir,midasRun,probeNumber); 
    c2->cd();
    c2->Print(plotPath);
 

@@ -71,13 +71,15 @@ def writeConfigFileProd(data,tag,keyList,axis,fitData,outpath):
          runList.append(data[tag][key])   
          labelList.append(key) 
    outData = {} 
-   outData['type']            = data['type'] 
-   outData['date']            = data['date']
-   outData['blinding']        = data['blinding'] 
-   outData['trly-probe']      = data['trly-probe'] 
-   outData['fxpr-set']        = data['fxpr-set']
-   outData['free-proton-cor'] = data['free-proton-cor'] 
+   outData['type']                 = data['type'] 
+   outData['date']                 = data['date']
+   outData['blinding']             = data['blinding'] 
+   outData['trly-probe']           = data['trly-probe'] 
+   outData['fxpr-set']             = data['fxpr-set']
+   outData['free-proton-cor']      = data['free-proton-cor'] 
    outData['load-trly-swap-times'] = data['load-trly-swap-times'] 
+   outData['load-trly-scc-times']  = data['load-trly-scc-times'] 
+   outData['use-aba-time-weight']  = data['use-aba-time-weight']
    if(fitData): 
       outData['fit'] = data[tag]['fit']  
    else: 

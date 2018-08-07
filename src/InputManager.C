@@ -17,6 +17,8 @@ int InputManager::Init(){
    fIsFreeProton    = false; 
    fUseAxis         = false;
    fLoadSwapTime    = false; 
+   fLoadSCCTime     = false;
+   fUseTimeWeight   = false;  
    fTrolleyProbe    = -1; 
    fAxis            = -1;
    fFXPRListTag     = -1;
@@ -99,6 +101,8 @@ int InputManager::Parse(){
    bool fxprStatus  = DoesKeyExist("fxpr-set"); 
    bool fitStatus   = DoesKeyExist("fit"); 
    bool swapStatus  = DoesKeyExist("load-trly-swap-times");  
+   bool sccStatus   = DoesKeyExist("load-trly-scc-times");  
+   bool timeStatus  = DoesKeyExist("use-aba-time-weight");
 
    // parameters common to all 
    if(dateStatus)  fAnaDate      = fParams["date"];
@@ -116,10 +120,12 @@ int InputManager::Parse(){
    
    // calibration: production 
    if( fType.compare("calib-prod")==0 ){
-      if(axisStatus) fAxis         = (int)fParams["axis"];
-      if(protStatus) fIsFreeProton = (bool)( (int)fParams["free-proton-cor"] );  
-      if(fitStatus)  fFitFunc      = fParams["fit"];
-      if(swapStatus) fLoadSwapTime = (bool)( (int)fParams["load-trly-swap-times"] ); 
+      if(axisStatus) fAxis          = (int)fParams["axis"];
+      if(protStatus) fIsFreeProton  = (bool)( (int)fParams["free-proton-cor"] );  
+      if(fitStatus)  fFitFunc       = fParams["fit"];
+      if(swapStatus) fLoadSwapTime  = (bool)( (int)fParams["load-trly-swap-times"] ); 
+      if(sccStatus)  fLoadSCCTime   = (bool)( (int)fParams["load-trly-scc-times"] ); 
+      if(timeStatus) fUseTimeWeight = (bool)( (int)fParams["use-aba-time-weight"] ); 
    }
  
    // simple input format (i.e., rapid swapping data from 6/1)  
