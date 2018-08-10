@@ -47,6 +47,8 @@ int FillTRVector(int probe,TString axis,std::vector<trolleyAnaEvent_t> data,std:
 
 TGraphErrors *GetSCCTestGraphTRLY(int probe,TString xAxis,TString yAxis,std::vector< std::vector<sccTrlyEvent_t> > data);
 
+TGraphErrors *GetTRLYTGraph_aziScan(int probe,double thr,TString yAxis,std::vector<trolleyAnaEvent_t> data); 
+
 // fixed probe plots 
 TGraph *GetTGraphNew(int method,unsigned long long timeStart,unsigned long long timeStop,unsigned long long timeStep,
                   std::vector<int> fxprList,std::vector<gm2field::fixedProbeFrequency_t> fxprData);

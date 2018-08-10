@@ -122,6 +122,11 @@ int LocalScanGrad_pp_prod(std::string configFile){
       }
    }
 
+   if(NSR<3){
+      std::cout << "WARNING: Only two data points to fit!  Using a 1st-order polynomial instead of " << fitFunc << std::endl;
+      fitFunc = "pol1";
+   }
+
    // PP data 
    std::vector<plungingProbeAnaEvent_t> ppData,ppEvent,ppEventCor; 
    std::cout << "Getting run " << midasRun << std::endl; 

@@ -1,5 +1,21 @@
 #include "../include/CustomAlgorithms.h"
 //______________________________________________________________________________
+int GetWeightedAverageStats(std::vector<double> x,std::vector<double> dx,double &mean,double &err,double &stdev){
+   // get weighted mean, stdev of a data set x +/- dx
+   double arg=0;
+   const int N = x.size();
+   std::vector<double> weight;
+   for(int i=0;i<N;i++){
+      arg = 1./( dx[i]*dx[i] );
+      weight.push_back(arg);
+   }
+
+   int rc = gm2fieldUtil::Math::GetWeightedMean<double>(x,weight,mean,err);
+   stdev = gm2fieldUtil::Math::GetStandardDeviation<double>(x);
+
+   return 0;
+}
+//______________________________________________________________________________
 int FindGalilEvent(int probe,unsigned long long trlyTime,
                    std::vector<trolleyAnaEvent_t> trly,
                    std::vector<gm2field::galilTrolley_t> galil){
@@ -98,7 +114,7 @@ int FindTransitionTimes(int type,double thr,double delta,std::vector<gm2field::s
       if( TMath::Abs(sum-sum_prev)>thr ){
 	 // found a transition
 	 cntr++;
-	 if( (type>=0&&cntr>2) || type==-1){ 
+	 if( (type>=0&&cntr>0) || type==-1){  // FIXME: Why do we need the conter to be greater than 2 before??
 	    // now is it a time off or time on? 
 	    if( TMath::Abs(sum)<10E-3 ){  // 10 mA 
 	       timeOff.push_back(theTime+delta); 

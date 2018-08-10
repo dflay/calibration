@@ -474,3 +474,36 @@ int FillTRVector(int probe,TString axis,std::vector<trolleyAnaEvent_t> data,std:
    if(axis=="freq")         for(int i=0;i<N;i++) x.push_back( data[i].freq[probe]      );  
    return 0; 
 }
+//______________________________________________________________________________
+TGraphErrors *GetTRLYTGraph_aziScan(int probe,double thr,TString yAxis,std::vector<trolleyAnaEvent_t> data){
+   double v=0;
+   double v_prev = data[0].phi[probe]; 
+   double angle=0,mean=0,stdev=0;
+   std::vector<double> X,Y,x,y,ey; 
+   const int N = data.size();
+   for(int i=1;i<N;i++){
+      v = data[i].phi[probe]; 
+      if( TMath::Abs(v-v_prev)<thr ){
+	 // very close in angle, add to vector 
+	 angle = v;
+	 if(yAxis=="r")    Y.push_back( data[i].r[probe]         );  
+	 if(yAxis=="y")    Y.push_back( data[i].y[probe]         );  
+	 if(yAxis=="temp") Y.push_back( data[i].temp[probe]      );  
+	 if(yAxis=="freq") Y.push_back( data[i].freq[probe]      );  
+      }else{
+	 // outside threshold, average and move on 
+	 mean  = gm2fieldUtil::Math::GetMean<double>(Y); 
+	 stdev = gm2fieldUtil::Math::GetStandardDeviation<double>(Y);
+         x.push_back(angle);
+	 y.push_back(mean);
+	 ey.push_back(stdev);
+	 // clear vectors
+	 Y.clear();
+      }
+      v_prev = v; 
+   }
+   // make the plot 
+   TGraphErrors *g = gm2fieldUtil::Graph::GetTGraphErrors(x,y,ey);
+   return g;
+}
+
