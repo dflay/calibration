@@ -23,6 +23,27 @@ int PrintTRLYPositions(const char *outpath,std::vector<int> probe,
    return 0;
 }
 //______________________________________________________________________________
+int PrintToFile(const char *outpath,std::vector<std::string> label,std::vector<double> x){
+
+   char outStr[200]; 
+   const int N = label.size(); 
+
+   std::ofstream outfile;
+   outfile.open(outpath);
+   if( outfile.fail() ){
+      std::cout << "Cannot open the file: " << outpath << std::endl;
+      return 1;
+   }else{
+      for(int i=0;i<N;i++){
+	 sprintf(outStr,"%s,%.3lf",label[i].c_str(),x[i]);
+	 outfile << outStr << std::endl;
+      }
+      outfile.close();
+      std::cout << "The data has been written to the file: " << outpath << std::endl;
+   }
+   return 0;
+}
+//______________________________________________________________________________
 int PrintToFile(const char *outpath,std::vector<std::string> label,
                 std::vector<double> x1,std::vector<double> x2,
                 std::vector<double> x3,std::vector<double> x4){

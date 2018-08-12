@@ -25,6 +25,7 @@ int ImportDeltaBFileList_csv(const char *inpath,
 int LoadTRLYSCCTimes(int probe,std::vector<double> &sccOff,std::vector<double> &sccOn); 
 int LoadTRLYTimes(int probe,std::string type,std::vector<double> &time); 
 int LoadResultsProdData(const char *inpath,result_prod_t &data); 
+int LoadResultsProdFinalData(const char *inpath,result_prod_t &data); 
 int LoadMisalignmentData(const char *inpath,misalignment_t &data); 
 int LoadCalibSwapData(const char *inpath,std::vector<calibSwap_t> &data);
 int LoadImposedGradientData(const char *inpath,imposed_gradient_t &data); 

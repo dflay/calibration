@@ -14,6 +14,7 @@ int PrintTRLYPositions(const char *outpath,std::vector<int> probe,
                        std::vector<double> y,std::vector<double> dy,
                        std::vector<double> z,std::vector<double> dz);
 
+int PrintToFile(const char *outpath,std::vector<std::string> label,std::vector<double> x); 
 int PrintToFile(const char *outpath,std::vector<std::string> label,
                 std::vector<double> x1,std::vector<double> x2,
                 std::vector<double> x3,std::vector<double> x4); 

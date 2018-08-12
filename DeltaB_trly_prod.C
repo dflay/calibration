@@ -67,17 +67,16 @@ int DeltaB_trly_prod(std::string configFile){
    GetDate(theDate);
 
    char outpath[200],outdir[200];
-
    if(isBlind)  sprintf(outdir,"./output/blinded/%s"  ,theDate.getDateString().c_str()); 
    if(!isBlind) sprintf(outdir,"./output/unblinded/%s",theDate.getDateString().c_str());
+   rc = MakeDirectory(outdir); 
  
    std::string gradName;
    if(axis==0) gradName = "rad"; 
    if(axis==1) gradName = "vert"; 
    if(axis==2) gradName = "azi";
 
-   rc = MakeDirectory(outdir); 
-   sprintf(outpath,"%s/dB-trly_final-location_%s-grad_pr-%02d_%s.csv"  ,outdir,gradName.c_str(),probeNumber,date.c_str());
+   sprintf(outpath,"%s/dB-trly_final-location_%s-grad_pr-%02d.csv",outdir,gradName.c_str(),probeNumber);
 
    blind_t blind; 
    ImportBlinding(blind);
@@ -113,8 +112,10 @@ int DeltaB_trly_prod(std::string configFile){
 
    // determine the correct ordering of the SCC on/off cycles 
    std::vector<gm2field::surfaceCoils_t> sccData;
-   for(int i=0;i<NRUN;i++) rc = gm2fieldUtil::RootHelper::GetSCCData(run[i],sccData);
-   if(rc!=0) return 1; 
+   if(!loadOnline){
+      for(int i=0;i<NRUN;i++) rc = gm2fieldUtil::RootHelper::GetSCCData(run[i],sccData);
+      if(rc!=0) return 1;
+   } 
    
    bool sccStartOn = false; 
    std::vector<double> sccOff,sccOn;
@@ -139,6 +140,8 @@ int DeltaB_trly_prod(std::string configFile){
       dB_err[1] = trly_dB[axis].dB_fxpr_err; 
       dB_err[2] = 0.; 
       rc = PrintToFile(outpath,gradName,dB,dB_err,drift,drift_err); 
+      std::cout << "YOLO" << std::endl;
+      return 0;
    }else{
       if(loadTimes){
 	 // better to use pre-defined transition times   
@@ -191,7 +194,6 @@ int DeltaB_trly_prod(std::string configFile){
       tOFF[i]->SetLineColor(kRed);
       tOFF[i]->SetLineWidth(2);
       tOFF[i]->SetLineStyle(2);
-
    }
 
    if(isBlind) ApplyBlindingTRLY(blindValue,trlyData);
@@ -205,9 +207,12 @@ int DeltaB_trly_prod(std::string configFile){
    // do delta B calcs
    // raw difference 
    std::vector<double> diff,diffErr;
-   rc = GetDifference(scc,sccErr,bare,bareErr,diff,diffErr);  
-   double mean  = gm2fieldUtil::Math::GetMean<double>(diff); 
-   double stdev = gm2fieldUtil::Math::GetStandardDeviation<double>(diff); 
+   rc = GetDifference(scc,sccErr,bare,bareErr,diff,diffErr); 
+
+   double mean=0,stdev=0,err=0; 
+   // mean  = gm2fieldUtil::Math::GetMean<double>(diff); 
+   // stdev = gm2fieldUtil::Math::GetStandardDeviation<double>(diff);
+   rc = GetWeightedAverageStats(diff,diffErr,mean,err,stdev); 
 
    // ABA difference (bare first) 
    std::vector<double> diff_aba,diffErr_aba;
@@ -217,8 +222,10 @@ int DeltaB_trly_prod(std::string configFile){
       rc = GetDifference_ABA(useTimeWeight,sccTime,scc,sccErr,bareTime,bare,bareErr,diff_aba,diffErr_aba);  
    }
 
-   double mean_aba  = gm2fieldUtil::Math::GetMean<double>(diff_aba); 
-   double stdev_aba = gm2fieldUtil::Math::GetStandardDeviation<double>(diff_aba); 
+   double mean_aba=0,stdev_aba=0;
+   // mean_aba  = gm2fieldUtil::Math::GetMean<double>(diff_aba); 
+   // stdev_aba = gm2fieldUtil::Math::GetStandardDeviation<double>(diff_aba); 
+   rc = GetWeightedAverageStats(diff_aba,diffErr_aba,mean_aba,err,stdev_aba); 
  
    const int ND = diff.size();
    std::vector<double> trial; 
@@ -299,7 +306,7 @@ int DeltaB_trly_prod(std::string configFile){
    c1->Update();
 
    c1->cd();
-   TString plotPath = Form("%s/trly_dB_%s-grad_run-%d_pr-%02d.png",plotDir,gradName.c_str(),run[0],probeNumber); 
+   TString plotPath = Form("%s/trly_dB_%s-grad_pr-%02d.png",plotDir,gradName.c_str(),probeNumber); 
    c1->Print(plotPath);
    delete c1;  
 
@@ -317,7 +324,7 @@ int DeltaB_trly_prod(std::string configFile){
    c2->Update();
 
    c2->cd();
-   plotPath = Form("%s/trly_dB_%s-grad_run-%d_pr-%02d_all-data.png",plotDir,gradName.c_str(),run[0],probeNumber); 
+   plotPath = Form("%s/trly_dB_%s-grad_pr-%02d_all-data.png",plotDir,gradName.c_str(),probeNumber); 
    c2->Print(plotPath);
    delete c2;  
 

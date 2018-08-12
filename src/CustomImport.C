@@ -44,6 +44,47 @@ int LoadTRLYTimes(int probe,std::string type,std::vector<double> &time){
    return 0;
 }
 //______________________________________________________________________________
+int LoadResultsProdFinalData(const char *inpath,result_prod_t &data){
+
+   const int NLines = 1;
+   const int SIZE = 2048;  
+   char buf[SIZE]; 
+
+   int cntr=0;
+   std::string stype,sx,sShot,sMisalign,sFree;
+
+   ifstream infile;
+   infile.open(inpath);
+   if( infile.fail() ){
+      cout << "Cannot open the file: " << inpath << endl;
+      return 1;
+   }else{
+      for(int i=0;i<NLines;i++) infile.getline(buf,SIZE); 
+      while( !infile.eof() ){
+         std::getline(infile,stype,',');
+         std::getline(infile,sx,','); 
+         std::getline(infile,sShot,',');
+         std::getline(infile,sMisalign,',');
+         std::getline(infile,sFree);
+	 cntr++;
+	 if(cntr==1){
+	    data.diff    = std::atof( sx.c_str() ); 
+	    data.diffErr = std::atof( sShot.c_str() );
+	    data.mErr    = std::atof( sMisalign.c_str() );
+	    data.pErr    = std::atof( sFree.c_str() );
+         }else if(cntr==2){
+	    data.diff_aba    = std::atof( sx.c_str() ); 
+	    data.diffErr_aba = std::atof( sShot.c_str() );
+	    data.mErr_aba    = std::atof( sMisalign.c_str() );
+	    data.pErr_aba    = std::atof( sFree.c_str() );
+         } 
+      }
+      infile.close();
+   }
+
+   return 0;
+}
+//______________________________________________________________________________
 int LoadResultsProdData(const char *inpath,result_prod_t &data){
 
    const int NLines = 1;

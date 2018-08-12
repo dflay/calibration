@@ -78,13 +78,13 @@ int ProcessResults_prod(std::string configFile){
 
    // results  
    char outPath_result[500]; 
-   sprintf(outPath_result,"%s/results_pr-%02d_%s.csv",outDir,probeNumber,anaDate.c_str());
+   sprintf(outPath_result,"%s/results_pr-%02d.csv",outDir,probeNumber);
 
    result_prod_t result;
    rc = LoadResultsProdData(outPath_result,result); 
 
    char outPath_result_free[500]; 
-   sprintf(outPath_result_free,"%s/results_free-prot_pr-%02d_%s.csv",outDir,probeNumber,anaDate.c_str());
+   sprintf(outPath_result_free,"%s/results_free-prot_pr-%02d.csv",outDir,probeNumber);
 
    result_prod_t result_free;
    rc = LoadResultsProdData(outPath_result_free,result_free); 
@@ -94,7 +94,7 @@ int ProcessResults_prod(std::string configFile){
 
    // misalignments 
    char outPath_misalign[500]; 
-   sprintf(outPath_misalign,"%s/misalignment_results_%s.csv",outDir,anaDate.c_str());
+   sprintf(outPath_misalign,"%s/misalignment_results_pr-%02d.csv",outDir,probeNumber);
 
    // load misalignment results 
    misalignment_t mErr; 
@@ -141,12 +141,12 @@ int ProcessResults_prod(std::string configFile){
 
    // results  
    char outPath_final[500]; 
-   sprintf(outPath_final,"%s/results_final_pr-%02d_%s.csv",outDir,probeNumber,anaDate.c_str());
+   sprintf(outPath_final,"%s/results_final_pr-%02d.csv",outDir,probeNumber);
    std::string outpath_final = outPath_final;  
    rc = PrintResults(outpath_final,result);
 
    char outPath_final_free[500]; 
-   sprintf(outPath_final_free,"%s/results_final_free-prot_pr-%02d_%s.csv",outDir,probeNumber,anaDate.c_str());
+   sprintf(outPath_final_free,"%s/results_final_free-prot_pr-%02d.csv",outDir,probeNumber);
    std::string outpath_final_free = outPath_final_free;  
    rc = PrintResults(outpath_final_free,result_free);
 

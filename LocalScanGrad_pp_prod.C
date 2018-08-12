@@ -38,6 +38,8 @@
 #include "./src/CustomUtilities.C"
 #include "./src/DeltaBFuncs.C"
 
+int GetAziGrad(TGraph *g,double &grad,double &gradErr);
+
 int LocalScanGrad_pp_prod(std::string configFile){
 
    std::cout << "------------------------------------" << std::endl;
@@ -87,7 +89,7 @@ int LocalScanGrad_pp_prod(std::string configFile){
    // outpaths  
    char outpath[200],tag[10];
    sprintf(tag    ,"%s-grad",gradType.c_str()); 
-   sprintf(outpath,"%s/%s_pr-%02d_%s.csv" ,outdir,tag,probeNumber,date.c_str());
+   sprintf(outpath,"%s/%s_pr-%02d.csv" ,outdir,tag,probeNumber);
    std::string strTag = tag;
 
    std::vector<int> run,subRun;
@@ -254,23 +256,25 @@ int LocalScanGrad_pp_prod(std::string configFile){
    double PR[3],ER[3];
    int slopeIndex=0;
 
-   dBdr = myFit->Derivative(trly_pr_pos);  // evaluate at the trolley probe position of interest   
- 
-   if( fitFunc.compare("pol1")==0 ){
-      // dBdr         = par[1];  
-      dBdr_err     = parErr[1]; 
-      // dBdr_cor     = parCor[1];  
-      // dBdr_cor_err = parCorErr[1]; 
-   }else if( fitFunc.compare("pol2")==0 ){
-      // dBdr         = par[1]    + 2.*par[2]*trly_pr_pos; 
-      dBdr_err     = TMath::Sqrt( parErr[1]*parErr[1] + parErr[2]*parErr[2] );  
-      // dBdr_cor     = parCor[1] + 2.*parCor[2]*trly_pr_pos;  
-      // dBdr_cor_err = TMath::Sqrt( parCorErr[1]*parCorErr[1] + parCorErr[2]*parErr[2] );  
-   }else if( fitFunc.compare("pol3")==0 ){
-      // dBdr         = par[1]    + 2.*par[2]*trly_pr_pos + 3.*par[3]*TMath::Power(trly_pr_pos,2.);  
-      dBdr_err     = TMath::Sqrt( parErr[1]*parErr[1] + parErr[2]*parErr[2] + parErr[3]*parErr[3] );  
-      // dBdr_cor     = parCor[1] + 2.*parCor[2]*trly_pr_pos + 3.*parCor[3]*TMath::Power(trly_pr_pos,2.);  
-      // dBdr_cor_err = TMath::Sqrt( parCorErr[1]*parCorErr[1] + parCorErr[2]*parCorErr[2] + parCorErr[3]*parCorErr[3] );  
+   double sum_sq=0;
+
+   if(axis!=2){
+      std::cout << "The trolley coordinate is " << trly_pr_pos << " mm" << std::endl;
+      dBdr = myFit->Derivative(trly_pr_pos);  // evaluate at the trolley probe position of interest   
+      if( fitFunc.compare("pol1")==0 ){
+	 dBdr_err = parErr[1]; 
+      }else if( fitFunc.compare("pol2")==0 ){
+	 sum_sq   = TMath::Power(parErr[1],2.)  
+	          + TMath::Power(2.*parErr[2]*trly_pr_pos,2.);   
+	 dBdr_err = TMath::Sqrt(sum_sq);  
+      }else if( fitFunc.compare("pol3")==0 ){
+	 sum_sq   = TMath::Power(parErr[1],2.)  
+	          + TMath::Power(2.*parErr[2]*trly_pr_pos,2.)  
+	          + TMath::Power(9.*parErr[3]*trly_pr_pos*trly_pr_pos,2.); 
+	 dBdr_err = TMath::Sqrt(sum_sq);  
+      }
+   }else{
+      rc = GetAziGrad(g,dBdr,dBdr_err);
    }
 
    // WARNING: not using the drift-corrected result.  Those probes are too far away!  
@@ -299,4 +303,21 @@ int LocalScanGrad_pp_prod(std::string configFile){
    
    return 0;
 }
+//______________________________________________________________________________
+int GetAziGrad(TGraph *g,double &grad,double &gradErr){
+   // will probably always be two data points
+   // just take slope between points 
+   const int N = g->GetN(); 
+   double *x   = g->GetX();
+   double *y   = g->GetY();
+   double *ey  = g->GetEY();
 
+   double df   = y[1]-y[0]; 
+   double dx   = x[1]-x[0];
+
+   // compute gradient 
+   grad    = df/dx; 
+   gradErr = TMath::Abs(grad);   // take absolute value 
+
+   return 0; 
+}

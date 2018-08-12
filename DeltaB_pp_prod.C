@@ -162,8 +162,10 @@ int DeltaB_pp_prod(std::string configFile){
       rc = GetDifference(scc,sccErr,bare,bareErr,diff,diffErr);
    }
 
-   double mean  = gm2fieldUtil::Math::GetMean<double>(diff); 
-   double stdev = gm2fieldUtil::Math::GetStandardDeviation<double>(diff); 
+   double mean=0,stdev=0,err=0;
+   // mean  = gm2fieldUtil::Math::GetMean<double>(diff); 
+   // stdev = gm2fieldUtil::Math::GetStandardDeviation<double>(diff); 
+   rc = GetWeightedAverageStats(diff,diffErr,mean,err,stdev); 
 
    // ABA difference (bare first) 
    std::vector<double> diff_aba,diffErr_aba;
@@ -173,8 +175,10 @@ int DeltaB_pp_prod(std::string configFile){
       rc = GetDifference_ABA(useTimeWeight,sccTime,scc,sccErr,bareTime,bare,bareErr,diff_aba,diffErr_aba);  
    }
 
-   double mean_aba  = gm2fieldUtil::Math::GetMean<double>(diff_aba); 
-   double stdev_aba = gm2fieldUtil::Math::GetStandardDeviation<double>(diff_aba); 
+   double mean_aba=0,stdev_aba=0;
+   // mean_aba  = gm2fieldUtil::Math::GetMean<double>(diff_aba); 
+   // stdev_aba = gm2fieldUtil::Math::GetStandardDeviation<double>(diff_aba); 
+   rc = GetWeightedAverageStats(diff_aba,diffErr_aba,mean_aba,err,stdev_aba); 
  
    double dB[3]        = {0,0,0}; 
    double dB_err[3]    = {0,0,0};
@@ -244,7 +248,7 @@ int DeltaB_pp_prod(std::string configFile){
    if(!isBlind) sprintf(outdir,"./output/unblinded/%s",theDate.getDateString().c_str()); 
 
    rc = MakeDirectory(outdir); 
-   sprintf(outpath,"%s/dB-pp_final-location_%s-grad_pr-%02d_%s.csv"  ,outdir,gradName.c_str(),probeNumber,date.c_str());
+   sprintf(outpath,"%s/dB-pp_final-location_%s-grad_pr-%02d.csv",outdir,gradName.c_str(),probeNumber);
    rc = PrintToFile(outpath,gradName,dB,dB_err,drift,drift_err); 
 
    char plotDir[200];
@@ -275,7 +279,7 @@ int DeltaB_pp_prod(std::string configFile){
    c1->Update();
 
    c1->cd();
-   TString plotPath = Form("%s/pp_dB_%s-grad_run-%d_pr-%02d.png",plotDir,gradName.c_str(),run[0],probeNumber); 
+   TString plotPath = Form("%s/pp_dB_%s-grad_pr-%02d.png",plotDir,gradName.c_str(),probeNumber); 
    c1->Print(plotPath);
    delete c1;  
 
@@ -302,7 +306,7 @@ int DeltaB_pp_prod(std::string configFile){
    c2->Update(); 
 
    c2->cd();
-   plotPath = Form("%s/pp_dB_scc-currents_%s-grad_run-%d_pr-%02d.png",plotDir,gradName.c_str(),run[0],probeNumber); 
+   plotPath = Form("%s/pp_dB_scc-currents_%s-grad_pr-%02d.png",plotDir,gradName.c_str(),probeNumber); 
    c2->Print(plotPath);
    delete c2;  
 
