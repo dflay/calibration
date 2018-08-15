@@ -140,7 +140,6 @@ int DeltaB_trly_prod(std::string configFile){
       dB_err[1] = trly_dB[axis].dB_fxpr_err; 
       dB_err[2] = 0.; 
       rc = PrintToFile(outpath,gradName,dB,dB_err,drift,drift_err); 
-      std::cout << "YOLO" << std::endl;
       return 0;
    }else{
       if(loadTimes){

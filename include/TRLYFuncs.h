@@ -18,11 +18,7 @@ int FindTransitionTimes(int step,double thr,std::vector<trolleyAnaEvent_t> Data,
 int FindTransitionTimes(int probe,int step,double thr,std::vector<trolleyAnaEvent_t> Data,
                         std::vector<double> &timeLo,std::vector<double> &timeHi);
 
-int FilterSingle(int probe,int nev,double T,std::vector<trolleyAnaEvent_t> in,
-                 std::vector<double> &freq,std::vector<double> &temp);
-int FilterSingle(int probe,int nev,double T,std::vector<trolleyAnaEvent_t> in,
-                 std::vector<double> &time,std::vector<double> &freq,std::vector<double> &temp);  
-int FilterSingle(int probe,int nev,double T,std::vector<trolleyAnaEvent_t> in,std::vector<trolleyAnaEvent_t> &out); 
+int FilterSingle(std::string var,int probe,int nev,double T,std::vector<trolleyAnaEvent_t> in,std::vector<double> &x); 
 
 int GetTRLYStats_sccToggle(int probe,int nev,std::vector<double> time,std::vector<trolleyAnaEvent_t> Data,
                            std::vector<double> &TIME,std::vector<double> &MEAN,std::vector<double> &STDEV); 

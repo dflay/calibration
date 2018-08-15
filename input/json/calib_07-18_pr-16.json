@@ -13,6 +13,6 @@
 "dB-pp_z"             : {"midas-runs": [5671] },
 "dB-trly_z"           : {"midas-runs": [-1] },
 "calib-run"           : {"midas-run" : 5615 },
-"local-shim-scan"     : {"midas-run" : 5614, "ppx": [958,959,960], "ppy": [959,961], "ppz": [959,962], "fit": "pol2" },
+"local-shim-scan"     : {"midas-run" : 5614, "ppx": [959,960], "ppy": [959,961], "ppz": [959,962], "fit": "pol2" },
 "trly_z-scan"         : {"midas-runs": [-1] } 
 }

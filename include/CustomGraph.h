@@ -30,6 +30,8 @@ TGraphErrors *GetTGraphErrors(std::vector<imposed_gradient_t> data);
 TGraph *GetPPTGraph1(TString xAxis,TString yAxis,std::vector<plungingProbeAnaEvent_t> data); 
 TGraph *GetPPTGraph2(TString xAxis,TString yAxis,std::vector<plungingProbeAnaEvent_t> data); 
 TGraph *GetPPTGraph3(TString xAxis,TString yAxis,plungingProbeAnaEvent_t data); 
+TGraphErrors *GetPPScanGraph(TString xAxis,TString yAxis,std::vector<plungingProbeAnaEvent_t> data,double x0=0);
+ 
 // TGraphErrors *GetTGraphErrors(TString xAxis,TString yAxis,std::vector<plungingProbeAnaEvent_t> data);
 // TGraph2D *GetAzimuthalProjection(std::vector<plungingProbeAnaEvent_t> data,int units=gm2fieldUtil::Units::Hz); 
 int FillPPVector1(TString axis,std::vector<plungingProbeAnaEvent_t> ppData,std::vector<double> &x);

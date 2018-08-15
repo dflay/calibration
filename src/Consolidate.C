@@ -248,7 +248,10 @@ int ConsolidatePPData(int method,std::vector<gm2field::plungingProbeFrequency_t>
 
    const int NN = ppEvent.size();
    std::cout << "NMR-DAQ runs: " << endl;
-   for(int i=0;i<NN;i++) std::cout << ppEvent[i].run << endl;
+   for(int i=0;i<NN;i++){
+      std::cout << Form("%d, x = %.3lf mm, y = %.3lf mm, z = %.3lf mm",
+                        ppEvent[i].run,ppEvent[i].r[0],ppEvent[i].y[0],ppEvent[i].phi[0]) << endl;
+   }
 
    delete tempSensor; 
 

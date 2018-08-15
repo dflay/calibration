@@ -157,7 +157,8 @@ int FindTransitionTimes(int probe,int step,double thr,std::vector<trolleyAnaEven
    return 0;
 }
 //______________________________________________________________________________
-int FilterSingle(int probe,int nev,double T,std::vector<trolleyAnaEvent_t> in,std::vector<double> &out){
+int FilterSingle(std::string var,int probe,int nev,double T,std::vector<trolleyAnaEvent_t> in,
+                 std::vector<double> &x){
 
    std::vector<double> tt;
    const int N = in.size();
@@ -165,52 +166,15 @@ int FilterSingle(int probe,int nev,double T,std::vector<trolleyAnaEvent_t> in,st
 
    int lo=0,hi=0;
    gm2fieldUtil::Algorithm::BinarySearch(tt,T,lo,hi);
-   int end   = lo-10;
+   int end   = lo;
    int start = end-nev;
    for(int i=start;i<end;i++){
-      // std::cout << Form("%s: %.3lf",gm2fieldUtil::GetStringTimeStampFromUTC(in[i].time[probe]/1E+9).c_str(),in[i].freq[probe]) << std::endl; 
-      out.push_back(in[i].freq[probe]);
-   }
-   // std::cout << "--------------------------" << std::endl;
-
-   return 0;
-
-}
-//______________________________________________________________________________
-int FilterSingle(int probe,int nev,double T,std::vector<trolleyAnaEvent_t> in,
-                 std::vector<double> &freq,std::vector<double> &temp){
-
-   std::vector<double> tt;
-   const int N = in.size();
-   for(int i=0;i<N;i++) tt.push_back(in[i].time[probe]/1E+9);
-
-   int lo=0,hi=0;
-   gm2fieldUtil::Algorithm::BinarySearch(tt,T,lo,hi);
-   int end   = lo-10;
-   int start = end-nev;
-   for(int i=start;i<end;i++){
-      freq.push_back(in[i].freq[probe]);
-      temp.push_back(in[i].temp[probe]);
-   }
-
-   return 0;
-}
-//______________________________________________________________________________
-int FilterSingle(int probe,int nev,double T,std::vector<trolleyAnaEvent_t> in,
-                 std::vector<double> &time,std::vector<double> &freq,std::vector<double> &temp){
-
-   std::vector<double> tt;
-   const int N = in.size();
-   for(int i=0;i<N;i++) tt.push_back(in[i].time[probe]/1E+9);
-
-   int lo=0,hi=0;
-   gm2fieldUtil::Algorithm::BinarySearch(tt,T,lo,hi);
-   int end   = lo-10;
-   int start = end-nev;
-   for(int i=start;i<end;i++){
-      time.push_back(in[i].time[probe]/1E+9); 
-      freq.push_back(in[i].freq[probe]);
-      temp.push_back(in[i].temp[probe]);
+      if( var.compare("time")==0 ) x.push_back(in[i].time[probe]/1E+9); 
+      if( var.compare("freq")==0 ) x.push_back(in[i].freq[probe]     );
+      if( var.compare("temp")==0 ) x.push_back(in[i].temp[probe]     );
+      if( var.compare("r")==0    ) x.push_back(in[i].r[probe]        );
+      if( var.compare("y")==0    ) x.push_back(in[i].y[probe]        );
+      if( var.compare("phi")==0  ) x.push_back(in[i].phi[probe]      );
    }
 
    return 0;
@@ -230,7 +194,9 @@ int GetTRLYStatsAtTime(int probe,int nev,double fLO,std::vector<double> time,std
    for(int i=0;i<N;i++){
       // std::cout << "Looking for time " << gm2fieldUtil::GetStringTimeStampFromUTC(time[i]) << std::endl;
       // find events 
-      rc = FilterSingle(probe,nev,time[i],Data,freq,temp);
+      // rc = FilterSingle("time",probe,nev,time[i],Data,time);
+      rc = FilterSingle("freq",probe,nev,time[i],Data,freq);
+      rc = FilterSingle("temp",probe,nev,time[i],Data,temp);
       // now get mean of events 
       mean_freq  = gm2fieldUtil::Math::GetMean<double>(freq);
       stdev_freq = gm2fieldUtil::Math::GetStandardDeviation<double>(freq);
@@ -261,7 +227,7 @@ int GetTRLYStats_sccToggle(int probe,int nev,std::vector<double> time,std::vecto
    for(int i=0;i<N;i++){
       // std::cout << "Looking for time " << gm2fieldUtil::GetStringTimeStampFromUTC(time[i]) << std::endl;
       // find events 
-      rc = FilterSingle(probe,nev,time[i],Data,freq);
+      rc = FilterSingle("freq",probe,nev,time[i],Data,freq);
       // now get mean of events 
       mean  = gm2fieldUtil::Math::GetMean<double>(freq);
       stdev = gm2fieldUtil::Math::GetStandardDeviation<double>(freq);

@@ -159,7 +159,7 @@ int MakeTables_prod(bool isBlind){
       rc = LoadMisalignmentData(inpath,m);
       if(rc!=0) return 1;
       misalign.push_back(m);
-      std::cout << misalign.size() << std::endl;
+      // std::cout << misalign.size() << std::endl;
       if(update){
 	 // need to recompute misalignment numbers
 	 misalign[k].dx_aba   = (deltaB_pp[k][0].dB_fxpr-deltaB_trly[k][0].dB_fxpr)/impGrad[k][0].grad; 
@@ -179,15 +179,22 @@ int MakeTables_prod(bool isBlind){
 
    const int NPROBES = probe.size(); 
 
-   double sum=0,sum_sq=0;
+   double sum_sq=0;
+   double sumf=0,sum=0;
+   double sumf_ppb=0,sum_ppb=0;
 
    // PP-TRLY 
    std::cout << "===================================== PP-TRLY =====================================" << std::endl;
    for(int i=0;i<NPROBES;i++){
-      sum_sq = res[i].diffErr_aba*res[i].diffErr_aba + res[i].mErr_aba*res[i].mErr_aba + resFree[i].pErr*resFree[i].pErr;
-      sum    = TMath::Sqrt(sum_sq)/0.06179;  
-      std::cout << Form("%02d,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf",
-                        probe[i],res[i].diff_aba,resFree[i].diff_aba,res[i].diffErr_aba,res[i].mErr_aba,resFree[i].pErr,sum) << std::endl;
+      sum_sq   = res[i].diffErr_aba*res[i].diffErr_aba + res[i].mErr_aba*res[i].mErr_aba;
+      sum      = TMath::Sqrt(sum_sq);  
+      sum_sq   = res[i].diffErr_aba*res[i].diffErr_aba + res[i].mErr_aba*res[i].mErr_aba + resFree[i].pErr*resFree[i].pErr;
+      sumf     = TMath::Sqrt(sum_sq); 
+      sum_ppb  = sum/0.06179;  
+      sumf_ppb = sumf/0.06179;  
+      std::cout << Form("%02d,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf",
+                        probe[i],res[i].diff_aba,resFree[i].diff_aba,res[i].diffErr_aba,
+                        res[i].mErr_aba,resFree[i].pErr,sum,sum_ppb,sumf_ppb) << std::endl;
    }
 
    std::cout << "===================================== DELTA B =====================================" << std::endl;

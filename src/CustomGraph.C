@@ -48,8 +48,32 @@ TGraphErrors *GetPPTGraphErrors2(TString xAxis,TString yAxis,std::vector<plungin
    std::vector<double> x,y,ey; 
    FillPPVector2(xAxis,data,x); 
    FillPPVector2(yAxis,data,y); 
-   FillPPVector2(yAxis_err,data,ey); 
+   FillPPVector2(yAxis_err,data,ey);
+   // const int N = x.size(); 
+   // std::cout << N << " data points" << std::endl;
+   // for(int i=0;i<N;i++){
+   //    std::cout << Form("***** F = %.3lf +/- %.3lf Hz",y[i],ey[i]) << std::endl;
+   // }
+   // std::cout << "---------------------------" << std::endl; 
    TGraphErrors *g = gm2fieldUtil::Graph::GetTGraphErrors(x,y,ey); 
+   return g;
+}
+//______________________________________________________________________________
+TGraphErrors *GetPPScanGraph(TString xAxis,TString yAxis,std::vector<plungingProbeAnaEvent_t> data,double x0){
+   // a custom plotter for the plunging probe analysis event
+   TString yAxis_err = Form("%s_err",yAxis.Data()); 
+   std::vector<double> x,y,ey; 
+   FillPPVector2(xAxis,data,x); 
+   FillPPVector2(yAxis,data,y); 
+   FillPPVector2(yAxis_err,data,ey);
+
+   // subtract off the offset 
+   std::vector<double> X; 
+   const int N = x.size();
+   for(int i=0;i<N;i++) X.push_back(x[i]-x0);
+
+   TGraphErrors *g = gm2fieldUtil::Graph::GetTGraphErrors(X,y,ey); 
+
    return g;
 }
 // //______________________________________________________________________________
