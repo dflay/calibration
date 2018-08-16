@@ -180,36 +180,60 @@ int FilterSingle(std::string var,int probe,int nev,double T,std::vector<trolleyA
    return 0;
 }
 //______________________________________________________________________________
-int GetTRLYStatsAtTime(int probe,int nev,double fLO,std::vector<double> time,std::vector<trolleyAnaEvent_t> Data,
-                       std::vector<double> &FREQ,std::vector<double> &FREQ_ERR,
-                       std::vector<double> &TEMP,std::vector<double> &TEMP_ERR){
+int GetTRLYStatsAtTime(int probe,int nev,double fLO,std::vector<double> time,
+                       std::vector<trolleyAnaEvent_t> Data,std::vector<trolleySwapEvent_t> &Event){
 
    // find the mean field at the times specified in the time vector 
+
+   trolleySwapEvent_t theEvent; 
 
    const int N = time.size();
    int M=0,rc=0;
    double mean_freq=0,stdev_freq=0;
    double mean_temp=0,stdev_temp=0;
-   std::vector<double> freq,temp;
+   double mean_x=0,stdev_x=0;
+   double mean_y=0,stdev_y=0;
+   double mean_z=0,stdev_z=0;
+   std::vector<double> freq,temp,x,y,z;
    for(int i=0;i<N;i++){
       // std::cout << "Looking for time " << gm2fieldUtil::GetStringTimeStampFromUTC(time[i]) << std::endl;
       // find events 
       // rc = FilterSingle("time",probe,nev,time[i],Data,time);
       rc = FilterSingle("freq",probe,nev,time[i],Data,freq);
       rc = FilterSingle("temp",probe,nev,time[i],Data,temp);
+      rc = FilterSingle("r"   ,probe,nev,time[i],Data,x);
+      rc = FilterSingle("y"   ,probe,nev,time[i],Data,y);
+      rc = FilterSingle("phi" ,probe,nev,time[i],Data,z);
       // now get mean of events 
       mean_freq  = gm2fieldUtil::Math::GetMean<double>(freq);
       stdev_freq = gm2fieldUtil::Math::GetStandardDeviation<double>(freq);
       mean_temp  = gm2fieldUtil::Math::GetMean<double>(temp);
       stdev_temp = gm2fieldUtil::Math::GetStandardDeviation<double>(temp);
+      mean_x     = gm2fieldUtil::Math::GetMean<double>(x);
+      stdev_x    = gm2fieldUtil::Math::GetStandardDeviation<double>(x);
+      mean_y     = gm2fieldUtil::Math::GetMean<double>(y);
+      stdev_y    = gm2fieldUtil::Math::GetStandardDeviation<double>(y);
+      mean_z     = gm2fieldUtil::Math::GetMean<double>(z);
+      stdev_z    = gm2fieldUtil::Math::GetStandardDeviation<double>(z);
       // store result
-      FREQ.push_back(mean_freq+fLO);
-      FREQ_ERR.push_back(stdev_freq);
-      TEMP.push_back(mean_temp);
-      TEMP_ERR.push_back(stdev_temp);
+      theEvent.time     = time[i]; 
+      theEvent.freq     = mean_freq + fLO;
+      theEvent.freq_err = stdev_freq; 
+      theEvent.temp     = mean_temp; 
+      theEvent.temp_err = stdev_temp; 
+      theEvent.r        = mean_x;       
+      theEvent.r_err    = stdev_x;       
+      theEvent.y        = mean_y;       
+      theEvent.y_err    = stdev_y;       
+      theEvent.phi      = mean_z;       
+      theEvent.phi_err  = stdev_z;       
+      Event.push_back(theEvent);  
       // set up for next time 
       freq.clear();
       temp.clear();
+      x.clear();
+      y.clear();
+      z.clear();
    }
 
    return 0;

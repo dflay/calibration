@@ -1,27 +1,26 @@
-// test the input manager 
+// test passing a function as an argument  
 
 #include <cstdlib> 
 #include <iostream>
 #include <vector>
 #include <string> 
 
-#include "./src/InputManager.C"
+double testFunc( double (*f)(double x),double v); 
+double myFunc(double x);
 
 int Test(){
 
-   std::string inpath = "test.json";
-   InputManager *inputMgr = new InputManager(); 
-   inputMgr->Load(inpath);
-   // inputMgr->Print();
-
-   std::string testKey = "my-key"; 
-   bool isThere = inputMgr->DoesKeyExist("my-key"); 
-   std::cout << Form("The key '%s' was found: ",testKey.c_str()) << isThere << std::endl;
-   if(isThere){
-      std::cout << Form("key value: %s",inputMgr->GetValue(testKey).c_str()) << std::endl;
-   }
-
-   delete inputMgr; 
+   double v = testFunc(&myFunc,5); 
+   std::cout << v << std::endl; 
 
    return 0;
+}
+//______________________________________________________________________________
+double testFunc( double (*f)(double x),double v){
+   double val = (*f)(v);
+   return val; 
 } 
+//______________________________________________________________________________
+double myFunc(double x){
+   return x;
+}

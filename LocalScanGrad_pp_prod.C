@@ -12,6 +12,7 @@
 #include "TCanvas.h"
 #include "TLegend.h"
 #include "TSpline.h"
+#include "TFitResult.h"
 
 #include "RootTreeStructs.h"
 #include "gm2fieldMath.h"
@@ -26,6 +27,8 @@
 #include "./include/trolleyAnaEvent.h"
 #include "./include/fixedProbeEvent.h"
 
+#include "./src/MyFits.C"
+#include "./src/FitErr.C"
 #include "./src/InputManager.C"
 #include "./src/FXPRFuncs.C"
 #include "./src/TRLYFuncs.C"
@@ -139,7 +142,7 @@ int LocalScanGrad_pp_prod(std::string configFile){
    if(axis!=2) trly_coord = pos[axis]; 
 
    // PP data 
-   std::vector<plungingProbeAnaEvent_t> ppData,ppEvent,ppEventCor; 
+   std::vector<plungingProbeAnaEvent_t> ppData,ppEvent; 
    std::cout << "Getting run " << midasRun << std::endl; 
    rc = GetPlungingProbeData(midasRun,method,ppData);
    if(rc!=0){
@@ -148,7 +151,7 @@ int LocalScanGrad_pp_prod(std::string configFile){
    }
 
    const int NEV = ppData.size(); 
-   std::cout << "PP events: " << ppData.size() << std::endl;
+   std::cout << "PP events: " << NEV << std::endl;
    for(int i=0;i<NEV;i++) rc = ModifyPlungingProbeData(kLeastSquaresPhase,ppData[i]);
   
    if(isBlind) ApplyBlindingPP(blindValue,ppData);
@@ -168,6 +171,7 @@ int LocalScanGrad_pp_prod(std::string configFile){
       std::cout << Form("%d: x = %.3lf mm, y = %.3lf mm, z = %.3lf mm, F = %.3lf +/- %.3lf Hz",
                         ppEvent[i].run,ppEvent[i].r[0],ppEvent[i].y[0],ppEvent[i].phi[0],
                         mean,stdev) << std::endl;
+      // clean up for next event 
       F.clear();
    } 
 
@@ -195,16 +199,10 @@ int LocalScanGrad_pp_prod(std::string configFile){
    std::vector<fixedProbeEvent_t> fxprDataAvg;
    GetAverageFXPRVectorsNew(method,t0,tStart,tStop,tStep,fxprList,fxprData,fxprDataAvg);
 
-   rc = CorrectPPForDriftDuringMeasurement(fxprDataAvg,ppEvent,ppEventCor,true);
-
    // Plunging probe plots 
    TGraphErrors *g = GetPPTGraphErrors2(Axis.c_str(),"freq",ppEvent);
    // TGraphErrors *g = GetPPScanGraph(Axis.c_str(),"freq",ppEvent,trly_coord);
    gm2fieldUtil::Graph::SetGraphParameters(g,20,kBlack);
-
-   TGraphErrors *g_cor = GetPPTGraphErrors2(Axis.c_str(),"freq",ppEventCor);
-   // TGraphErrors *g_cor = GetPPScanGraph(Axis.c_str(),"freq",ppEventCor,trly_coord);
-   gm2fieldUtil::Graph::SetGraphParameters(g_cor,20,kRed);
 
    // Fixed probe plot 
    TGraph *gFXPR = GetTGraphNew(fxprDataAvg);
@@ -213,22 +211,12 @@ int LocalScanGrad_pp_prod(std::string configFile){
    TString xAxisLabel = Form("%s (mm)",Axis.c_str());
 
    TCanvas *c1 = new TCanvas("c1","PP Data",1200,600);
-   c1->Divide(1,2);
   
-   c1->cd(1); 
+   c1->cd(); 
    g->Draw("ap");
    gm2fieldUtil::Graph::SetGraphLabels(g,"Shimmed Field",xAxisLabel,"Frequency (Hz)"); 
-   gm2fieldUtil::Graph::SetGraphLabelSizes(g,0.05,0.06); 
    g->Draw("ap");
-   g->Fit(fitFunc.c_str(),"Q"); 
-   c1->Update(); 
-
-   c1->cd(2); 
-   g_cor->Draw("ap");
-   gm2fieldUtil::Graph::SetGraphLabels(g_cor,"Drift Corrected (FXPR)",xAxisLabel,"Frequency (Hz)"); 
-   gm2fieldUtil::Graph::SetGraphLabelSizes(g_cor,0.05,0.06); 
-   g_cor->Draw("ap");
-   g_cor->Fit(fitFunc.c_str(),"Q"); 
+   TFitResultPtr fitResult = g->Fit(fitFunc.c_str(),"QS"); 
    c1->Update(); 
 
    TString plotPath = Form("%s/pp-shimmed-scan-%s_pr-%02d.png",plotDir,Axis.c_str(),probeNumber); 
@@ -241,7 +229,6 @@ int LocalScanGrad_pp_prod(std::string configFile){
    gFXPR->Draw("alp");
    gm2fieldUtil::Graph::SetGraphLabels(gFXPR,"Fixed Probe Average","","Frequency (Hz)"); 
    gm2fieldUtil::Graph::UseTimeDisplay(gFXPR);  
-   gm2fieldUtil::Graph::SetGraphLabelSizes(gFXPR,0.04,0.04); 
    gFXPR->Draw("alp");
    c2->Update(); 
 
@@ -250,17 +237,13 @@ int LocalScanGrad_pp_prod(std::string configFile){
    c2->Print(plotPath);
 
    // get fit info 
-   TF1 *myFit     = g->GetFunction(fitFunc.c_str()); 
-   TF1 *myFit_cor = g_cor->GetFunction(fitFunc.c_str());
+   TF1 *myFit = g->GetFunction(fitFunc.c_str()); 
 
    const int NPAR = myFit->GetNpar();
-   double par[NPAR]   ,parErr[NPAR]; 
-   double parCor[NPAR],parCorErr[NPAR]; 
+   double par[NPAR],parErr[NPAR]; 
    for(int i=0;i<NPAR;i++){
       par[i]       = myFit->GetParameter(i); 
       parErr[i]    = myFit->GetParError(i); 
-      parCor[i]    = myFit_cor->GetParameter(i); 
-      parCorErr[i] = myFit_cor->GetParError(i); 
    }
 
    // get gradient based on fit type and which trolley probe we're looking at  
@@ -270,24 +253,24 @@ int LocalScanGrad_pp_prod(std::string configFile){
 
    double sum_sq=0;
 
-   // double X = pp_coord - trly_coord;
-
+   double X[3] = {trly_coord,0.,0.}; 
+ 
    if(axis!=2){
       std::cout << "The trolley coordinate is " << trly_coord << " mm" << std::endl;
-      dBdr = myFit->Derivative(trly_coord);  // evaluate at the trolley probe position of interest  
-      // dBdr = par[0] + par[1]*X; 
-      if( fitFunc.compare("pol1")==0 ){
-	 dBdr_err = parErr[1]; 
-      }else if( fitFunc.compare("pol2")==0 ){
-	 sum_sq   = TMath::Power(parErr[1],2.)  
-	          + TMath::Power(2.*parErr[2]*trly_coord,2.);   
-	 dBdr_err = TMath::Sqrt(sum_sq);  
-      }else if( fitFunc.compare("pol3")==0 ){
-	 sum_sq   = TMath::Power(parErr[1],2.)  
-	          + TMath::Power(2.*parErr[2]*trly_coord,2.)  
-	          + TMath::Power(9.*parErr[3]*trly_coord*trly_coord,2.); 
-	 dBdr_err = TMath::Sqrt(sum_sq);  
-      }
+      dBdr     = myFit->Derivative(trly_coord);  // evaluate at the trolley probe position of interest 
+      dBdr_err = GetFitError(myFit,fitResult,MyPolyFitFuncDerivative,X);   
+      // if( fitFunc.compare("pol1")==0 ){
+      //    dBdr_err = parErr[1]; 
+      // }else if( fitFunc.compare("pol2")==0 ){
+      //    sum_sq   = TMath::Power(parErr[1],2.)  
+      //             + TMath::Power(2.*parErr[2]*trly_coord,2.);   
+      //    dBdr_err = TMath::Sqrt(sum_sq);  
+      // }else if( fitFunc.compare("pol3")==0 ){
+      //    sum_sq   = TMath::Power(parErr[1],2.)  
+      //             + TMath::Power(2.*parErr[2]*trly_coord,2.)  
+      //             + TMath::Power(9.*parErr[3]*trly_coord*trly_coord,2.); 
+      //    dBdr_err = TMath::Sqrt(sum_sq);  
+      // }
    }else{
       rc = GetAziGrad(g,dBdr,dBdr_err);
    }

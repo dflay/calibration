@@ -6,13 +6,28 @@
 #define NUM_TRLY 17   
 
 typedef struct trolleyAnaEvent{
-   unsigned long long time[NUM_TRLY];  // time of measurement 
+   unsigned long long time[NUM_TRLY];  // time of measurement (ns since epoch)  
    Double_t freq[NUM_TRLY];            // frequency for each trolley probe (Hz)
    Double_t r[NUM_TRLY];               // radial position of probe
    Double_t y[NUM_TRLY];               // vertical position of probe
    Double_t phi[NUM_TRLY];             // azimuthal position of probe
    Double_t temp[NUM_TRLY];            // temperature (deg C)
 } trolleyAnaEvent_t;
+
+// trolley swap event 
+typedef struct trolleySwapEvent { 
+   Double_t time;  // sec since epoch  
+   Double_t freq;
+   Double_t freq_err;
+   Double_t temp;
+   Double_t temp_err;
+   Double_t r;
+   Double_t r_err;
+   Double_t y;
+   Double_t y_err;
+   Double_t phi;
+   Double_t phi_err;
+} trolleySwapEvent_t; 
 
 // trolley probe positions 
 

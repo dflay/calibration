@@ -13,6 +13,9 @@
 // int GetTrolleyProbePosition(int index,double *pos);
 int GetTrolleyProbePositions(trolleyProbePosition_t &data);
 
+int GetTRLYStatsAtTime(int probe,int nev,double fLO,std::vector<double> time,
+                       std::vector<trolleyAnaEvent_t> Data,std::vector<trolleySwapEvent_t> &Event); 
+
 int FindTransitionTimes(int step,double thr,std::vector<trolleyAnaEvent_t> Data,
                         std::vector< std::vector<double> > &timeLo,std::vector< std::vector<double> > &timeHi);
 int FindTransitionTimes(int probe,int step,double thr,std::vector<trolleyAnaEvent_t> Data,

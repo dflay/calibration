@@ -52,19 +52,16 @@ int GetImposedGradients(const char *inpath,std::vector<imposed_gradient_t> &imp_
 int GetShimmedGradients(const char *prefix,int probe,std::vector<std::string> gradName,
                         std::vector<grad_meas_t> &shim_grad);
 
-int MakeTables_prod(bool isBlind){
+int MakeTables_prod(bool isBlind,std::string theDate){
 
    int rc=0;
    int method = gm2fieldUtil::Constants::kPhaseDerivative;
-
-   date_t theDate;
-   GetDate(theDate);
 
    char outDir[200];
    sprintf(outDir,"./output"); 
    if(isBlind)  sprintf(outDir,"%s/blinded"  ,outDir);
    if(!isBlind) sprintf(outDir,"%s/unblinded",outDir);
-   sprintf(outDir,"%s/%s",outDir,theDate.getDateString().c_str()); 
+   sprintf(outDir,"%s/%s",outDir,theDate.c_str()); 
 
    result_prod_t result;
    std::vector<result_prod_t> res,resFree;
@@ -92,6 +89,10 @@ int MakeTables_prod(bool isBlind){
    std::vector<int> probe; 
 
    bool update = false;
+
+   double sum_sq=0;
+   double sumf=0,sum=0;
+   double sumf_ppb=0,sum_ppb=0;
 
    int k=0; 
    int probeNumber = 0; 
@@ -167,7 +168,11 @@ int MakeTables_prod(bool isBlind){
 	 misalign[k].dz_aba   = (deltaB_pp[k][2].dB_fxpr-deltaB_trly[k][2].dB_fxpr)/impGrad[k][2].grad; 
 	 misalign[k].dB_x_aba = misalign[k].dx_aba*shimGrad[k][0].grad; 
 	 misalign[k].dB_y_aba = misalign[k].dy_aba*shimGrad[k][1].grad; 
-	 misalign[k].dB_z_aba = misalign[k].dz_aba*shimGrad[k][2].grad; 
+	 misalign[k].dB_z_aba = misalign[k].dz_aba*shimGrad[k][2].grad;
+         // now propagate to the PP-TRLY difference 
+         sum_sq               = misalign[k].dB_x_aba*misalign[k].dB_x_aba + misalign[k].dB_y_aba*misalign[k].dB_y_aba
+                              + misalign[k].dB_z_aba*misalign[k].dB_z_aba; 
+	 res[i].mErr_aba = TMath::Sqrt(sum_sq);
 	 std::cout << "--> Misalignments recalculated." << std::endl;
       }
       // reset 
@@ -179,9 +184,6 @@ int MakeTables_prod(bool isBlind){
 
    const int NPROBES = probe.size(); 
 
-   double sum_sq=0;
-   double sumf=0,sum=0;
-   double sumf_ppb=0,sum_ppb=0;
 
    // PP-TRLY 
    std::cout << "===================================== PP-TRLY =====================================" << std::endl;
