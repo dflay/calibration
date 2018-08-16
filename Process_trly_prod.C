@@ -42,11 +42,6 @@
 #include "./src/CustomExport.C"
 #include "./src/CustomAlgorithms.C"
 
-enum outType{
-   kSWAP = 0,
-   kPOS  = 1
-}; 
-
 double gMarkerSize = 0.8; 
 
 TGraph *GetTRLYVelocityTGraph(int probe,TString xAxis,TString yAxis,
@@ -60,16 +55,7 @@ int GetTRLYSwapData(int probe,int nev,double time,std::vector<trolleyAnaEvent_t>
                     std::vector<double> &TIME,std::vector<double> &FREQ,std::vector<double> &TEMP,
 		    std::vector<double> &X,std::vector<double> &Y,std::vector<double> &Z); 
 
-// int GetTRLYProbeStatsAtTime(int probe,int nev,std::vector<trolleyAnaEvent_t> trlyData,
-//                             std::vector<double> time,std::vector<double> &freq,std::vector<double> &freqErr,
-//                             std::vector<double> &temp,std::vector<double> &tempErr);
-
-int PrintToFileSingle(std::string outpath,int run,double time,double t,double x,double dx,double y,double dy);
-
-int PrintToFile(int type,std::string outpath,std::vector<trolleySwapEvent_t> Event); 
-int PrintToFile(std::string outpath,std::vector<double> Time,
-                std::vector<double> Freq,std::vector<double> dFreq,
-                std::vector<double> Temp,std::vector<double> dTemp);
+int PrintToFile(std::string outpath,std::vector<trolleySwapEvent_t> Event); 
 
 int Process_trly_prod(std::string configFile){
 
@@ -137,7 +123,7 @@ int Process_trly_prod(std::string configFile){
    // mgVelo->Add(gSig ,"lp"); 
    // mgVelo->Add(gFish,"lp"); 
 
-   std::vector<double> time,freq,freqErr,temp,tempErr;
+   std::vector<double> time;
 
    // find the times for each TRLY swap
    double angle = 189.160; // nominal trolley location 
@@ -160,13 +146,9 @@ int Process_trly_prod(std::string configFile){
 
    char outPath[500];
    sprintf(outPath,"%s/trly-swap-data_pr-%02d_%s.csv",outDir,probeNumber,anaDate.c_str());
-   std::string outpath_swap = outPath;
+   std::string outpath = outPath;
 
-   sprintf(outPath,"%s/trly-swap-pos_pr-%02d_%s.csv",outDir,probeNumber,anaDate.c_str());
-   std::string outpath_pos = outPath;
-
-   rc = PrintToFile(kSWAP,outpath_swap,trlySwap); 
-   rc = PrintToFile(kPOS ,outpath_pos ,trlySwap); 
+   rc = PrintToFile(outpath,trlySwap); 
 
    // make plots 
    TGraph *gTR = GetTRLYTGraph(probeNumber-1,"GpsTimeStamp","freq",trlyData);
@@ -183,15 +165,19 @@ int Process_trly_prod(std::string configFile){
       mgt->Add(gTemp[i],"lp");
    }
 
-   double mean  = gm2fieldUtil::Math::GetMean<double>(freq); 
-   double yMin = (mean-fLO)-1E+3; 
-   double yMax = (mean-fLO)+1E+3;
+   double mean=0,stdev=0;
+   double mean_t=0,stdev_t=0;
+   rc = GetStats("freq",probeNumber-1,trlyData,mean,stdev); 
+   rc = GetStats("temp",probeNumber-1,trlyData,mean_t,stdev_t); 
 
-   double stdev = gm2fieldUtil::Math::GetStandardDeviation<double>(freq); 
+   double yMin  = mean-1E+3; 
+   double yMax  = mean+1E+3;
+
+   rc = GetStats("freq",trlySwap,mean,stdev); 
+
    double yMin2 = (mean-fLO)-10.*stdev;
    double yMax2 = (mean-fLO)+10.*stdev;
 
-   double mean_t = gm2fieldUtil::Math::GetMean<double>(temp); 
    double yMin3 = mean_t-0.2;
    double yMax3 = mean_t+0.2;
 
@@ -221,19 +207,14 @@ int Process_trly_prod(std::string configFile){
    c1->cd(2);
    mgf->Draw("a");
    gm2fieldUtil::Graph::SetGraphLabels(mgf,Form("TRLY-%02d Swap Events",probeNumber),"","Frequency (Hz)");
-   // gm2fieldUtil::Graph::UseTimeDisplay(mgf); 
    gm2fieldUtil::Graph::SetGraphLabelSizes(mgf,0.05,0.06);
    mgf->GetYaxis()->SetRangeUser(yMin2,yMax2);
    mgf->Draw("a");
-   // L->Draw("same"); 
    c1->Update();
-
-   std::cout << __LINE__ << std::endl;
 
    c1->cd(3);
    mgt->Draw("a");
    gm2fieldUtil::Graph::SetGraphLabels(mgt,Form("TRLY-%02d Swap Events",probeNumber),"","Temperature (#circC)");
-   // gm2fieldUtil::Graph::UseTimeDisplay(mgt); 
    gm2fieldUtil::Graph::SetGraphLabelSizes(mgt,0.05,0.06);
    mgt->GetYaxis()->SetRangeUser(yMin3,yMax3);
    mgt->Draw("a");
@@ -241,30 +222,24 @@ int Process_trly_prod(std::string configFile){
    
    TString plotPath = Form("%s/trly-swap_pr-%02d.png",plotDir,probeNumber);
    c1->cd(); 
-   std::cout << __LINE__ << std::endl;
    c1->Print(plotPath); 
-   std::cout << __LINE__ << std::endl;
    delete c1; 
 
    // TCanvas *c2 = new TCanvas("c2","TRLY Velocities",1200,600); 
    // c2->cd();
 
-   // c1->cd(2); 
    // mgVelo->Draw("a"); 
    // gm2fieldUtil::Graph::SetGraphLabels(mgVelo,"TRLY Velocities (blue = signal, red = fishing)","","Velocity (counts/sec)"); 
    // gm2fieldUtil::Graph::UseTimeDisplay(mgVelo); 
    // gm2fieldUtil::Graph::SetGraphLabelSizes(mgVelo,0.05,0.06); 
    // mgVelo->Draw("a");
-   // c1->Update();
-
-
-   std::cout << __LINE__ << std::endl;
-
-   std::cout << "--> Done." << std::endl; 
+   // c2->Update();
 
    // plotPath = Form("%s/trly-velo_run-%05d.png",plotDir,run[0]);
    // c2->cd(); 
    // c2->Print(plotPath); 
+
+   std::cout << "--> Done." << std::endl; 
 
    return 0;
 }
@@ -345,7 +320,7 @@ int GetTRLYSwapData(int probe,int nev,double time,std::vector<trolleyAnaEvent_t>
    return 0;
 }
 //______________________________________________________________________________
-int PrintToFile(int type,std::string outpath,std::vector<trolleySwapEvent_t> Event){
+int PrintToFile(std::string outpath,std::vector<trolleySwapEvent_t> Event){
 
    const int N = Event.size();
    char myStr[1000];
@@ -357,35 +332,9 @@ int PrintToFile(int type,std::string outpath,std::vector<trolleySwapEvent_t> Eve
       return 1;
    }else{
       for(int i=0;i<N;i++){
-	 if(type==kSWAP){
-	    sprintf(myStr,"%.0lf,%.3lf,%.3lf,%.3lf,%.3lf",Event[i].time,Event[i].freq,Event[i].freq_err,Event[i].temp,Event[i].temp_err);
-	 }else if(type==kPOS){
-	    sprintf(myStr,"%.0lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf",
-                    Event[i].time,Event[i].r,Event[i].r_err,Event[i].y,Event[i].y_err,Event[i].phi,Event[i].phi_err);
-	 }
-         outfile << myStr << std::endl;
-      }
-      std::cout << "The data has been written to file: " << outpath << std::endl;
-      outfile.close();
-   }
-   return 0;
-}
-//______________________________________________________________________________
-int PrintToFile(std::string outpath,std::vector<double> Time,
-                std::vector<double> Freq,std::vector<double> dFreq,
-                std::vector<double> Temp,std::vector<double> dTemp){
-
-   const int N = Time.size();
-   char myStr[1000];
-
-   std::ofstream outfile;
-   outfile.open( outpath.c_str() );
-   if( outfile.fail() ){
-      std::cout << "Cannot open the file: " << outpath << std::endl;
-      return 1;
-   }else{
-      for(int i=0;i<N;i++){
-         sprintf(myStr,"%.0lf,%.3lf,%.3lf,%.3lf,%.3lf",Time[i],Freq[i],dFreq[i],Temp[i],dTemp[i]);
+	 sprintf(myStr,"%.0lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf",
+                 Event[i].time,Event[i].freq,Event[i].freq_err,Event[i].temp,Event[i].temp_err,
+                 Event[i].r,Event[i].r_err,Event[i].y,Event[i].y_err,Event[i].phi,Event[i].phi_err);
          outfile << myStr << std::endl;
       }
       std::cout << "The data has been written to file: " << outpath << std::endl;

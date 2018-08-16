@@ -1,5 +1,38 @@
 #include "../include/CustomMath.h" 
 //______________________________________________________________________________
+int GetStats(std::string varName,std::vector<trolleySwapEvent_t> data,double &mean,double &stdev){
+   const int N = data.size();
+   if(N==0) return -1;
+
+   std::vector<double> x;
+   for(int i=0;i<N;i++){
+      if( varName.compare("freq")==0 ) x.push_back(data[i].freq); 
+      if( varName.compare("temp")==0 ) x.push_back(data[i].temp); 
+   }
+
+   mean  = gm2fieldUtil::Math::GetMean<double>(x); 
+   stdev = gm2fieldUtil::Math::GetStandardDeviation<double>(x);
+
+   return 0;   
+}
+//______________________________________________________________________________
+int GetStats(std::string varName,int probe,std::vector<trolleyAnaEvent_t> data,double &mean,double &stdev){
+   // get stats for the trolley data 
+   const int N = data.size();
+   if(N==0) return -1; 
+
+   std::vector<double> x;
+   for(int i=0;i<N;i++){
+      if( varName.compare("freq")==0 ) x.push_back(data[i].freq[probe]); 
+      if( varName.compare("temp")==0 ) x.push_back(data[i].temp[probe]); 
+   }
+
+   mean  = gm2fieldUtil::Math::GetMean<double>(x); 
+   stdev = gm2fieldUtil::Math::GetStandardDeviation<double>(x);
+
+   return 0; 
+}
+//______________________________________________________________________________
 int GetStats(std::vector<double> x,double &mean,double &stdev){
    // compute mean and standard deviation of data 
    const int N = x.size();

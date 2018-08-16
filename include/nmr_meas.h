@@ -23,7 +23,13 @@ typedef struct calibSwap{
    double freq;                // frequency (Hz) 
    double freqErr;             // frequency uncertainty (Hz) 
    double temp;                // temperature (deg C) 
-   double tempErr;             // temperature uncertainty (deg C) 
+   double tempErr;             // temperature uncertainty (deg C)
+   double r;
+   double rErr; 
+   double y;
+   double yErr; 
+   double phi;
+   double phiErr; 
    int type;                   // 0 = PP, 1 = TRLY 
 } calibSwap_t; 
 

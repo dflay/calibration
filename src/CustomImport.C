@@ -164,7 +164,7 @@ int LoadMisalignmentData(const char *inpath,misalignment_t &data){
 int LoadCalibSwapData(const char *inpath,std::vector<calibSwap_t> &data){
 
    int i=0;
-   std::string stime,sf,sfe,st,ste;
+   std::string stime,sf,sfe,st,ste,sx,sxe,sy,sye,sz,sze;
 
    calibSwap_t dataPt;
 
@@ -179,10 +179,24 @@ int LoadCalibSwapData(const char *inpath,std::vector<calibSwap_t> &data){
          std::getline(infile,sf   ,',');
          std::getline(infile,sfe  ,',');
          std::getline(infile,st   ,',');
-         std::getline(infile,ste);
+         std::getline(infile,ste  ,',');
+         std::getline(infile,sx   ,',');
+         std::getline(infile,sxe  ,',');
+         std::getline(infile,sy   ,',');
+         std::getline(infile,sye  ,',');
+         std::getline(infile,sz   ,',');
+         std::getline(infile,sze);
 	 dataPt.time    = std::atof( stime.c_str() );
 	 dataPt.freq    = std::atof( sf.c_str()    );
 	 dataPt.freqErr = std::atof( sfe.c_str()   );
+	 dataPt.temp    = std::atof( st.c_str()    );
+	 dataPt.tempErr = std::atof( ste.c_str()   );
+	 dataPt.r       = std::atof( sx.c_str()    );
+	 dataPt.rErr    = std::atof( sxe.c_str()   );
+	 dataPt.y       = std::atof( sy.c_str()    );
+	 dataPt.yErr    = std::atof( sye.c_str()   );
+	 dataPt.phi     = std::atof( sz.c_str()    );
+	 dataPt.phiErr  = std::atof( sze.c_str()   );
 	 data.push_back(dataPt); 
       }
       infile.close();
