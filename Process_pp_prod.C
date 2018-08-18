@@ -122,7 +122,7 @@ int Process_pp_prod(std::string configFile){
    char inpath[200]; 
    perturbation_t ppPert;
    sprintf(inpath,"./input/perturbation/pp-pert.csv");
-   LoadPerturbationData(inpath,ppPert);
+   LoadPerturbationData(inpath,probeNumber,ppPert);
 
    int M=0;
 

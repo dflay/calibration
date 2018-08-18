@@ -13,6 +13,7 @@
 #include "TLegend.h"
 #include "TSpline.h"
 #include "TFitResult.h"
+#include "TLine.h"
 
 #include "RootTreeStructs.h"
 #include "gm2fieldMath.h"
@@ -42,6 +43,8 @@
 #include "./src/DeltaBFuncs.C"
 
 int GetAziGrad(TGraph *g,double &grad,double &gradErr);
+int GetCoordinates(std::vector<calibSwap_t> data,std::vector<double> &r); 
+int RedefineOrigin(std::vector<plungingProbeAnaEvent_t> &data,std::vector<double> &r0); 
 
 int LocalScanGrad_pp_prod(std::string configFile){
 
@@ -132,15 +135,6 @@ int LocalScanGrad_pp_prod(std::string configFile){
       fitFunc = "pol1";
    }
 
-   // trolley probe coordinates 
-   trolleyProbePosition_t trlyPos; 
-   rc = GetTrolleyProbePositions(trlyPos);
-   double pos[2] = {trlyPos.r[probeNumber-1],trlyPos.y[probeNumber-1]}; 
-
-   // we do something different for the z axis (see below) 
-   double trly_coord=0;
-   if(axis!=2) trly_coord = pos[axis]; 
-
    // PP data 
    std::vector<plungingProbeAnaEvent_t> ppData,ppEvent; 
    std::cout << "Getting run " << midasRun << std::endl; 
@@ -156,24 +150,65 @@ int LocalScanGrad_pp_prod(std::string configFile){
   
    if(isBlind) ApplyBlindingPP(blindValue,ppData);
 
+   // trolley probe coordinates 
+   // std::vector<calibSwap_t> trData; 
+   // trolleyProbePosition_t trlyPos; 
+   // rc = GetTrolleyProbePositions(trlyPos);
+   // double pos[2] = {trlyPos.r[probeNumber-1],trlyPos.y[probeNumber-1]}; 
+
    // now parse PP data using subrun list 
    rc = FilterPlungingProbeData(subRun,ppData,ppEvent); 
    std::cout << "Filtered PP data to use NMR-DAQ runs: " << std::endl;
    int M=0;
    const int NPP = ppEvent.size();
-   double mean=0,stdev=0;
+   double mean=0,stdev=0,max=0,min=50E+3;
    std::vector<double> F;
    for(int i=0;i<NPP;i++){
       M = ppEvent[i].numTraces; 
       for(int j=0;j<M;j++) F.push_back(ppEvent[i].freq[j]); 
       mean  = gm2fieldUtil::Math::GetMean<double>(F); 
-      stdev = gm2fieldUtil::Math::GetStandardDeviation<double>(F); 
+      stdev = gm2fieldUtil::Math::GetStandardDeviation<double>(F);
+      if(max<mean) max = mean;  
+      if(min>mean) min = mean;  
       std::cout << Form("%d: x = %.3lf mm, y = %.3lf mm, z = %.3lf mm, F = %.3lf +/- %.3lf Hz",
                         ppEvent[i].run,ppEvent[i].r[0],ppEvent[i].y[0],ppEvent[i].phi[0],
                         mean,stdev) << std::endl;
       // clean up for next event 
       F.clear();
    } 
+
+   min -= 5; 
+   max += 5; 
+
+
+   // plunging probe swap data 
+   std::vector<calibSwap_t> ppCalib_data;
+   char inpath_pp[200]; 
+   sprintf(inpath_pp,"%s/pp-swap-data_pr-%02d_%s.csv",outdir,probeNumber,date.c_str());
+   rc = LoadCalibSwapData(inpath_pp,ppCalib_data);  
+
+   // trolley swap data 
+   std::vector<calibSwap_t> trlyCalib_data;
+   char inpath_tr[200]; 
+   sprintf(inpath_tr,"%s/trly-swap-data_pr-%02d_%s.csv",outdir,probeNumber,date.c_str());
+   rc = LoadCalibSwapData(inpath_tr,trlyCalib_data);  
+
+   // get the coordinates of the PP and trly probe  
+   std::vector<double> ppCoord,trlyCoord;
+   rc = GetCoordinates(ppCalib_data  ,ppCoord  );  
+   rc = GetCoordinates(trlyCalib_data,trlyCoord);  
+   
+   // subtract off PP coordinates from the PP data (redefine the origin) 
+   rc = RedefineOrigin(ppEvent,ppCoord);
+
+   // we do something different for the z axis (see below) 
+   double X = (-1.)*(ppCoord[axis] - trlyCoord[axis]);  // WARNING: we impose a NEGATIVE gradient, so our convention flips here
+   if(axis!=2) X = 0; 
+   
+   TLine *evalPoint = new TLine(X,min,X,max);
+   evalPoint->SetLineColor(kBlue);
+   evalPoint->SetLineStyle(2); 
+   evalPoint->SetLineWidth(2); 
 
    // fixed probe data
    char fxpr_path[200]; 
@@ -201,22 +236,29 @@ int LocalScanGrad_pp_prod(std::string configFile){
 
    // Plunging probe plots 
    TGraphErrors *g = GetPPTGraphErrors2(Axis.c_str(),"freq",ppEvent);
-   // TGraphErrors *g = GetPPScanGraph(Axis.c_str(),"freq",ppEvent,trly_coord);
+   // TGraphErrors *g = GetPPScanGraph(Axis.c_str(),"freq",ppEvent,X);
    gm2fieldUtil::Graph::SetGraphParameters(g,20,kBlack);
 
    // Fixed probe plot 
    TGraph *gFXPR = GetTGraphNew(fxprDataAvg);
    gm2fieldUtil::Graph::SetGraphParameters(gFXPR,20,kBlack);  
 
-   TString xAxisLabel = Form("%s (mm)",Axis.c_str());
+   TString xAxisLabel;
+   if(ppCoord[axis]>=0){
+      xAxisLabel = Form("%s - %.3lf (mm)",Axis.c_str(),ppCoord[axis]);
+   }else{
+      xAxisLabel = Form("%s + %.3lf (mm)",Axis.c_str(),TMath::Abs(ppCoord[axis]) );
+   }
 
    TCanvas *c1 = new TCanvas("c1","PP Data",1200,600);
   
    c1->cd(); 
    g->Draw("ap");
-   gm2fieldUtil::Graph::SetGraphLabels(g,"Shimmed Field",xAxisLabel,"Frequency (Hz)"); 
+   gm2fieldUtil::Graph::SetGraphLabels(g,"Shimmed Field (Gradient Evaluated at Dotted Line)",xAxisLabel,"Frequency (Hz)"); 
    g->Draw("ap");
+   g->GetYaxis()->SetRangeUser(min,max); 
    TFitResultPtr fitResult = g->Fit(fitFunc.c_str(),"QS"); 
+   if(axis!=2) evalPoint->Draw("same"); 
    c1->Update(); 
 
    TString plotPath = Form("%s/pp-shimmed-scan-%s_pr-%02d.png",plotDir,Axis.c_str(),probeNumber); 
@@ -253,22 +295,22 @@ int LocalScanGrad_pp_prod(std::string configFile){
 
    double sum_sq=0;
 
-   double X[3] = {trly_coord,0.,0.}; 
+   double XX[3] = {X,0.,0.}; 
  
    if(axis!=2){
-      std::cout << "The trolley coordinate is " << trly_coord << " mm" << std::endl;
-      dBdr     = myFit->Derivative(trly_coord);  // evaluate at the trolley probe position of interest 
-      dBdr_err = GetFitError(myFit,fitResult,MyPolyFitFuncDerivative,X);   
+      std::cout << "The trolley coordinate is " << X << " mm" << std::endl;
+      dBdr     = myFit->Derivative(X);  // evaluate at the trolley probe position of interest 
+      dBdr_err = GetFitError(myFit,fitResult,MyPolyFitFuncDerivative,XX);   
       // if( fitFunc.compare("pol1")==0 ){
       //    dBdr_err = parErr[1]; 
       // }else if( fitFunc.compare("pol2")==0 ){
       //    sum_sq   = TMath::Power(parErr[1],2.)  
-      //             + TMath::Power(2.*parErr[2]*trly_coord,2.);   
+      //             + TMath::Power(2.*parErr[2]*X,2.);   
       //    dBdr_err = TMath::Sqrt(sum_sq);  
       // }else if( fitFunc.compare("pol3")==0 ){
       //    sum_sq   = TMath::Power(parErr[1],2.)  
-      //             + TMath::Power(2.*parErr[2]*trly_coord,2.)  
-      //             + TMath::Power(9.*parErr[3]*trly_coord*trly_coord,2.); 
+      //             + TMath::Power(2.*parErr[2]*X,2.)  
+      //             + TMath::Power(9.*parErr[3]*X*X,2.); 
       //    dBdr_err = TMath::Sqrt(sum_sq);  
       // }
    }else{
@@ -301,29 +343,41 @@ int LocalScanGrad_pp_prod(std::string configFile){
    
    return 0;
 }
-// //______________________________________________________________________________
-// double GetPPOrigin(int axis,std::vector<plungingProbeAnaEvent_t> data){
-//    // find the origin of the scan 
-//    std::vector<double> x; 
-//    const int N = data.size();
-//    for(int i=0;i<N;i++){
-//       if(axis==0) x.push_back(data[i].r[0]); 
-//       if(axis==1) x.push_back(data[i].y[0]); 
-//       if(axis==2) x.push_back(data[i].phi[0]); 
-//    }
-//  
-//    double x0=0; 
-//    // sort in ascending order 
-//    std::sort(x.begin(),x.end()); 
-//    if(N>2){
-//       x0 = x[1];
-//    }else{
-//       // how do we tell what is the origin here? 
-//       x0 = x[0];
-//       if(x[0]>x[1]) x0 = x[1];
-//    }
-//    return x0; 
-// }
+//______________________________________________________________________________
+int RedefineOrigin(std::vector<plungingProbeAnaEvent_t> &data,std::vector<double> &r0){
+   int M=0;
+   const int N = data.size();
+   for(int i=0;i<N;i++){
+      M = data[i].numTraces; 
+      for(int j=0;j<M;j++){
+	 data[i].r[j]   -= r0[0];
+	 data[i].y[j]   -= r0[1];
+	 data[i].phi[j] -= r0[2];
+      }  
+   }
+   return 0;
+}
+//______________________________________________________________________________
+int GetCoordinates(std::vector<calibSwap_t> data,std::vector<double> &r){
+   const int N = data.size();
+   std::vector<double> x,y,z; 
+   for(int i=0;i<N;i++){
+      x.push_back( data[i].r   ); 
+      y.push_back( data[i].y   ); 
+      z.push_back( data[i].phi ); 
+   }
+
+   double mean_x = gm2fieldUtil::Math::GetMean<double>(x); 
+   double mean_y = gm2fieldUtil::Math::GetMean<double>(y); 
+   double mean_z = gm2fieldUtil::Math::GetMean<double>(z);
+
+   r.push_back(mean_x);  
+   r.push_back(mean_y);  
+   r.push_back(mean_z);  
+
+   return 0;
+
+}
 //______________________________________________________________________________
 int GetAziGrad(TGraph *g,double &grad,double &gradErr){
    // will probably always be two data points

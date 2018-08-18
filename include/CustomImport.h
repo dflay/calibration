@@ -22,6 +22,7 @@ int ImportDeltaBFileList_csv(const char *inpath,
                     std::vector<int> &x1,std::vector<std::string> &x2,
                     std::vector<double> &x3); 
 
+int LoadImagesData(const char *inpath,int probe,double &image,double &image_err); 
 int LoadTRLYSCCTimes(int probe,std::vector<double> &sccOff,std::vector<double> &sccOn); 
 int LoadTRLYTimes(int probe,std::string type,std::vector<double> &time); 
 int LoadResultsProdData(const char *inpath,result_prod_t &data); 

@@ -85,6 +85,33 @@ int LoadResultsProdFinalData(const char *inpath,result_prod_t &data){
    return 0;
 }
 //______________________________________________________________________________
+int LoadImagesData(const char *inpath,int probe,double &image,double &image_err){
+
+   int ip=0;
+   std::string sp,sx,sdx;
+
+   ifstream infile;
+   infile.open(inpath);
+   if( infile.fail() ){
+      cout << "Cannot open the file: " << inpath << endl;
+      return 1;
+   }else{
+      while( !infile.eof() ){
+         std::getline(infile,sp,',');
+         std::getline(infile,sx,',');
+         std::getline(infile,sdx);
+         ip = std::atof( sp.c_str() ); 
+         if(probe==ip){
+	    image     = std::atof( sx.c_str() ); 
+	    image_err = std::atof( sdx.c_str() );
+         } 
+      }
+      infile.close();
+   }
+
+   return 0;
+}
+//______________________________________________________________________________
 int LoadResultsProdData(const char *inpath,result_prod_t &data){
 
    const int NLines = 1;
@@ -462,7 +489,7 @@ int ImportDeltaBFileList_csv(const char *inpath,
    return 0;
 }
 //______________________________________________________________________________
-int LoadPerturbationData(const char *inpath,perturbation_t &pert){
+int LoadPerturbationData(const char *inpath,int probe,perturbation_t &pert){
 
    int cntr=0;
    string s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11,s12;
@@ -504,7 +531,15 @@ int LoadPerturbationData(const char *inpath,perturbation_t &pert){
       }
       infile.close();
    }
-  
+ 
+   // get the correct value of the image 
+   double image=0,image_err=0;
+   char inpath_image[200];
+   sprintf(inpath_image,"./input/perturbation/images.csv"); 
+   LoadImagesData(inpath_image,probe,image,image_err);
+   pert.delta_mag     = image; 
+   pert.delta_mag_err = image_err;   
+ 
    return 0;
 }
 

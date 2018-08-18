@@ -107,7 +107,7 @@ int ProcessResults_prod(std::string configFile){
    char inpath_pert[200];
    perturbation_t ppPert;
    sprintf(inpath_pert,"./input/perturbation/pp-pert.csv");
-   LoadPerturbationData(inpath_pert,ppPert);
+   LoadPerturbationData(inpath_pert,probeNumber,ppPert);
 
    // compute errors from free proton corrections 
    double freeProtErr=0;
