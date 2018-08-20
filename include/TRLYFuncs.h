@@ -4,6 +4,7 @@
 #include <cstdlib> 
 #include <vector>
 
+#include "nmr_meas.h"
 #include "trolleyAnaEvent.h"
 
 #include "gm2fieldMath.h"
@@ -13,7 +14,7 @@
 // int GetTrolleyProbePosition(int index,double *pos);
 int GetTrolleyProbePositions(trolleyProbePosition_t &data);
 
-int GetTRLYStatsAtTime(int probe,int nev,double fLO,std::vector<double> time,
+int GetTRLYStatsAtTime(bool UseTempCor,int probe,int nev,double fLO,std::vector<double> time,
                        std::vector<trolleyAnaEvent_t> Data,std::vector<trolleySwapEvent_t> &Event); 
 
 int FindTransitionTimes(int step,double thr,std::vector<trolleyAnaEvent_t> Data,

@@ -1,6 +1,6 @@
 #include "../include/CustomMath.h" 
 //______________________________________________________________________________
-int GetStats(std::string varName,std::vector<trolleySwapEvent_t> data,double &mean,double &stdev){
+int GetStats(std::string varName,std::vector<calibSwap_t> data,double &mean,double &stdev){
    const int N = data.size();
    if(N==0) return -1;
 

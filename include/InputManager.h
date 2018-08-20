@@ -15,7 +15,7 @@ class InputManager{
    private:
       json fParams; 
       bool fIsSimple,fIsFullAnalysis,fIsBlind,fUseP2PFit,fIsFinalLocation;
-      bool fUseAxis,fIsFreeProton,fLoadSwapTime,fLoadSCCTime,fUseTimeWeight;
+      bool fUseAxis,fIsFreeProton,fLoadSwapTime,fLoadSCCTime,fUseTimeWeight,fUseTempCor;
       int fTrolleyProbe,fAxis,fFXPRListTag;  
       std::string fType,fDevice,fAnaDate,fFitFunc;
       std::vector<int> fRunList; 
@@ -46,7 +46,8 @@ class InputManager{
       bool GetFreeProtonStatus()    const { return fIsFreeProton;    }
       bool GetSwapTimeStatus()      const { return fLoadSwapTime;    }  
       bool GetSCCTimeStatus()       const { return fLoadSCCTime;     }  
-      bool GetTimeWeightStatus()    const { return fUseTimeWeight;   }  
+      bool GetTimeWeightStatus()    const { return fUseTimeWeight;   } 
+      bool GetTempCorStatus()       const { return fUseTempCor;      }  
      
       int GetTrolleyProbe()         const { return fTrolleyProbe;    } 
       int GetAxis()                 const { return fAxis;            }

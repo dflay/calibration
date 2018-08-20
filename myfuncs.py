@@ -80,6 +80,7 @@ def writeConfigFileProd(data,tag,keyList,axis,fitData,outpath):
    outData['load-trly-swap-times'] = data['load-trly-swap-times'] 
    outData['load-trly-scc-times']  = data['load-trly-scc-times'] 
    outData['use-aba-time-weight']  = data['use-aba-time-weight']
+   outData['use-trly-temp-cor']    = data['use-trly-temp-cor'] 
    if(fitData): 
       outData['fit'] = data[tag]['fit']  
    else: 

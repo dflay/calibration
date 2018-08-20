@@ -180,15 +180,16 @@ int FilterSingle(std::string var,int probe,int nev,double T,std::vector<trolleyA
    return 0;
 }
 //______________________________________________________________________________
-int GetTRLYStatsAtTime(int probe,int nev,double fLO,std::vector<double> time,
-                       std::vector<trolleyAnaEvent_t> Data,std::vector<trolleySwapEvent_t> &Event){
+int GetTRLYStatsAtTime(bool UseTempCor,int probe,int nev,double fLO,std::vector<double> time,
+                       std::vector<trolleyAnaEvent_t> Data,std::vector<calibSwap_t> &Event){
 
    // find the mean field at the times specified in the time vector 
 
-   trolleySwapEvent_t theEvent; 
+   calibSwap_t theEvent; 
 
    const int N = time.size();
    int M=0,rc=0;
+   double delta=0;
    double mean_freq=0,stdev_freq=0;
    double mean_temp=0,stdev_temp=0;
    double mean_x=0,stdev_x=0;
@@ -204,6 +205,16 @@ int GetTRLYStatsAtTime(int probe,int nev,double fLO,std::vector<double> time,
       rc = FilterSingle("r"   ,probe,nev,time[i],Data,x);
       rc = FilterSingle("y"   ,probe,nev,time[i],Data,y);
       rc = FilterSingle("phi" ,probe,nev,time[i],Data,z);
+      // now add in the LO 
+      M = freq.size();
+      for(int j=0;j<M;j++){
+	 if(UseTempCor){
+	    // apply a temperature correction if necessary
+	    // accounts for the trolley being at a temperature other than 25 deg c  
+	    delta = (10.36E-9)*(temp[j]-25.0);
+	 }
+	 freq[j] = (freq[j]+fLO)/(1. - delta); 
+      }
       // now get mean of events 
       mean_freq  = gm2fieldUtil::Math::GetMean<double>(freq);
       stdev_freq = gm2fieldUtil::Math::GetStandardDeviation<double>(freq);
@@ -216,17 +227,17 @@ int GetTRLYStatsAtTime(int probe,int nev,double fLO,std::vector<double> time,
       mean_z     = gm2fieldUtil::Math::GetMean<double>(z);
       stdev_z    = gm2fieldUtil::Math::GetStandardDeviation<double>(z);
       // store result
-      theEvent.time     = time[i]; 
-      theEvent.freq     = mean_freq + fLO;
-      theEvent.freq_err = stdev_freq; 
-      theEvent.temp     = mean_temp; 
-      theEvent.temp_err = stdev_temp; 
-      theEvent.r        = mean_x;       
-      theEvent.r_err    = stdev_x;       
-      theEvent.y        = mean_y;       
-      theEvent.y_err    = stdev_y;       
-      theEvent.phi      = mean_z;       
-      theEvent.phi_err  = stdev_z;       
+      theEvent.time    = time[i]; 
+      theEvent.freq    = mean_freq;
+      theEvent.freqErr = stdev_freq; 
+      theEvent.temp    = mean_temp; 
+      theEvent.tempErr = stdev_temp; 
+      theEvent.r       = mean_x;       
+      theEvent.rErr    = stdev_x;       
+      theEvent.y       = mean_y;       
+      theEvent.yErr    = stdev_y;       
+      theEvent.phi     = mean_z;       
+      theEvent.phiErr  = stdev_z;       
       Event.push_back(theEvent);  
       // set up for next time 
       freq.clear();

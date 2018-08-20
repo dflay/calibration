@@ -272,11 +272,15 @@ int GetStatsForSingleProbe(int probe,std::vector<trolleyAnaEvent_t> data,
                            double &min,double &max){
    min = 60E+3;
    max = 0;
+   double arg=0,delta=0;
    double fLO = 61.74E+6; 
    const int N = data.size();
    std::vector<double> x,y; 
    for(int i=0;i<N;i++){
-      x.push_back( fLO + data[i].freq[probe] );
+      delta = 0; // 10.36E-9*(data[i].temp[probe]-25.0);  // TEMPERATURE CORRECTION 
+      arg   = (data[i].freq[probe]+fLO)/(1.-delta); 
+      // x.push_back( fLO + data[i].freq[probe] );
+      x.push_back(arg);
       y.push_back( data[i].temp[probe] );
       if(min>data[i].freq[probe]) min = data[i].freq[probe]; 
       if(max<data[i].freq[probe]) max = data[i].freq[probe]; 

@@ -8,6 +8,7 @@
 "load-trly-swap-times": true,
 "load-trly-scc-times" : true,
 "use-aba-time-weight" : true,
+"use-trly-temp-cor"   : false,
 "dB-pp_x"             : {"midas-runs": [5500] },              
 "dB-pp_y"             : {"midas-runs": [5501] },              
 "dB-pp_z"             : {"midas-runs": [5502] },              

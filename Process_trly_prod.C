@@ -55,7 +55,7 @@ int GetTRLYSwapData(int probe,int nev,double time,std::vector<trolleyAnaEvent_t>
                     std::vector<double> &TIME,std::vector<double> &FREQ,std::vector<double> &TEMP,
 		    std::vector<double> &X,std::vector<double> &Y,std::vector<double> &Z); 
 
-int PrintToFile(std::string outpath,std::vector<trolleySwapEvent_t> Event); 
+int PrintToFile(std::string outpath,std::vector<calibSwap_t> Event); 
 
 int Process_trly_prod(std::string configFile){
 
@@ -68,7 +68,8 @@ int Process_trly_prod(std::string configFile){
 
    std::string anaDate = inputMgr->GetAnalysisDate();
    bool isBlind        = inputMgr->IsBlind();
-   bool loadSwapTimes  = inputMgr->GetSwapTimeStatus(); 
+   bool loadSwapTimes  = inputMgr->GetSwapTimeStatus();
+   bool useTempCor     = inputMgr->GetTempCorStatus();  
    int probeNumber     = inputMgr->GetTrolleyProbe(); 
 
    date_t theDate;
@@ -141,8 +142,8 @@ int Process_trly_prod(std::string configFile){
    int nev = 30;
    double fLO = 61.74E+6; 
 
-   std::vector<trolleySwapEvent_t> trlySwap; 
-   rc = GetTRLYStatsAtTime(probeNumber-1,nev,fLO,time,trlyData,trlySwap);
+   std::vector<calibSwap_t> trlySwap; 
+   rc = GetTRLYStatsAtTime(useTempCor,probeNumber-1,nev,fLO,time,trlyData,trlySwap);
 
    char outPath[500];
    sprintf(outPath,"%s/trly-swap-data_pr-%02d_%s.csv",outDir,probeNumber,anaDate.c_str());
@@ -320,7 +321,7 @@ int GetTRLYSwapData(int probe,int nev,double time,std::vector<trolleyAnaEvent_t>
    return 0;
 }
 //______________________________________________________________________________
-int PrintToFile(std::string outpath,std::vector<trolleySwapEvent_t> Event){
+int PrintToFile(std::string outpath,std::vector<calibSwap_t> Event){
 
    const int N = Event.size();
    char myStr[1000];
@@ -333,8 +334,8 @@ int PrintToFile(std::string outpath,std::vector<trolleySwapEvent_t> Event){
    }else{
       for(int i=0;i<N;i++){
 	 sprintf(myStr,"%.0lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf",
-                 Event[i].time,Event[i].freq,Event[i].freq_err,Event[i].temp,Event[i].temp_err,
-                 Event[i].r,Event[i].r_err,Event[i].y,Event[i].y_err,Event[i].phi,Event[i].phi_err);
+                 Event[i].time,Event[i].freq,Event[i].freqErr,Event[i].temp,Event[i].tempErr,
+                 Event[i].r,Event[i].rErr,Event[i].y,Event[i].yErr,Event[i].phi,Event[i].phiErr);
          outfile << myStr << std::endl;
       }
       std::cout << "The data has been written to file: " << outpath << std::endl;

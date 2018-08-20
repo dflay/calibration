@@ -127,7 +127,7 @@ int CalibrateMultiSwap(std::string configFile){
    perturbation_t ppPert;
    char inpath[500]; 
    sprintf(inpath,"./input/perturbation/pp-pert.csv");
-   LoadPerturbationData(inpath,ppPert);
+   LoadPerturbationData(inpath,probe,ppPert);
 
    // put PP data into nmr_meas_t struct 
    nmr_meas_t data;

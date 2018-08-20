@@ -18,7 +18,8 @@ int InputManager::Init(){
    fUseAxis         = false;
    fLoadSwapTime    = false; 
    fLoadSCCTime     = false;
-   fUseTimeWeight   = false;  
+   fUseTimeWeight   = false; 
+   fUseTempCor      = false; 
    fTrolleyProbe    = -1; 
    fAxis            = -1;
    fFXPRListTag     = -1;
@@ -103,6 +104,7 @@ int InputManager::Parse(){
    bool swapStatus  = DoesKeyExist("load-trly-swap-times");  
    bool sccStatus   = DoesKeyExist("load-trly-scc-times");  
    bool timeStatus  = DoesKeyExist("use-aba-time-weight");
+   bool tempStatus  = DoesKeyExist("use-trly-temp-cor"); 
 
    // parameters common to all 
    if(dateStatus)  fAnaDate      = fParams["date"];
@@ -126,6 +128,7 @@ int InputManager::Parse(){
       if(swapStatus) fLoadSwapTime  = (bool)( (int)fParams["load-trly-swap-times"] ); 
       if(sccStatus)  fLoadSCCTime   = (bool)( (int)fParams["load-trly-scc-times"] ); 
       if(timeStatus) fUseTimeWeight = (bool)( (int)fParams["use-aba-time-weight"] ); 
+      if(tempStatus) fUseTempCor    = (bool)( (int)fParams["use-trly-temp-cor"] ); 
    }
  
    // simple input format (i.e., rapid swapping data from 6/1)  
