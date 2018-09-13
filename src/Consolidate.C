@@ -180,7 +180,7 @@ int ConsolidatePPData(int method,std::vector<gm2field::plungingProbeFrequency_t>
    // collect the PP data into a single struct
    // includes a variable "drift" that is a measure of field drift during the PP run 
 
-   gm2fieldUtil::TemperatureSensor *tempSensor = new gm2fieldUtil::TemperatureSensor("PT1000");
+   gm2fieldUtil::Temperature::Sensor *tempSensor = new gm2fieldUtil::Temperature::Sensor("PT1000");
    tempSensor->SetDataPath(TEMP_DIR); 
 
    plungingProbeAnaEvent_t data;

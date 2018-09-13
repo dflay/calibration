@@ -61,7 +61,7 @@ int GetOmegaP_free(nmr_meas_t pp,perturbation_t pert,double *freq_free,double *f
 int GetDiamagneticShielding(double sigma,double dsigma,double T,double &SIG,double &ERR){
    // compute diamagnetic shielding with temperature dependence
    // input units: ppb; output units: ppb  
-   SIG = sigma + 10.36*(T-25);
+   SIG = sigma - 10.36*(T-25);
    ERR = TMath::Sqrt(dsigma*dsigma + 0.30*0.30);   
    return 0; 
 }

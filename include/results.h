@@ -43,10 +43,12 @@ typedef struct result{
 
 typedef struct result_prod{
    double diff;
+   double diffFree;
    double diffErr;         // shot error 
    double mErr;            // misalignment error 
    double pErr;            // free-proton error  
    double diff_aba;
+   double diffFree_aba;
    double diffErr_aba;
    double mErr_aba;
    double pErr_aba;       

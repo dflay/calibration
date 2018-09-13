@@ -1,5 +1,28 @@
 #include "../include/CustomMath.h" 
 //______________________________________________________________________________
+int GetStats(std::string varName,std::vector<plungingProbeAnaEvent_t> data,double &mean,double &stdev){
+   const int N = data.size();
+   if(N==0) return -1;
+
+   int M=0;
+   std::vector<double> x;
+   for(int i=0;i<N;i++){
+      M = data[i].numTraces; 
+      for(int j=0;j<M;j++){
+	 if( varName.compare("r")==0    ) x.push_back(data[i].r[j]   ); 
+	 if( varName.compare("y")==0    ) x.push_back(data[i].y[j]   ); 
+	 if( varName.compare("phi")==0  ) x.push_back(data[i].phi[j] ); 
+	 if( varName.compare("freq")==0 ) x.push_back(data[i].freq[j]); 
+	 if( varName.compare("temp")==0 ) x.push_back(data[i].temp[j]); 
+      }
+   }
+
+   mean  = gm2fieldUtil::Math::GetMean<double>(x); 
+   stdev = gm2fieldUtil::Math::GetStandardDeviation<double>(x);
+
+   return 0;   
+}
+//______________________________________________________________________________
 int GetStats(std::string varName,std::vector<calibSwap_t> data,double &mean,double &stdev){
    const int N = data.size();
    if(N==0) return -1;

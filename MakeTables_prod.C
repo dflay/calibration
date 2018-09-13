@@ -48,6 +48,20 @@ double gMarkerSize = 0.8;
 double gXSize      = 0.05;  
 double gYSize      = 0.06;  
 
+int PrintTableOfResults(const char *outpath,int probe,double diff,double diffFree,
+                        double swapErr,double mErr,double pErr);
+
+int PrintTableOfResults_db(const char *outpath,int probe,
+                           double dBx_pp,double dBx_pp_err,double dBx_tr,double dBx_tr_err,
+                           double dBy_pp,double dBy_pp_err,double dBy_tr,double dBy_tr_err,
+                           double dBz_pp,double dBz_pp_err,double dBz_tr,double dBz_tr_err); 
+
+int PrintTableOfResults_grad(const char *outpath,int probe,double dBdx,double dBdx_err,
+                             double dBdy,double dBdy_err,double dBdz,double dBdz_err);
+
+int PrintTableOfResults_mis(const char *outpath,int probe,double dx,double dB_x,
+                            double dy,double dB_y,double dz,double dB_z);
+
 int GetImposedGradients(const char *inpath,std::vector<imposed_gradient_t> &imp_grad); 
 int GetShimmedGradients(const char *prefix,int probe,std::vector<std::string> gradName,
                         std::vector<grad_meas_t> &shim_grad);
@@ -182,8 +196,26 @@ int MakeTables_prod(bool isBlind,std::string theDate){
 
    // now make tables
 
-   const int NPROBES = probe.size(); 
+   // also print table of results to file 
+   char outpath_res[200];
+   sprintf(outpath_res,"%s/results_all-probes.csv",outDir);
 
+   char outpath_res_free[200];
+   sprintf(outpath_res_free,"%s/results_free-prot_all-probes.csv",outDir);
+
+   char outpath_db[200];
+   sprintf(outpath_db,"%s/results_db_all-probes.csv",outDir);
+
+   char outpath_ig[200];
+   sprintf(outpath_ig,"%s/results_imposed-gradients_all-probes.csv",outDir);
+
+   char outpath_sg[200];
+   sprintf(outpath_sg,"%s/results_shimmed-gradients_all-probes.csv",outDir);
+
+   char outpath_mis[200];
+   sprintf(outpath_mis,"%s/results_misalignments_all-probes.csv",outDir);
+
+   const int NPROBES = probe.size(); 
 
    // PP-TRLY 
    std::cout << "===================================== PP-TRLY =====================================" << std::endl;
@@ -197,6 +229,7 @@ int MakeTables_prod(bool isBlind,std::string theDate){
       std::cout << Form("%02d,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf",
                         probe[i],res[i].diff_aba,resFree[i].diff_aba,res[i].diffErr_aba,
                         res[i].mErr_aba,resFree[i].pErr,sum,sum_ppb,sumf_ppb) << std::endl;
+      rc = PrintTableOfResults(outpath_res,probe[i],res[i].diff_aba,resFree[i].diff_aba,res[i].diffErr_aba,res[i].mErr,resFree[i].pErr);
    }
 
    std::cout << "===================================== DELTA B =====================================" << std::endl;
@@ -205,6 +238,11 @@ int MakeTables_prod(bool isBlind,std::string theDate){
                         deltaB_pp[i][0].dB_fxpr,deltaB_pp[i][0].dB_fxpr_err,deltaB_trly[i][0].dB_fxpr,deltaB_trly[i][0].dB_fxpr_err,
                         deltaB_pp[i][1].dB_fxpr,deltaB_pp[i][1].dB_fxpr_err,deltaB_trly[i][1].dB_fxpr,deltaB_trly[i][1].dB_fxpr_err,
                         deltaB_pp[i][2].dB_fxpr,deltaB_pp[i][2].dB_fxpr_err,deltaB_trly[i][2].dB_fxpr,deltaB_trly[i][2].dB_fxpr_err) << std::endl;
+
+   rc = PrintTableOfResults_db(outpath_db,probe[i],
+                               deltaB_pp[i][0].dB_fxpr,deltaB_pp[i][0].dB_fxpr_err,deltaB_trly[i][0].dB_fxpr,deltaB_trly[i][0].dB_fxpr_err,
+                               deltaB_pp[i][1].dB_fxpr,deltaB_pp[i][1].dB_fxpr_err,deltaB_trly[i][1].dB_fxpr,deltaB_trly[i][1].dB_fxpr_err,
+                               deltaB_pp[i][2].dB_fxpr,deltaB_pp[i][2].dB_fxpr_err,deltaB_trly[i][2].dB_fxpr,deltaB_trly[i][2].dB_fxpr_err);
    }
 
    std::cout << "===================================== MISALIGNMENTS =====================================" << std::endl;
@@ -216,6 +254,11 @@ int MakeTables_prod(bool isBlind,std::string theDate){
                         misalign[i].dy_aba,misalign[i].dB_y_aba,
                         misalign[i].dz_aba,misalign[i].dB_z_aba,
                         sum) << std::endl;
+
+      rc = PrintTableOfResults_mis(outpath_mis,probe[i],
+                                   misalign[i].dx_aba,misalign[i].dB_x_aba,
+                                   misalign[i].dy_aba,misalign[i].dB_y_aba,
+                                   misalign[i].dz_aba,misalign[i].dB_z_aba);
    }
    
    std::cout << "===================================== SHIMMED GRADIENTS =====================================" << std::endl;
@@ -224,17 +267,21 @@ int MakeTables_prod(bool isBlind,std::string theDate){
                         probe[i],shimGrad[i][0].grad,shimGrad[i][0].grad_err,
                         shimGrad[i][1].grad,shimGrad[i][1].grad_err,
                         shimGrad[i][2].grad,shimGrad[i][2].grad_err) << std::endl;
+      rc = PrintTableOfResults_grad(outpath_sg,probe[i],
+                                    shimGrad[i][0].grad,shimGrad[i][0].grad_err,
+	                            shimGrad[i][1].grad,shimGrad[i][1].grad_err,
+	                            shimGrad[i][2].grad,shimGrad[i][2].grad_err); 
    }
 
    std::cout << "===================================== IMPOSED GRADIENTS =====================================" << std::endl;
    for(int i=0;i<NPROBES;i++){
       std::cout << Form("%02d,%.3lf,%.3lf,%.3lf",
                         probe[i],impGrad[i][0].grad,impGrad[i][1].grad,impGrad[i][2].grad) << std::endl;
+      rc = PrintTableOfResults_grad(outpath_ig,probe[i],
+                                    impGrad[i][0].grad,0.0,
+	                            impGrad[i][1].grad,0.0,
+	                            impGrad[i][2].grad,0.0);
    }
-
-
-
-
 
    return 0;
 }
@@ -281,4 +328,88 @@ int GetShimmedGradients(const char *prefix,int probe,std::vector<std::string> gr
       shim_grad.push_back(meas);
    }
    return 0;
+}
+//______________________________________________________________________________
+int PrintTableOfResults(const char *outpath,int probe,double diff,double diffFree,
+                        double swapErr,double mErr,double pErr){
+   // printing the final results for ALL probes to a single file.  All values in Hz 
+   // diff    = PP-TRLY 
+   // swapErr = point-to-point error due to the multiple swaps (RMS) 
+   // mErr    = misalignment error (dB/dx)*dx 
+   // pErr    = free-proton error 
+   // totErr  = in-quadrature sum of all errors  
+   char myStr[500]; 
+   sprintf(myStr,"%02d,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf",probe,diff,diffFree,swapErr,mErr,pErr);  
+   std::ofstream outfile;
+   outfile.open(outpath,std::ios::app);
+   if( outfile.fail() ){ 
+      std::cout << "Cannot open the file: " << outpath << std::endl;
+      return 1; 
+   }else{
+      outfile << myStr << std::endl;
+      outfile.close(); 
+   }
+   return 1; 
+}
+//______________________________________________________________________________
+int PrintTableOfResults_db(const char *outpath,int probe,
+                           double dBx_pp,double dBx_pp_err,double dBx_tr,double dBx_tr_err,
+                           double dBy_pp,double dBy_pp_err,double dBy_tr,double dBy_tr_err,
+                           double dBz_pp,double dBz_pp_err,double dBz_tr,double dBz_tr_err){
+
+   // printing the final Delta-B results for ALL probes to a single file.  All values in Hz 
+   char myStr[500]; 
+   sprintf(myStr,"%02d,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf",
+           probe,dBx_pp,dBx_pp_err,dBx_tr,dBx_tr_err,
+                 dBy_pp,dBy_pp_err,dBy_tr,dBy_tr_err,
+                 dBz_pp,dBz_pp_err,dBz_tr,dBz_tr_err); 
+   
+   std::ofstream outfile;
+   outfile.open(outpath,std::ios::app);
+   if( outfile.fail() ){ 
+      std::cout << "Cannot open the file: " << outpath << std::endl;
+      return 1; 
+   }else{
+      outfile << myStr << std::endl;
+      outfile.close(); 
+   }
+   return 1; 
+}
+//______________________________________________________________________________
+int PrintTableOfResults_grad(const char *outpath,int probe,double dBdx,double dBdx_err,
+                             double dBdy,double dBdy_err,double dBdz,double dBdz_err){
+
+   // printing the final Delta-B results for ALL probes to a single file.  All values in Hz 
+   char myStr[500]; 
+   sprintf(myStr,"%02d,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf",probe,dBdx,dBdx_err,dBdy,dBdy_err,dBdz,dBdz_err); 
+   
+   std::ofstream outfile;
+   outfile.open(outpath,std::ios::app);
+   if( outfile.fail() ){ 
+      std::cout << "Cannot open the file: " << outpath << std::endl;
+      return 1; 
+   }else{
+      outfile << myStr << std::endl;
+      outfile.close(); 
+   }
+   return 1; 
+}
+//______________________________________________________________________________
+int PrintTableOfResults_mis(const char *outpath,int probe,double dx,double dB_x,
+                            double dy,double dB_y,double dz,double dB_z){
+
+   // printing the final Delta-B results for ALL probes to a single file.  All values in Hz 
+   char myStr[500]; 
+   sprintf(myStr,"%02d,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf",probe,dx,dB_x,dy,dB_y,dz,dB_z); 
+   
+   std::ofstream outfile;
+   outfile.open(outpath,std::ios::app);
+   if( outfile.fail() ){ 
+      std::cout << "Cannot open the file: " << outpath << std::endl;
+      return 1; 
+   }else{
+      outfile << myStr << std::endl;
+      outfile.close(); 
+   }
+   return 1; 
 }
