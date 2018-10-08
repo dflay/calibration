@@ -7,6 +7,8 @@
 #include <vector>
 #include <string> 
 
+#include "gm2fieldFunc.h"
+
 #include "trolleyAnaEvent.h"
 #include "results.h"
 #include "misalignment.h"

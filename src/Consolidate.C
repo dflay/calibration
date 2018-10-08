@@ -278,6 +278,32 @@ int GetPlungingProbeData(int runNumber,int freqMethod,std::vector<plungingProbeA
    return rc;
 }
 //______________________________________________________________________________
+int GetPlungingProbeData_alt(int runNumber,int freqMethod,std::vector<plungingProbeAnaEvent_t> &ppData){
+   // import PP data when we're not using MIDAS runs  
+   // std::cout << "Trying NMR-DAQ run " << runNumber << std::endl; 
+   // load data from our analysis framework 
+   std::vector<nmrAnaEvent_t> inData;
+   char inpath[512];
+   sprintf(inpath,"./input/NMR-ANA/run-%05d/results_pulse-stats.dat",runNumber);
+   int rc = ImportNMRANAData(inpath,inData);
+   if(rc!=0){
+      std::cout << "[GetPlungingProbeData_alt]: No data for NMR-DAQ run " << runNumber << "!" << std::endl;
+      return 1;
+   }
+
+   const int N = inData.size();
+
+   // now store in the plunging probe data struct 
+   plungingProbeAnaEvent_t data;
+   data.run       = runNumber; 
+   data.numTraces = N;
+   for(int i=0;i<N;i++) data.freq[i] = inData[i].freq[freqMethod];
+   // fill vector 
+   ppData.push_back(data); 
+
+   return rc;
+}
+//______________________________________________________________________________
 int ModifyPlungingProbeData(int method,plungingProbeAnaEvent_t &Data){
    // replace the frequency values with those calculated by the NMR-ANA framework  
    int runNumber = Data.run;
