@@ -5,6 +5,7 @@
 
 typedef struct imageParameter{
    double height;              // height of FXPR 
+   int numEvents;              // number of events to use in analysis 
    int trial;                  // trial number 
    int midasRun;               // MIDAS run of measurement 
    int nmrDAQRun;              // NMR-DAQ run of measurement 

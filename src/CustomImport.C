@@ -1,5 +1,61 @@
 #include "../include/CustomImport.h"
 //______________________________________________________________________________
+int LoadImageResults(std::string inpath,std::vector<imageResult_t> &data){
+
+   std::string stype,strial,sheight,simg,simgErr,simgc,simgcErr; 
+
+   imageResult_t res;
+   std::ifstream infile;
+   infile.open(inpath.c_str());
+   if( infile.fail() ){
+      std::cout << "Cannot open the file: " << inpath << std::endl;
+      return 1;
+   }else{
+      while( !infile.eof() ){
+         std::getline(infile,stype   ,',');
+         std::getline(infile,strial  ,',');
+         std::getline(infile,sheight ,',');
+         std::getline(infile,simg    ,',');
+         std::getline(infile,simgErr ,',');
+         std::getline(infile,simgc   ,',');
+         std::getline(infile,simgcErr);
+         res.type        = stype; 
+         res.trial       = std::atoi( strial.c_str()   ); 
+         res.height      = std::atof( sheight.c_str()  ); 
+         res.img         = std::atof( simg.c_str()     ); 
+         res.img_err     = std::atof( simgErr.c_str()  ); 
+         res.img_cor     = std::atof( simgc.c_str()    ); 
+         res.img_cor_err = std::atof( simgcErr.c_str() ); 
+	 data.push_back(res); 
+      }
+      infile.close(); 
+      data.pop_back(); 
+   }
+   return 0;
+}
+//______________________________________________________________________________
+int LoadImageParameters(std::string inpath,std::string type,std::vector<imageParameter_t> &data){
+   // load relevant parameters for image measurements 
+
+   json input;
+   int rc = gm2fieldUtil::Import::ImportJSON(inpath,input);
+
+   imageParameter_t in;
+   in.numEvents = (int)input["num-events"];
+
+   std::string index;
+   const int N = input[type].size();
+   for(int i=0;i<N;i++){
+      in.trial     = (int)input[type][i]["trial"];
+      in.midasRun  = (int)input[type][i]["midas-run"];
+      in.nmrDAQRun = (int)input[type][i]["nmr-daq-run"];
+      in.height    = (double)input[type][i]["fxpr-height"];
+      // std::cout << Form("trial: %d, MIDAS: %d, NMR-DAQ: %d, height = %.3lf mm",in.trial,in.midasRun,in.nmrDAQRun,in.height) << std::endl;
+      data.push_back(in);
+   }
+   return rc;
+}
+//______________________________________________________________________________
 int LoadTRLYSCCTimes(int probe,std::vector<double> &sccOff,std::vector<double> &sccOn){
    // load in the by-hand determined SCC times 
    std::vector<double> time;
@@ -12,6 +68,36 @@ int LoadTRLYSCCTimes(int probe,std::vector<double> &sccOff,std::vector<double> &
       // even -- SCC is off 
       if(i%2==0) sccOff.push_back(time[i]);
    }
+   return 0;
+}
+//______________________________________________________________________________
+int LoadIMGTimes(std::string type,int trial,std::vector<double> &time){
+   // load in the by-hand determined swap times 
+   std::vector<std::string> stime;
+   unsigned long int aTime;
+   std::string st;
+   char inpath[200];
+   sprintf(inpath,"./input/img-times/%s_t%02d.txt",type.c_str(),trial);
+   std::ifstream infile;
+   infile.open(inpath);
+   if( infile.fail() ){
+      std::cout << "Cannot open the file: " << inpath << std::endl;
+      return 1;
+   }else{
+      while( !infile.eof() ){
+         std::getline(infile,st);
+         aTime = gm2fieldUtil::GetUTCTimeStampFromString(st,true);
+         stime.push_back(st);
+         time.push_back(aTime);
+      }
+      time.pop_back();
+      infile.close();
+   }
+
+   // std::cout << "[LoadIMGTimes]: Read in the values: " << std:: endl;
+   // const int N = time.size();
+   // for(int i=0;i<N;i++) std::cout << Form("%s (%.0lf)",stime[i].c_str(),time[i]) << std::endl;
+
    return 0;
 }
 //______________________________________________________________________________
@@ -421,6 +507,39 @@ int ImportNMRANAData(const char *inpath,std::vector<nmrAnaEvent_t> &Data){
       }
       infile.close();
       Data.pop_back();
+   }
+
+   return 0;
+}
+//______________________________________________________________________________
+int LoadNMRDAQEventData(const char *inpath,std::vector<NMRDAQEvent_t> &event){
+   NMRDAQEvent_t data;  
+   std::string sPulseNum,sChNum,sTime,sTemp,sx,sy,sz;
+
+   std::ifstream infile;
+   infile.open(inpath);
+   if( infile.fail() ){
+      std::cout << "Cannot open the file: " << inpath << std::endl;
+      return 1;
+   }else{
+      while( !infile.eof() ){
+         std::getline(infile,sPulseNum,',');
+         std::getline(infile,sChNum   ,',');
+         std::getline(infile,sTime    ,',');
+         std::getline(infile,sTemp    ,',');
+         std::getline(infile,sx       ,',');
+         std::getline(infile,sy       ,',');
+         std::getline(infile,sz);
+	 data.pulseNum    = std::atoi( sPulseNum.c_str() );
+	 data.chNum       = std::atoi( sChNum.c_str() );
+	 data.timestamp   = std::stoull(sTime.c_str());
+	 data.temperature = std::atof( sTemp.c_str() );
+	 data.x           = std::atof( sx.c_str() );
+	 data.y           = std::atof( sy.c_str() );
+	 data.z           = std::atof( sz.c_str() );
+	 event.push_back(data); 
+      }
+      event.pop_back();
    }
 
    return 0;

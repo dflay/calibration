@@ -175,7 +175,12 @@ int FillPPVector3(TString axis,plungingProbeAnaEvent_t data,std::vector<double> 
       if(axis=="freq_err")  x.push_back(data.freq[i]   );  
       if(axis=="freq_LO")   x.push_back(data.freq_LO[i]);  
       if(axis=="freq_RF")   x.push_back(data.freq_RF[i]); 
-   }            
+   }  
+
+   if(axis=="freq"){
+      for(int i=0;i<N;i++) if(x[i]>20E+3) std::cout << x[i] << std::endl;
+   }
+          
    return 0; 
 }
 //______________________________________________________________________________
@@ -325,11 +330,11 @@ TGraph *GetInterpolatedTGraph(int method,std::vector<int> probe,
    return g;
 }
 //______________________________________________________________________________
-TGraph *GetTRLYTGraph(int probe,TString xAxis,TString yAxis,std::vector<trolleyAnaEvent_t> data){
+TGraph *GetTRLYTGraph(int probe,TString xAxis,TString yAxis,std::vector<trolleyAnaEvent_t> data,double sf){
    // a custom plotter for the trolley analysis event 
    std::vector<double> x,y; 
-   FillTRVector(probe,xAxis,data,x); 
-   FillTRVector(probe,yAxis,data,y); 
+   FillTRVector(probe,xAxis,data,sf,x); 
+   FillTRVector(probe,yAxis,data,sf,y); 
    TGraph *g = gm2fieldUtil::Graph::GetTGraph(x,y); 
    return g;
 }
@@ -488,14 +493,14 @@ TGraph *GetSCCPlot(int type,std::vector<gm2field::surfaceCoils_t> data){
    return g;
 }
 //______________________________________________________________________________
-int FillTRVector(int probe,TString axis,std::vector<trolleyAnaEvent_t> data,std::vector<double> &x){
+int FillTRVector(int probe,TString axis,std::vector<trolleyAnaEvent_t> data,double sf,std::vector<double> &x){
    const int N = data.size();
    if(axis=="GpsTimeStamp") for(int i=0;i<N;i++) x.push_back( data[i].time[probe]/1E+9 );  
-   if(axis=="r")            for(int i=0;i<N;i++) x.push_back( data[i].r[probe]         );  
-   if(axis=="y")            for(int i=0;i<N;i++) x.push_back( data[i].y[probe]         );  
-   if(axis=="phi")          for(int i=0;i<N;i++) x.push_back( data[i].phi[probe]       );  
-   if(axis=="temp")         for(int i=0;i<N;i++) x.push_back( data[i].temp[probe]      );  
-   if(axis=="freq")         for(int i=0;i<N;i++) x.push_back( data[i].freq[probe]      );  
+   if(axis=="r")            for(int i=0;i<N;i++) x.push_back( sf*data[i].r[probe]      );  
+   if(axis=="y")            for(int i=0;i<N;i++) x.push_back( sf*data[i].y[probe]      );  
+   if(axis=="phi")          for(int i=0;i<N;i++) x.push_back( sf*data[i].phi[probe]    );  
+   if(axis=="temp")         for(int i=0;i<N;i++) x.push_back( sf*data[i].temp[probe]   );  
+   if(axis=="freq")         for(int i=0;i<N;i++) x.push_back( sf*data[i].freq[probe]   );  
    return 0; 
 }
 //______________________________________________________________________________

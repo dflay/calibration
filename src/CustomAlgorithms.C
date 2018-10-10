@@ -297,8 +297,8 @@ int GetDifference_ABA_sccFirst(bool useTimeWeight,
 	 arg     = 0.5*(diff     + diff_prev);
 	 arg_err = 0.5*(diff_err + diff_prev_err);
       }
-      // std::cout << Form("Trial %d: scc1 = %.3lf +/- %.3lf Hz, bare = %.3lf +/- %.3lf Hz, scc2 = %.3lf +/- %.3lf Hz, diff = %.3lf +/- %.3lf Hz",
-      //                   i,scc[i-1],scc_err[i-1],bare[i-1],bare_err[i-1],scc[i],scc_err[i],arg,arg_err) << std::endl;
+       std::cout << Form("Trial %d: scc1 = %.3lf +/- %.3lf Hz, bare = %.3lf +/- %.3lf Hz, scc2 = %.3lf +/- %.3lf Hz, diff = %.3lf +/- %.3lf Hz",
+                         i,scc[i-1],scc_err[i-1],bare[i-1],bare_err[i-1],scc[i],scc_err[i],arg,arg_err) << std::endl;
       // store result 
       diff_aba.push_back(arg);
       diff_aba_err.push_back(arg_err);

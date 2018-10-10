@@ -8,17 +8,26 @@
 #include <string> 
 
 #include "gm2fieldFunc.h"
+#include "gm2fieldImport.h"
 
+#include "imageResult.h"
+#include "imageParameter.h"
 #include "trolleyAnaEvent.h"
 #include "results.h"
 #include "misalignment.h"
 #include "nmrAnaEvent.h"
+#include "NMRDAQEvent.h"
 #include "perturbation.h"
 #include "nmr_meas.h"
 #include "grad_meas.h"
 #include "deltab.h"
 #include "blind.h"
 
+int LoadImageResults(std::string inpath,std::vector<imageResult_t> &data); 
+int LoadIMGTimes(std::string type,int trial,std::vector<double> &time); 
+int LoadImageParameters(std::string inpath,std::string type,std::vector<imageParameter_t> &data);
+
+int LoadNMRDAQEventData(const char *inpath,std::vector<NMRDAQEvent_t> &event); 
 int ImportNMRANAData(const char *inpath,std::vector<nmrAnaEvent_t> &Data);
 int ImportDeltaBFileList_csv(const char *inpath,
                     std::vector<int> &x1,std::vector<std::string> &x2,

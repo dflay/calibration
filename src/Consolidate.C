@@ -291,13 +291,30 @@ int GetPlungingProbeData_alt(int runNumber,int freqMethod,std::vector<plungingPr
       return 1;
    }
 
+   // now load timestamps from the event data of NMR-DAQ
+   std::vector<NMRDAQEvent_t> event;  
+   sprintf(inpath,"./input/NMR-DAQ/event-data_%05d.csv",runNumber);
+   rc = LoadNMRDAQEventData(inpath,event); 
+   if(rc!=0){
+      std::cout << "[GetPlungingProbeData_alt]: No event data for NMR-DAQ run " << runNumber << "!" << std::endl;
+      return 1;
+   }
+
    const int N = inData.size();
 
    // now store in the plunging probe data struct 
+   std::string timeStamp;
+   int trace=0;
    plungingProbeAnaEvent_t data;
    data.run       = runNumber; 
    data.numTraces = N;
-   for(int i=0;i<N;i++) data.freq[i] = inData[i].freq[freqMethod];
+   for(int i=0;i<N;i++){
+      // we read in *all* timestamps into the NMRDAQEvent vector.  Need to grab the right one here 
+      trace        = inData[i].pulse;
+      timeStamp    = gm2fieldUtil::GetStringTimeStampFromUTC(event[trace-1].timestamp/1E+9); 
+      data.time[i] = event[trace-1].timestamp;
+      data.freq[i] = inData[i].freq[freqMethod];
+   }
    // fill vector 
    ppData.push_back(data); 
 

@@ -18,6 +18,7 @@
 
 #include "Constants.h"
 #include "nmrAnaEvent.h"
+#include "NMRDAQEvent.h"
 #include "plungingProbeAnaEvent.h"
 #include "trolleyAnaEvent.h"
 #include "CustomImport.h"
