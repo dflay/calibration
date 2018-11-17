@@ -9,6 +9,7 @@
 
 #include "TString.h"
 
+int PrintTRLYFrequencies(const char *outpath,int probe,std::vector<trolleyAnaEvent_t> data); 
 int PrintTRLYPositions(const char *outpath,std::vector<int> probe,
                        std::vector<double> r,std::vector<double> dr,
                        std::vector<double> y,std::vector<double> dy,

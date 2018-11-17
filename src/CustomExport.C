@@ -1,5 +1,24 @@
 #include "../include/CustomExport.h"
 //______________________________________________________________________________
+int PrintTRLYFrequencies(const char *outpath,int probe,std::vector<trolleyAnaEvent_t> data){
+   const int N = data.size(); 
+   char outStr[500]; 
+   std::ofstream outfile;
+   outfile.open(outpath);
+   if( outfile.fail() ){
+      std::cout << "Cannot open the file: " << outpath << std::endl;
+      return 1;
+   }else{
+      for(int i=0;i<N;i++){
+	 sprintf(outStr,"%.0lf,%.3lf",data[i].time[probe]/1E+9,data[i].freq[probe]);
+	 outfile << outStr << std::endl;
+      }
+      outfile.close();
+      std::cout << "The data has been printed to the file: " << outpath << std::endl;
+   }
+   return 0;
+} 
+//______________________________________________________________________________
 int PrintTRLYPositions(const char *outpath,std::vector<int> probe,
                        std::vector<double> r,std::vector<double> dr,
                        std::vector<double> y,std::vector<double> dy,

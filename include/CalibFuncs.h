@@ -12,6 +12,7 @@
 #include "grad_meas.h"
 #include "perturbation.h"
 
+int GetDeltaTerm(double sigma,double delta_m,double chi,double delta_eps,double delta_mag); 
 int GetOmegaP_err(perturbation_t pert,double &err); 
 int GetOmegaP_free(nmr_meas_t pp,perturbation_t pert,double &freq_free,double &freq_free_err);
 int GetOmegaP_free(perturbation_t pert,double freq,double freqErr,double temp,double tempErr,double &freqFree,double &freqFreeErr);

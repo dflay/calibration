@@ -651,13 +651,13 @@ int LoadPerturbationData(const char *inpath,int probe,perturbation_t &pert){
       infile.close();
    }
  
-   // get the correct value of the image 
-   double image=0,image_err=0;
-   char inpath_image[200];
-   sprintf(inpath_image,"./input/perturbation/images.csv"); 
-   LoadImagesData(inpath_image,probe,image,image_err);
-   pert.delta_mag     = image; 
-   pert.delta_mag_err = image_err;   
+   // // get the correct value of the image 
+   // double image=0,image_err=0;
+   // char inpath_image[200];
+   // sprintf(inpath_image,"./input/perturbation/images.csv"); 
+   // LoadImagesData(inpath_image,probe,image,image_err);
+   // pert.delta_mag     = image; 
+   // pert.delta_mag_err = image_err;   
  
    return 0;
 }
