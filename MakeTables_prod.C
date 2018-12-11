@@ -48,6 +48,7 @@ double gMarkerSize = 0.8;
 double gXSize      = 0.05;  
 double gYSize      = 0.06;  
 
+int ApplyShimmedGradEstimates(int probe,std::vector<grad_meas_t> &data); 
 int PrintTableOfResults(const char *outpath,int probe,double diff,double diffFree,
                         double swapErr,double mErr,double pErr);
 
@@ -105,7 +106,7 @@ int MakeTables_prod(bool isBlind,std::string theDate){
    bool update = false;
 
    double sum_sq=0;
-   double sumf=0,sum=0;
+   double sumf=0,sum_sf=0,sum=0;
    double sumf_ppb=0,sum_ppb=0;
 
    int k=0; 
@@ -222,13 +223,14 @@ int MakeTables_prod(bool isBlind,std::string theDate){
    for(int i=0;i<NPROBES;i++){
       sum_sq   = res[i].diffErr_aba*res[i].diffErr_aba + res[i].mErr_aba*res[i].mErr_aba;
       sum      = TMath::Sqrt(sum_sq);  
-      sum_sq   = res[i].diffErr_aba*res[i].diffErr_aba + res[i].mErr_aba*res[i].mErr_aba + resFree[i].pErr*resFree[i].pErr;
+      sum_sq   = resFree[i].diffErr_aba*resFree[i].diffErr_aba + res[i].mErr_aba*res[i].mErr_aba + resFree[i].pErr*resFree[i].pErr;
       sumf     = TMath::Sqrt(sum_sq); 
-      sum_ppb  = sum/0.06179;  
       sumf_ppb = sumf/0.06179;  
-      std::cout << Form("%02d,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf",
+      sum_sq   = resFree[i].diffErr_aba*resFree[i].diffErr_aba + res[i].mErr_aba*res[i].mErr_aba;
+      sum_sf   = TMath::Sqrt(sum_sq);  
+      std::cout << Form("%02d,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf",
                         probe[i],res[i].diff_aba,resFree[i].diff_aba,res[i].diffErr_aba,
-                        res[i].mErr_aba,resFree[i].pErr,sum,sum_ppb,sumf_ppb) << std::endl;
+                        resFree[i].diffErr_aba,res[i].mErr_aba,resFree[i].pErr,sum,sum_sf,sumf_ppb) << std::endl;
       rc = PrintTableOfResults(outpath_res,probe[i],res[i].diff_aba,resFree[i].diff_aba,res[i].diffErr_aba,res[i].mErr,resFree[i].pErr);
    }
 
@@ -326,6 +328,54 @@ int GetShimmedGradients(const char *prefix,int probe,std::vector<std::string> gr
       LoadGradientData(inpath,meas);
       // push back into vector 
       shim_grad.push_back(meas);
+   }
+
+   // apply estimates if necessary
+   int rc = ApplyShimmedGradEstimates(probe,shim_grad);
+
+   return 0;
+}
+//______________________________________________________________________________
+int ApplyShimmedGradEstimates(int probe,std::vector<grad_meas_t> &data){
+   // load estimates of shimmed gradient and apply to the data 
+   // for use when we don't know the shimmed gradient 
+   const int NAXES = 3;
+   char axis[NAXES] = {'x','y','z'};
+
+   std::string spr,sx,sy,sz;
+   double ipr,ig,ix,iy,iz; 
+
+   char inpath[200]; 
+   sprintf(inpath,"./input/gradients/shim-grad-estimates.csv");
+
+   std::ifstream infile;
+   infile.open(inpath); 
+   if( infile.fail() ){
+      std::cout << "Cannot open the file: " << inpath << std::endl;
+      return 1;
+   }else{
+      while( !infile.eof() ){
+	 std::getline(infile,spr,','); 
+	 std::getline(infile,sx,','); 
+	 std::getline(infile,sy,','); 
+	 std::getline(infile,sz); 
+	 ipr = std::atoi( spr.c_str() );
+	 ix  = std::atof( sx.c_str() );
+	 iy  = std::atof( sy.c_str() );
+	 iz  = std::atof( sz.c_str() );
+	 if(probe==ipr){
+	    for(int i=0;i<NAXES;i++){
+	       if(data[i].grad==0){
+		  // bad axis, replace data 
+		  if(i==0) ig = ix;
+		  if(i==1) ig = iy;
+		  if(i==2) ig = iz;
+		  data[i].grad = ig;
+		  std::cout << "WARNING for probe " << probe << ": grad estimate of " << ig << " applied for axis " << axis[i] << std::endl;
+	       }
+            }
+         }
+      }
    }
    return 0;
 }

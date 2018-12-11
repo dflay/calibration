@@ -1,41 +1,20 @@
-// generate a random number for blinding 
+// generate random numbers for blinding 
 
 #include <cstdlib> 
 #include <iostream>
 #include <fstream>
 
-#include "TRandom3.h"
-
-#include "./src/CustomExport.C"
+#include "Blinder.h"
 
 int GenerateBlinding(){
 
-   double range    = 1.*61.79;     // 1 ppm
-   double rangeErr = 20.*0.06179;  // 20 ppb 
+   int units    = gm2fieldUtil::Constants::ppb; 
+   double range = 100;
 
-   TRandom3 *myRand = new TRandom3(0); 
+   gm2fieldUtil::Blinder *myBlind = new gm2fieldUtil::Blinder("flay",range,units); 
+   myBlind->UpdateBlinding();  
 
-   double r = myRand->Rndm();
-   double val = (-1.)*range + 2.*range*r;  
-   r = myRand->Rndm();
-   double val2 = (-1.)*range + 2.*range*r;  
-   
-   r = myRand->Rndm();
-   double x_err = rangeErr*r;  
-   r = myRand->Rndm();
-   double y_err = rangeErr*r;  
-   r = myRand->Rndm();
-   double z_err = rangeErr*r;  
-   r = myRand->Rndm();
-   double f1_err = rangeErr*r;  
-   r = myRand->Rndm();
-   double f2_err = rangeErr*r;  
-
-   double V[7] = {val,val2,x_err,y_err,z_err,f1_err,f2_err}; 
-
-   char outpath[200];
-   sprintf(outpath,"./misc/blind/values.csv"); 
-   PrintToFile(outpath,V); 
+   delete myBlind; 
 
    return 0;
 }

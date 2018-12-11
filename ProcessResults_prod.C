@@ -92,6 +92,9 @@ int ProcessResults_prod(std::string configFile){
    double shot_err     = result.diffErr; 
    double shot_err_aba = result.diffErr_aba; 
 
+   double shot_err_free     = result_free.diffErr; 
+   double shot_err_free_aba = result_free.diffErr_aba; 
+
    // misalignments 
    char outPath_misalign[500]; 
    sprintf(outPath_misalign,"%s/misalignment_results_pr-%02d.csv",outDir,probeNumber);
@@ -118,8 +121,8 @@ int ProcessResults_prod(std::string configFile){
    sprintf(errStr_aba,"%.3lf +/- %.3lf",shot_err_aba,tot_misalign_err_aba); 
 
    char errStr_free[200],errStr_free_aba[200];
-   sprintf(errStr_free    ,"%.3lf +/- %.3lf +/- %.3lf",shot_err    ,tot_misalign_err,freeProtErr); 
-   sprintf(errStr_free_aba,"%.3lf +/- %.3lf +/- %.3lf",shot_err_aba,tot_misalign_err_aba,freeProtErr); 
+   sprintf(errStr_free    ,"%.3lf +/- %.3lf +/- %.3lf",shot_err_free    ,tot_misalign_err,freeProtErr); 
+   sprintf(errStr_free_aba,"%.3lf +/- %.3lf +/- %.3lf",shot_err_free_aba,tot_misalign_err_aba,freeProtErr); 
 
    result.mErr     = tot_misalign_err; 
    result.mErr_aba = tot_misalign_err_aba; 

@@ -21,6 +21,7 @@
 #include "gm2fieldRootHelper.h"
 #include "gm2fieldUnits.h"
 #include "TemperatureSensor.h"
+#include "Blinder.h"
 
 #include "./include/Constants.h"
 #include "./include/drift.h"
@@ -88,9 +89,12 @@ int LocalScanGrad_pp_prod(std::string configFile){
    sprintf(plotDir,"./plots/%s",theDate.getDateString().c_str());
    MakeDirectory(plotDir);
 
-   blind_t blind;
-   ImportBlinding(blind);
-   double blindValue = blind.value_pp;
+   // blind_t blind;
+   // ImportBlinding(blind);
+   // double blindValue = blind.value_pp;
+
+   gm2fieldUtil::Blinder *myBlind = new gm2fieldUtil::Blinder("flay");
+   double blindValue = myBlind->GetBlinding(1); // in Hz
 
    // outpaths  
    char outpath[200],tag[10];

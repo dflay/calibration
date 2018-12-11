@@ -255,10 +255,12 @@ int GetDifference_ABA(bool useTimeWeight,
       // now get the ABA difference 
       if(useTimeWeight){
 	 arg     = w*diff     + w_prev*diff_prev;
-	 arg_err = w*diff_err + w_prev*diff_prev_err;
+	 // arg_err = w*diff_err + w_prev*diff_prev_err;
+	 arg_err = TMath::Sqrt( scc_err[i-1]*scc_err[i-1] + w*w*bare_err[i]*bare_err[i] + w_prev*w_prev*bare_err[i-1]*bare_err[i-1] );
       }else{
 	 arg     = 0.5*(diff     + diff_prev);
-	 arg_err = 0.5*(diff_err + diff_prev_err);
+	 // arg_err = 0.5*(diff_err + diff_prev_err);
+	 arg_err = TMath::Sqrt( scc_err[i-1]*scc_err[i-1] + 0.25*bare_err[i]*bare_err[i] + 0.25*bare_err[i-1]*bare_err[i-1] );
       }
       // std::cout << Form("Trial %d: bare1 = %.3lf +/- %.3lf Hz, scc = %.3lf +/- %.3lf Hz, bare2 = %.3lf +/- %.3lf Hz, diff = %.3lf +/- %.3lf Hz",
       //                   i,bare[i-1],bare_err[i-1],scc[i-1],scc_err[i-1],bare[i],bare_err[i],arg,arg_err) << std::endl;
@@ -292,10 +294,12 @@ int GetDifference_ABA_sccFirst(bool useTimeWeight,
       // now get the ABA difference
       if(useTimeWeight){
 	 arg     = w*diff     + w_prev*diff_prev;
-	 arg_err = w*diff_err + w_prev*diff_prev_err;
+	 // arg_err = w*diff_err + w_prev*diff_prev_err;
+	 arg_err = TMath::Sqrt( bare_err[i-1]*bare_err[i-1] + w*w*scc_err[i]*scc_err[i] + w_prev*w_prev*scc_err[i-1]*scc_err[i-1] );
       }else{ 
 	 arg     = 0.5*(diff     + diff_prev);
-	 arg_err = 0.5*(diff_err + diff_prev_err);
+	 // arg_err = 0.5*(diff_err + diff_prev_err);
+	 arg_err = TMath::Sqrt( bare_err[i-1]*bare_err[i-1] + 0.25*scc_err[i]*scc_err[i] + 0.25*scc_err[i-1]*scc_err[i-1] );
       }
        std::cout << Form("Trial %d: scc1 = %.3lf +/- %.3lf Hz, bare = %.3lf +/- %.3lf Hz, scc2 = %.3lf +/- %.3lf Hz, diff = %.3lf +/- %.3lf Hz",
                          i,scc[i-1],scc_err[i-1],bare[i-1],bare_err[i-1],scc[i],scc_err[i],arg,arg_err) << std::endl;

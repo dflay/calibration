@@ -21,6 +21,7 @@
 #include "gm2fieldUnits.h"
 #include "TemperatureSensor.h"
 #include "MovingAverage.h"
+#include "Blinder.h"
 
 #include "./include/date.h"
 #include "./include/Constants.h"
@@ -84,9 +85,12 @@ int Process_pp_prod(std::string configFile){
    sprintf(outPath,"%s/pp-swap-data_free-prot_pr-%02d_%s.csv",outDir,probeNumber,anaDate.c_str());
    std::string outpath_free = outPath;  
 
-   blind_t blind;
-   ImportBlinding(blind);
-   double blindValue = blind.value_pp;
+   // blind_t blind;
+   // ImportBlinding(blind);
+   // double blindValue = blind.value_pp;
+
+   gm2fieldUtil::Blinder *myBlind = new gm2fieldUtil::Blinder("flay");
+   double blindValue = myBlind->GetBlinding(1); // in Hz
 
    std::vector<int> run;
    std::vector<std::string> label;
@@ -186,13 +190,14 @@ int GetSwapStatsForPP(perturbation_t ppPert,std::vector<plungingProbeAnaEvent_t>
    calibSwap_t rawEvent,freeEvent;
  
    double arg=0;
+   double mean_freq_free=0,stdev_freq_free=0;
    double mean_freq=0,stdev_freq=0;
    double mean_temp=0,stdev_temp=0;
    double mean_x=0,stdev_x=0;
    double mean_y=0,stdev_y=0;
    double mean_z=0,stdev_z=0;
-   double freqFree=0,freqFreeErr=0;
-   std::vector<double> F,T,x,y,z;
+   double freqFree=0,freqFreeErr_stat=0,freqFreeErr_syst=0;
+   std::vector<double> F,FF,T,x,y,z;
  
    for(int i=0;i<N;i++){
       M = data[i].numTraces;
@@ -204,7 +209,10 @@ int GetSwapStatsForPP(perturbation_t ppPert,std::vector<plungingProbeAnaEvent_t>
       for(int j=0;j<M;j++){
          // we want to add back in the LO since we're comparing against the TRLY eventually 
 	 arg = data[i].freq[j] + data[i].freq_LO[j]; 
+	 // get the free-proton frequency here
+	 GetOmegaP_free(ppPert,arg,0,data[i].temp[j],0,freqFree,freqFreeErr_stat);
 	 F.push_back(arg);
+	 FF.push_back(freqFree);
          T.push_back(data[i].temp[j]);
 	 x.push_back(data[i].r[j]);  
 	 y.push_back(data[i].y[j]);  
@@ -213,18 +221,20 @@ int GetSwapStatsForPP(perturbation_t ppPert,std::vector<plungingProbeAnaEvent_t>
          if( max<data[i].freq[j] ) max = data[i].freq[j];  
       }
       // get average on the run (swap) 
-      mean_freq  = gm2fieldUtil::Math::GetMean<double>(F); 
-      stdev_freq = gm2fieldUtil::Math::GetStandardDeviation<double>(F);
-      mean_temp  = gm2fieldUtil::Math::GetMean<double>(T); 
-      stdev_temp = gm2fieldUtil::Math::GetStandardDeviation<double>(T);
-      mean_x     = gm2fieldUtil::Math::GetMean<double>(x); 
-      stdev_x    = gm2fieldUtil::Math::GetStandardDeviation<double>(x);
-      mean_y     = gm2fieldUtil::Math::GetMean<double>(y); 
-      stdev_y    = gm2fieldUtil::Math::GetStandardDeviation<double>(y);
-      mean_z     = gm2fieldUtil::Math::GetMean<double>(z); 
-      stdev_z    = gm2fieldUtil::Math::GetStandardDeviation<double>(z);
+      mean_freq       = gm2fieldUtil::Math::GetMean<double>(F); 
+      stdev_freq      = gm2fieldUtil::Math::GetStandardDeviation<double>(F);
+      mean_freq_free  = gm2fieldUtil::Math::GetMean<double>(FF); 
+      stdev_freq_free = gm2fieldUtil::Math::GetStandardDeviation<double>(FF);
+      mean_temp       = gm2fieldUtil::Math::GetMean<double>(T); 
+      stdev_temp      = gm2fieldUtil::Math::GetStandardDeviation<double>(T);
+      mean_x          = gm2fieldUtil::Math::GetMean<double>(x); 
+      stdev_x         = gm2fieldUtil::Math::GetStandardDeviation<double>(x);
+      mean_y          = gm2fieldUtil::Math::GetMean<double>(y); 
+      stdev_y         = gm2fieldUtil::Math::GetStandardDeviation<double>(y);
+      mean_z          = gm2fieldUtil::Math::GetMean<double>(z); 
+      stdev_z         = gm2fieldUtil::Math::GetStandardDeviation<double>(z);
       // apply free proton corrections 
-      GetOmegaP_free(ppPert,mean_freq,stdev_freq,mean_temp,stdev_temp,freqFree,freqFreeErr);
+      // GetOmegaP_free(ppPert,mean_freq,stdev_freq,mean_temp,stdev_temp,freqFree,freqFreeErr);
       // fill output structs 
       rawEvent.time    = data[i].time[0]/1E+9; 
       rawEvent.freq    = mean_freq;  
@@ -239,8 +249,8 @@ int GetSwapStatsForPP(perturbation_t ppPert,std::vector<plungingProbeAnaEvent_t>
       rawEvent.phiErr  = stdev_z; 
       // free proton  
       freeEvent.time    = data[i].time[0]/1E+9; 
-      freeEvent.freq    = freqFree;  
-      freeEvent.freqErr = stdev_freq;  // WARNING: We'll fold in free-proton errors seprately.  we want shot errors here
+      freeEvent.freq    = mean_freq_free;  
+      freeEvent.freqErr = stdev_freq_free;  // WARNING: We'll fold in free-proton errors seprately.  we want shot errors here
       freeEvent.temp    = mean_temp;  
       freeEvent.tempErr = stdev_temp;  
       freeEvent.r       = mean_x;  
@@ -254,6 +264,7 @@ int GetSwapStatsForPP(perturbation_t ppPert,std::vector<plungingProbeAnaEvent_t>
       free.push_back(freeEvent);  
       // clean up for next run 
       F.clear();
+      FF.clear();
       T.clear();  
       x.clear();  
       y.clear();  

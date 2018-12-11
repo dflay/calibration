@@ -22,6 +22,7 @@
 #include "gm2fieldRootHelper.h"
 #include "gm2fieldUnits.h"
 #include "TemperatureSensor.h"
+#include "Blinder.h"
 
 #include "./include/date.h"
 #include "./include/Constants.h"
@@ -78,9 +79,12 @@ int DeltaB_trly_prod(std::string configFile){
 
    sprintf(outpath,"%s/dB-trly_final-location_%s-grad_pr-%02d.csv",outdir,gradName.c_str(),probeNumber);
 
-   blind_t blind; 
-   ImportBlinding(blind);
-   double blindValue = blind.value_tr; 
+   // blind_t blind; 
+   // ImportBlinding(blind);
+   // double blindValue = blind.value_tr; 
+
+   gm2fieldUtil::Blinder *myBlind = new gm2fieldUtil::Blinder("flay");
+   double blindValue = myBlind->GetBlinding(2); // in Hz
 
    std::vector<int> run;
    std::vector<std::string> label;

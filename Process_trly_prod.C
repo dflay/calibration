@@ -23,6 +23,7 @@
 #include "gm2fieldUnits.h"
 #include "TemperatureSensor.h"
 #include "MovingAverage.h"
+#include "Blinder.h"
 
 #include "./include/date.h"
 #include "./include/Constants.h"
@@ -86,9 +87,12 @@ int Process_trly_prod(std::string configFile){
    sprintf(outDir,"%s/%s",outDir,theDate.getDateString().c_str());
    rc = MakeDirectory(outDir);
 
-   blind_t blind;
-   ImportBlinding(blind);
-   double blindValue = blind.value_tr;
+   // blind_t blind;
+   // ImportBlinding(blind);
+   // double blindValue = blind.value_tr;
+
+   gm2fieldUtil::Blinder *myBlind = new gm2fieldUtil::Blinder("flay");
+   double blindValue = myBlind->GetBlinding(2); // in Hz 
 
    std::vector<int> run;
    std::vector<std::string> label;
