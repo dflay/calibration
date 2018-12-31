@@ -10,6 +10,7 @@
 #include "gm2fieldFunc.h"
 #include "gm2fieldImport.h"
 
+#include "runSummary.h"
 #include "imageResult.h"
 #include "imageParameter.h"
 #include "trolleyAnaEvent.h"
@@ -27,6 +28,7 @@ int LoadImageResults(std::string inpath,std::vector<imageResult_t> &data);
 int LoadIMGTimes(std::string type,int trial,std::vector<double> &time); 
 int LoadImageParameters(std::string inpath,std::string type,std::vector<imageParameter_t> &data);
 
+int LoadRunSummaryData(const char *inpath,runSummary_t &x)
 int LoadNMRDAQEventData(const char *inpath,std::vector<NMRDAQEvent_t> &event); 
 int ImportNMRANAData(const char *inpath,std::vector<nmrAnaEvent_t> &Data);
 int ImportDeltaBFileList_csv(const char *inpath,

@@ -512,6 +512,59 @@ int ImportNMRANAData(const char *inpath,std::vector<nmrAnaEvent_t> &Data){
    return 0;
 }
 //______________________________________________________________________________
+int LoadRunSummaryData(const char *inpath,runSummary_t &x){
+
+   std::string tag,value;
+   std::string runNo        = "run_number";
+   std::string date         = "date";
+   std::string startTime    = "start_time";
+   std::string endTime      = "end_time";
+   std::string numPulses    = "num_pulses";
+   std::string numSamples   = "num_samples_per_pulse";
+   std::string adcID        = "adc_id";
+   std::string adcCh        = "adc_ch_number";
+   std::string clockFreq    = "adc_clock_frequency";
+   std::string expectedFreq = "expected_IF_frequency";
+   std::string loFreq       = "LO_frequency";
+   std::string pi2Freq      = "pi2_frequency_1";
+   std::string pi2Power     = "pi2_power_1";
+   std::string pi2Voltage   = "pi2_voltage_1";
+   std::string bncVoltage   = "bnc_voltage";
+   std::string nTypeVoltage = "ntype_voltage";
+   std::string tempSensor   = "temp_sensor";
+   std::ifstream infile;
+
+   infile.open(inpath);
+   if( infile.fail() ){
+      std::cout << "Cannot open the file: " << inpath << std::endl;
+      return 1;
+   }else{
+      while( !infile.eof() ){
+         infile >> tag >> value;
+         if( tag.compare(runNo)==0 )        x.runNumber    = std::atoi( value.c_str() );
+         if( tag.compare(date)==0 )         x.date         = value;
+         if( tag.compare(startTime)==0 )    x.startTime    = value;
+         if( tag.compare(endTime)==0 )      x.endTime      = value;
+         if( tag.compare(numPulses)==0 )    x.numPulses    = std::atoi( value.c_str() );
+         if( tag.compare(numSamples)==0 )   x.numSamples   = std::atoi( value.c_str() );
+         if( tag.compare(adcID)==0 )        x.adcID        = std::atoi( value.c_str() );
+         if( tag.compare(adcCh)==0 )        x.adcChannel   = std::atoi( value.c_str() );
+         if( tag.compare(clockFreq)==0 )    x.adcClockFreq = std::atof( value.c_str() );
+         if( tag.compare(expectedFreq)==0 ) x.expFreq      = std::atof( value.c_str() );
+         if( tag.compare(loFreq)==0 )       x.loFreq       = std::atof( value.c_str() );
+         if( tag.compare(bncVoltage)==0 )   x.bncVoltage   = std::atof( value.c_str() );
+         if( tag.compare(nTypeVoltage)==0 ) x.nTypeVoltage = std::atof( value.c_str() );
+         if( tag.compare(pi2Freq)==0 )      x.pi2Freq      = std::atof( value.c_str() );
+         if( tag.compare(pi2Power)==0 )     x.pi2Power     = std::atof( value.c_str() );
+         if( tag.compare(pi2Voltage)==0 )   x.pi2Voltage   = std::atof( value.c_str() );
+         if( tag.compare(tempSensor)==0 )   x.tempSensor   = value;
+      }
+      infile.close();
+   }
+   return 0;
+}
+
+//______________________________________________________________________________
 int LoadNMRDAQEventData(const char *inpath,std::vector<NMRDAQEvent_t> &event){
    NMRDAQEvent_t data;  
    std::string sPulseNum,sChNum,sTime,sTemp,sx,sy,sz;
