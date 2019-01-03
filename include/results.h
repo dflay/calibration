@@ -57,27 +57,59 @@ typedef struct result_prod{
 // fill this struct and write to a ROOT file; 
 // this is for a single trolley probe. 
 // after reading in from the ROOT file,
-// we should have a vector of size 17  
+// we should have a vector of size 17 
+// all values are necessarily stored in Hz 
 typedef struct calib_result { 
    double calibCoeff;             // [raw] calibration coefficient (PP-TRLY) 
    double calibCoeffErr;          // [raw] shot uncertainty for calib coeff 
    double calibCoeff_aba;         // [ABA] calib coeff
    double calibCoeffErr_aba;      // [ABA] shot uncertainty  
+
    double calibCoeffFree;         // [raw] free-proton calib coeff  
    double calibCoeffFreeErr;      // [raw] shot uncertainty  
    double calibCoeffFree_aba;     // [ABA] free-proton calib coeff   
    double calibCoeffFreeErr_aba;  // [ABA] shot uncertainty  
    double freeErr;                // error from proton corrections (added in quadrature)  
+
+   double dx;                     // misalignment error along x axis in Hz 
+   double dy;                     // misalignment error along y axis in Hz 
+   double dz;                     // misalignment error along z axis in Hz 
    double dr;                     // misalignment error: combines (x,y,z) errors added in quadrature 
-   double deltaB_x;               // deltaB(PP-TRLY) for x gradient 
-   double deltaB_y;               // deltaB(PP-TRLY) for y gradient
-   double deltaB_z;               // deltaB(PP-TRLY) for z gradient 
+
+   double deltaB_pp_x;            // deltaB(PP) for x gradient 
+   double deltaB_pp_y;            // deltaB(PP) for y gradient
+   double deltaB_pp_z;            // deltaB(PP) for z gradient 
+
+   double deltaB_pp_xErr;         // deltaB(PP) for x gradient [uncertainty]  
+   double deltaB_pp_yErr;         // deltaB(PP) for y gradient [uncertainty] 
+   double deltaB_pp_zErr;         // deltaB(PP) for z gradient [uncertainty]  
+
+   double deltaB_tr_x;            // deltaB(TRLY) for x gradient 
+   double deltaB_tr_y;            // deltaB(TRLY) for y gradient
+   double deltaB_tr_z;            // deltaB(TRLY) for z gradient
+ 
+   double deltaB_tr_xErr;         // deltaB(TRLY) for x gradient [uncertainty]  
+   double deltaB_tr_yErr;         // deltaB(TRLY) for y gradient [uncertainty] 
+   double deltaB_tr_zErr;         // deltaB(TRLY) for z gradient [uncertainty]  
+
    double dBdx_imp;               // imposed gradient along x (radial)    
    double dBdy_imp;               // imposed gradient along y (vertical)  
    double dBdz_imp;               // imposed gradient along z (azimuthal) 
+
+   double dBdx_impErr;            // imposed gradient along x (radial)    [uncertainty]  
+   double dBdy_impErr;            // imposed gradient along y (vertical)  [uncertainty]  
+   double dBdz_impErr;            // imposed gradient along z (azimuthal) [uncertainty]  
+
    double dBdx_shim;              // shimmed gradient along x (radial)    
    double dBdy_shim;              // shimmed gradient along y (vertical)  
    double dBdz_shim;              // shimmed gradient along z (azimuthal) 
-} calib_result_t; 
+
+   double dBdx_shimErr;           // shimmed gradient along x (radial)    [uncertainty]  
+   double dBdy_shimErr;           // shimmed gradient along y (vertical)  [uncertainty]  
+   double dBdz_shimErr;           // shimmed gradient along z (azimuthal) [uncertainty]  
+
+} calib_result_t;
+
+const char * const calib_result_str = "calibCoeff/D:calibCoeffErr/D:calibCoeff_aba/D:calibCoeffErr_aba:calibCoeffFree/D:calibCoeffFreeErr/D:calibCoeffFree_aba/D:calibCoeffFreeErr_aba:freeErr/D:dx/D:dy/D:dz/D:dr/D:deltaB_pp_x/D:deltaB_pp_y/D:deltaB_pp_z/D:deltaB_pp_xErr/D:deltaB_pp_yErr/D:deltaB_pp_zErr/D:deltaB_tr_x/D:deltaB_tr_y/D:deltaB_tr_z/D:deltaB_tr_xErr/D:deltaB_tr_yErr/D:deltaB_tr_zErr/D:dBdx_imp/D:dBdy_imp/D:dBdz_imp/D:dBdx_impErr/D:dBdy_impErr/D:dBdz_impErr/D:dBdx_shim/D:dBdy_shim/D:dBdz_shim/D:dBdx_shimErr/D:dBdy_shimErr/D:dBdz_shimErr/D"; 
 
 #endif 

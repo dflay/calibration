@@ -18,6 +18,8 @@
 #include "gm2fieldGraph.h"
 #include "gm2fieldRootHelper.h"
 #include "gm2fieldUnits.h"
+#include "gm2fieldImport.h"
+#include "gm2fieldExport.h"
 #include "TemperatureSensor.h"
 #include "MovingAverage.h"
 
@@ -67,6 +69,12 @@ int GetImposedGradients(const char *inpath,std::vector<imposed_gradient_t> &imp_
 int GetShimmedGradients(const char *prefix,int probe,std::vector<std::string> gradName,
                         std::vector<grad_meas_t> &shim_grad);
 
+int PrintResults(const char *outpath,std::vector<result_prod_t> r,std::vector<result_prod_t> rFree,
+                 std::vector<std::vector<imposed_gradient_t>> ig,std::vector<std::vector<grad_meas_t> > mg,
+                 std::vector<std::vector<deltab_t>> dB_pp,std::vector<std::vector<deltab_t>> dB_tr,
+                 std::vector<misalignment_t> mis); 
+
+
 int MakeTables_prod(bool isBlind,std::string theDate){
 
    int rc=0;
@@ -77,6 +85,9 @@ int MakeTables_prod(bool isBlind,std::string theDate){
    if(isBlind)  sprintf(outDir,"%s/blinded"  ,outDir);
    if(!isBlind) sprintf(outDir,"%s/unblinded",outDir);
    sprintf(outDir,"%s/%s",outDir,theDate.c_str()); 
+
+   char rfPath[200]; 
+   sprintf(rfPath,"%s/calibData_%s.root",outDir,theDate.c_str()); 
 
    result_prod_t result;
    std::vector<result_prod_t> res,resFree;
@@ -285,7 +296,80 @@ int MakeTables_prod(bool isBlind,std::string theDate){
 	                            impGrad[i][2].grad,0.0);
    }
 
+   rc = PrintResults(rfPath,res,resFree,impGrad,shimGrad,deltaB_pp,deltaB_trly,misalign); 
+
    return 0;
+}
+//______________________________________________________________________________
+int PrintResults(const char *outpath,std::vector<result_prod_t> r,std::vector<result_prod_t> rFree,
+                 std::vector<std::vector<imposed_gradient_t>> ig,std::vector<std::vector<grad_meas_t> > mg,
+                 std::vector<std::vector<deltab_t>> dB_pp,std::vector<std::vector<deltab_t>> dB_tr,
+                 std::vector<misalignment_t> mis){
+
+   // print the results to a ROOT file
+   calib_result_t data; 
+   std::vector<calib_result_t> x; 
+   const int N = r.size();
+   for(int i=0;i<N;i++){
+      // no proton corrections 
+      data.calibCoeff            = r[i].diff; 
+      data.calibCoeffErr         = r[i].diffErr;  
+      data.calibCoeff_aba        = r[i].diff_aba; 
+      data.calibCoeffErr_aba     = r[i].diffErr_aba;
+      // free proton corrections applied 
+      data.calibCoeffFree        = rFree[i].diff;  
+      data.calibCoeffFreeErr     = rFree[i].diffErr;  
+      data.calibCoeffFree_aba    = rFree[i].diff_aba;  
+      data.calibCoeffFreeErr_aba = rFree[i].diffErr_aba; 
+      data.freeErr               = rFree[i].pErr;  
+      // imposed gradient data 
+      data.dBdx_imp              = ig[i][0].grad;  
+      data.dBdy_imp              = ig[i][1].grad;
+      data.dBdz_imp              = ig[i][2].grad; 
+      data.dBdx_impErr           = ig[i][0].grad_err;  
+      data.dBdy_impErr           = ig[i][1].grad_err;
+      data.dBdz_impErr           = ig[i][2].grad_err; 
+      // shimmed gradient data 
+      data.dBdx_shim             = mg[i][0].grad;  
+      data.dBdy_shim             = mg[i][1].grad;
+      data.dBdz_shim             = mg[i][2].grad; 
+      data.dBdx_shimErr          = mg[i][0].grad_err;  
+      data.dBdy_shimErr          = mg[i][1].grad_err;
+      data.dBdz_shimErr          = mg[i][2].grad_err; 
+      // delta-B data  
+      data.deltaB_pp_x           = dB_pp[i][0].dB_fxpr; 
+      data.deltaB_pp_y           = dB_pp[i][1].dB_fxpr; 
+      data.deltaB_pp_z           = dB_pp[i][2].dB_fxpr; 
+      data.deltaB_pp_xErr        = dB_pp[i][0].dB_fxpr_err; 
+      data.deltaB_pp_yErr        = dB_pp[i][1].dB_fxpr_err; 
+      data.deltaB_pp_zErr        = dB_pp[i][2].dB_fxpr_err; 
+      data.deltaB_tr_x           = dB_tr[i][0].dB_fxpr; 
+      data.deltaB_tr_y           = dB_tr[i][1].dB_fxpr; 
+      data.deltaB_tr_z           = dB_tr[i][2].dB_fxpr; 
+      data.deltaB_tr_xErr        = dB_tr[i][0].dB_fxpr_err; 
+      data.deltaB_tr_yErr        = dB_tr[i][1].dB_fxpr_err; 
+      data.deltaB_tr_zErr        = dB_tr[i][2].dB_fxpr_err;
+      // misalignment data.  note that this is in Hz 
+      data.dx                    = mis[i].dB_x_aba; 
+      data.dy                    = mis[i].dB_y_aba; 
+      data.dz                    = mis[i].dB_z_aba;
+      data.dr                    = TMath::Sqrt( data.dx*data.dx + data.dy*data.dy + data.dz*data.dz );  
+      // fill vector 
+      x.push_back(data);  
+   } 
+
+   // now print to ROOT file
+
+   gm2fieldUtil::rootData_t rd;
+   rd.fileName      = outpath;
+   rd.treeName      = "CAL";
+   rd.branchName    = "B";
+   rd.leafStructure = calib_result_str; 
+   // rd.leafStructure = "calibCoeff/D:calibCoeffErr/D:calibCoeff_aba/D:calibCoeffErr_aba:calibCoeffFree/D:calibCoeffFreeErr/D:calibCoeffFree_aba/D:calibCoeffFreeErr_aba:freeErr/D:dx/D:dy/D:dz/D:dr/D:deltaB_pp_x/D:deltaB_pp_y/D:deltaB_pp_z/D:deltaB_pp_xErr/D:deltaB_pp_yErr/D:deltaB_pp_zErr/D:deltaB_tr_x/D:deltaB_tr_y/D:deltaB_tr_z/D:deltaB_tr_xErr/D:deltaB_tr_yErr/D:deltaB_tr_zErr/D:dBdx_imp/D:dBdy_imp/D:dBdz_imp/D:dBdx_impErr/D:dBdy_impErr/D:dBdz_impErr/D:dBdx_shim/D:dBdy_shim/D:dBdz_shim/D:dBdx_shimErr/D:dBdy_shimErr/D:dBdz_shimErr/D";
+
+   int rc = gm2fieldUtil::Export::PrintToROOTFile<calib_result_t>(rd,x); 
+   return rc;
+
 }
 //______________________________________________________________________________
 int GetImposedGradients(const char *inpath,std::vector<imposed_gradient_t> &imp_grad){
