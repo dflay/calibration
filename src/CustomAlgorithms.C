@@ -90,59 +90,149 @@ int FindTRLYStopTimes(int probe,double angle,std::vector<trolleyAnaEvent_t> trly
    return 0;
 }
 //______________________________________________________________________________
-int FindTransitionTimes(int type,double thr,double delta,std::vector<gm2field::surfaceCoils_t> data,
+int FindTransitionTimes(int type,int gradType,double thr,double delta,std::vector<gm2field::surfaceCoils_t> data,
                         std::vector<double> &timeOff,std::vector<double> &timeOn){
    // find the transition times of turning off and on the surface coils 
    // use the sum of the coils to determine if they're on or off 
    // type: 0 (bottom), 1 (top), -1 (azi)
    // thr: threshold above which we consider the SCC to be on 
    // delta: how much time to delay marking the transition (for downstream analysis) 
-   int rc=0,i=0,cntr=0,M=4;
+   int k=0; 
+   int rc=0,i=0,cntr=0,M=4,currentErr=0;
    if(type==0||type==1) M = 100;
-   if( TMath::Abs(type)>1 ) return -1;  
-   double theTime=0,diff=0,sum=0,sum_prev=0; 
+   if( TMath::Abs(type)>1 ) return -1; 
+   int sign_top=0,sign_bot=0,sign_azi=0;
+   double currentThr=2.0;
+   double bot=0,top=0,azi=0;  
+   double BOT=0,TOP=0,AZI=0;  
+   double change=0,theTime=0,theTime_prev=0;
+   double diff=0,sum=0,sum2=0,sum_prev=0;
+   double SUM=0,SUM_PREV=0; 
    const int NEV = data.size();
+   // std::cout << "Scanning " << NEV << " events..." << std::endl;
    do{ 
       for(int j=0;j<M;j++){
-	 if(type==0)  sum += data[i].BotCurrents[j]; 
-	 if(type==1)  sum += data[i].TopCurrents[j]; 
-	 if(type==-1) sum  = data[i].AzCurrents[0];   // these coils are set symmetrically, so we don't want to sum! 
+	 bot = data[i].BotCurrents[j]; 
+	 top = data[i].TopCurrents[j]; 
+	 azi = data[i].AzCurrents[0];
+         BOT = TMath::Abs(bot); 
+         TOP = TMath::Abs(top); 
+         AZI = TMath::Abs(azi); 
+         sign_bot = bot/BOT; 
+         sign_top = top/TOP; 
+         sign_azi = azi/AZI; 
+         if(gradType==0){
+	    // x axis, sign should be the same; also require valid top current values 
+	    if(sign_bot!=sign_top&&TOP>0.100) diff = 1;
+         }else if(gradType==1){
+	    // y axis, sign should be different; also require valid top current values 
+	    if(sign_bot==sign_top&&TOP>0.100) diff = 1;
+         }else{
+	    diff=0;
+         }
+	 // azi can't be on while others are on 
+	 if(AZI>0.100 && TOP>0.100) diff = 1;
+	 if(AZI>0.100 && BOT>0.100) diff = 1;
+	 // sum based on type 
+	 if(type==0)  sum += bot; 
+	 if(type==1)  sum += top; 
+	 if(type==-1) sum  = azi; // these coils are set symmetrically, so we don't want to sum! 
+         if(TMath::Abs(sum)>currentThr||diff!=0){
+	    currentErr = 1;
+	    break;
+         } 
       }
+      if(currentErr==1){
+	 // not correct currents, continue on
+	 currentErr = 0;
+	 sum_prev = 0;
+	 sum      = 0;
+	 diff     = 0;
+	 i++;
+	 continue; 
+      }
+      // get the time of the event 
       if(type==0)  theTime = data[i].BotTime[0]/1E+9; 
       if(type==1)  theTime = data[i].TopTime[0]/1E+9; 
-      if(type==-1) theTime = data[i].TopTime[0]/1E+9; // we don't have an Azi time  
-      if( TMath::Abs(sum-sum_prev)>thr ){
+      if(type==-1) theTime = data[i].TopTime[0]/1E+9; // we don't have an Azi time 
+      // std::cout << "time = " << theTime << " sum = " << sum << " time_prev = " << theTime_prev << " sum_prev = " << sum_prev << std::endl;
+      // now compute the change
+      change = sum - sum_prev;
+      // std::cout << gm2fieldUtil::GetStringTimeStampFromUTC(theTime) << " " << sum_prev << " " << sum << " CURRENT CHANGE = " << change << std::endl;
+      // if(k%5==0){
+      //    // hit the 5th second, take mean 
+      //    SUM /= 5.; 
+      //    change   = (SUM-SUM_PREV);
+      //    SUM_PREV = SUM;
+      //    std::cout << k << " " << gm2fieldUtil::GetStringTimeStampFromUTC(theTime) 
+      //              << " " << SUM_PREV << " " << SUM << " CURRENT CHANGE = " << change << std::endl;
+      //    SUM = 0;
+      //    k   = 0; 
+      // }else{
+      //    // keep accumulating 
+      //    SUM += sum;
+      // }
+      // k++;
+      // categorize as an on or off transition  
+      if( TMath::Abs(change)>thr ){
 	 // found a transition
+         std::cout << "Found a transition at: " << gm2fieldUtil::GetStringTimeStampFromUTC(theTime) << std::endl; 
 	 cntr++;
-	 if( (type>=0&&cntr>0) || type==-1){  // FIXME: Why do we need the conter to be greater than 2 before??
-	    // now is it a time off or time on? 
-	    if( TMath::Abs(sum)<10E-3 ){  // 10 mA 
-	       timeOff.push_back(theTime+delta); 
-	    }else{
-	       timeOn.push_back(theTime+delta); 
-	    }
-	 }
-	 i += 75;   // jump ahead 
+	 // if( (type>=0&&cntr>0) || type==-1){  // FIXME: Why do we need the counter to be greater than 2 before??
+	 //    // now is it a time off or time on? 
+	 //    if( TMath::Abs(sum)<thr ){   
+	 //       timeOff.push_back(theTime+delta); 
+	 //       // std::cout << "sum = " << sum; 
+	 //       // std::cout << " OFF transition " << timeOff.size() << ": " << gm2fieldUtil::GetStringTimeStampFromUTC(theTime+delta) << std::endl; 
+	 //    }else{
+	 //       timeOn.push_back(theTime+delta); 
+	 //       // std::cout << "sum = " << sum; 
+         //       // std::cout << " ON transition " << timeOn.size() << ": " << gm2fieldUtil::GetStringTimeStampFromUTC(theTime+delta) << std::endl; 
+	 //    }
+	 // }
+         if(change>0) timeOn.push_back(theTime+delta);  
+         if(change<0) timeOff.push_back(theTime+delta);  
+	 // i += 20;   // jump ahead 
       }else{
 	 // no transition 
-         i++; 
       }
       // set up for next event 
-      sum_prev = sum;
-      sum      = 0;
+      sum_prev     = sum;
+      theTime_prev = theTime;
+      sum          = 0;
+      diff         = 0;
+      i++;
    }while(i<NEV); 
+
+   // std::cout << "--> Done." << std::endl;
 
    const int Non  = timeOn.size();
    const int Noff = timeOff.size();
-   std::cout << Form("Number of SCC transition times: off = %d, on = %d",Noff,Non) << std::endl;
 
    // no transitions?! return an error 
-   if(Non==0 || Noff==0) return -1; 
+   if(Non==0 || Noff==0){
+      std::cout << "PROBLEM! No transitions!" << std::endl;
+      return -1; 
+   }
+
+   if(Non!=Noff){
+      std::cout << "PROBLEM! Unequal on/off transitions!" << std::endl;
+      std::cout << "on: " << Non << std::endl;
+      for(int i=0;i<Non;i++){
+	 std::cout << "on: "  << gm2fieldUtil::GetStringTimeStampFromUTC( timeOn[i] ) << std::endl;
+      }
+      std::cout << " off: " << Noff << std::endl;
+      for(int i=0;i<Noff;i++){
+	 std::cout << "on: "  << gm2fieldUtil::GetStringTimeStampFromUTC( timeOff[i] ) << std::endl;
+      }
+      return -2;
+   }
 
    // determine if we start analysis with SCC on or off
    // rc = 1, SCC on to start 
-   if(timeOff[0]>timeOn[0])  rc = 1;
+   if(timeOn[0]<timeOff[0])  rc = 1;
 
+   std::cout << Form("Number of SCC transition times: off = %d, on = %d",Noff,Non) << std::endl;
    for(int i=0;i<Non;i++){
       std::cout << "on: "  << gm2fieldUtil::GetStringTimeStampFromUTC( timeOn[i] ) << " "  
                 << "off: " << gm2fieldUtil::GetStringTimeStampFromUTC( timeOff[i] ) << std::endl;
@@ -214,16 +304,16 @@ int CheckDifference(std::vector<double> &x,std::vector<double> &dx){
 
 }
 //______________________________________________________________________________
-int GetDifference(std::vector<double> scc ,std::vector<double> scc_err,
-                  std::vector<double> bare,std::vector<double> bare_err,
+int GetDifference(std::vector<double> A,std::vector<double> A_err,
+                  std::vector<double> B,std::vector<double> B_err,
                   std::vector<double> &diff,std::vector<double> &diff_err){
    double arg=0,arg_err=0;
-   const int N = bare.size();
+   const int N = B.size();
    for(int i=0;i<N;i++){
-      arg     = scc[i] - bare[i];
-      arg_err = TMath::Sqrt(scc_err[i]*scc_err[i] + bare_err[i]*bare_err[i]);
-      std::cout << Form("Trial %d: bare = %.3lf +/- %.3lf Hz, scc = %.3lf +/- %.3lf Hz, diff = %.3lf +/- %.3lf Hz",
-                        i,bare[i],bare_err[i],scc[i],scc_err[i],arg,arg_err) << std::endl;
+      arg     = A[i] - B[i];
+      arg_err = TMath::Sqrt(A_err[i]*A_err[i] + B_err[i]*B_err[i]);
+      std::cout << Form("Trial %d: A = %.3lf +/- %.3lf Hz, B = %.3lf +/- %.3lf Hz, diff(A-B) = %.3lf +/- %.3lf Hz",
+                        i,A[i],A_err[i],B[i],B_err[i],arg,arg_err) << std::endl;
       diff.push_back(arg);
       diff_err.push_back(arg_err);
    }
@@ -236,6 +326,7 @@ int GetDifference_ABA(bool useTimeWeight,
                       std::vector<double> &diff_aba,std::vector<double> &diff_aba_err){
 
    // WARNING: This assumes that the bare measurement comes first!
+   // FIXME? THIS IS WRONG! 
 
    double w=0,w_prev=0;
    double dt_tot=0;
@@ -303,6 +394,43 @@ int GetDifference_ABA_sccFirst(bool useTimeWeight,
       }
        std::cout << Form("Trial %d: scc1 = %.3lf +/- %.3lf Hz, bare = %.3lf +/- %.3lf Hz, scc2 = %.3lf +/- %.3lf Hz, diff = %.3lf +/- %.3lf Hz",
                          i,scc[i-1],scc_err[i-1],bare[i-1],bare_err[i-1],scc[i],scc_err[i],arg,arg_err) << std::endl;
+      // store result 
+      diff_aba.push_back(arg);
+      diff_aba_err.push_back(arg_err);
+   }
+   return 0;
+}
+//______________________________________________________________________________
+int GetDifference_ABA_final(bool useTimeWeight,
+                            std::vector<double> A_time,std::vector<double> A,std::vector<double> A_err,
+                            std::vector<double> B_time,std::vector<double> B,std::vector<double> B_err,
+                            std::vector<double> &diff_aba,std::vector<double> &diff_aba_err){
+   // WARNING: This assumes that the A measurement comes first!
+   double w=0,w_prev=0,dt_tot=0;
+   double diff=0,diff_prev=0;
+   double arg=0,arg_err=0;
+   const int N = B.size();
+   for(int i=1;i<N;i++){
+      // set up time weights 
+      dt_tot    = A_time[i] - A_time[i-1]; 
+      w         = TMath::Abs(A_time[i-1]-B_time[i-1])/dt_tot;
+      w_prev    = TMath::Abs(A_time[i]-B_time[i-1])/dt_tot;
+      // first compute the difference 
+      diff_prev = A[i-1] - B[i-1];
+      diff      = A[i]   - B[i-1];
+      // now get the ABA difference
+      if(useTimeWeight){
+	 arg     = w*diff + w_prev*diff_prev;
+	 arg_err = TMath::Sqrt( B_err[i-1]*B_err[i-1] + w*w*A_err[i]*A_err[i] + w_prev*w_prev*A_err[i-1]*A_err[i-1] );
+      }else{ 
+	 arg     = 0.5*(diff + diff_prev);
+	 arg_err = TMath::Sqrt( B_err[i-1]*B_err[i-1] + 0.25*A_err[i]*A_err[i] + 0.25*A_err[i-1]*A_err[i-1] );
+      }
+      std::cout << Form("Trial %02d: ",i); 
+      std::cout << Form("A1 = %.3lf +/- %.3lf Hz, ",A[i-1],A_err[i-1]); 
+      std::cout << Form("B = %.3lf +/- %.3lf Hz, " ,B[i-1],B_err[i-1]);
+      std::cout << Form("A2 = %.3lf +/- %.3lf Hz, ",A[i]  ,A_err[i]  );
+      std::cout << Form("diff = %.3lf +/- %.3lf Hz",arg   ,arg_err   ) << std::endl;
       // store result 
       diff_aba.push_back(arg);
       diff_aba_err.push_back(arg_err);

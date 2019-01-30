@@ -61,9 +61,9 @@ class InputManager{
       std::string GetValue(std::string key)                       const { return fParams[key]; }  
       std::string GetValue(std::string key,std::string subKey)    const { return fParams[key][subKey]; } 
 
-      // identical to above, but more descriptive function name
-      std::string GetValueFromKey(std::string key)                       const { return fParams[key]; }  
-      std::string GetValueFromSubKey(std::string key,std::string subKey) const { return fParams[key][subKey]; } 
+      // identical to above, but more descriptive function name and templated 
+      template <typename T> T GetValueFromKey(std::string key)                       const { return fParams[key]; }  
+      template <typename T> T GetValueFromSubKey(std::string key,std::string subKey) const { return fParams[key][subKey]; } 
 
 }; 
 

@@ -496,11 +496,11 @@ TGraph *GetSCCPlot(int type,std::vector<gm2field::surfaceCoils_t> data){
 int FillTRVector(int probe,TString axis,std::vector<trolleyAnaEvent_t> data,double sf,std::vector<double> &x){
    const int N = data.size();
    if(axis=="GpsTimeStamp") for(int i=0;i<N;i++) x.push_back( data[i].time[probe]/1E+9 );  
-   if(axis=="r")            for(int i=0;i<N;i++) x.push_back( sf*data[i].r[probe]      );  
-   if(axis=="y")            for(int i=0;i<N;i++) x.push_back( sf*data[i].y[probe]      );  
-   if(axis=="phi")          for(int i=0;i<N;i++) x.push_back( sf*data[i].phi[probe]    );  
-   if(axis=="temp")         for(int i=0;i<N;i++) x.push_back( sf*data[i].temp[probe]   );  
-   if(axis=="freq")         for(int i=0;i<N;i++) x.push_back( sf*data[i].freq[probe]   );  
+   if(axis=="r")            for(int i=0;i<N;i++) x.push_back( data[i].r[probe]      );  
+   if(axis=="y")            for(int i=0;i<N;i++) x.push_back( data[i].y[probe]      );  
+   if(axis=="phi")          for(int i=0;i<N;i++) x.push_back( data[i].phi[probe]    );  
+   if(axis=="temp")         for(int i=0;i<N;i++) x.push_back( data[i].temp[probe]   );  
+   if(axis=="freq")         for(int i=0;i<N;i++) x.push_back( data[i].freq[probe]-sf);  
    return 0; 
 }
 //______________________________________________________________________________

@@ -83,7 +83,9 @@ int DeltaB_trly_prod(std::string configFile){
    // ImportBlinding(blind);
    // double blindValue = blind.value_tr; 
 
-   gm2fieldUtil::Blinder *myBlind = new gm2fieldUtil::Blinder("flay");
+   int blindUnits  = gm2fieldUtil::Constants::ppb;
+   double blindMag = 100.;
+   gm2fieldUtil::Blinder *myBlind = new gm2fieldUtil::Blinder("flay",blindMag,blindUnits);
    double blindValue = myBlind->GetBlinding(2); // in Hz
 
    std::vector<int> run;
@@ -105,8 +107,8 @@ int DeltaB_trly_prod(std::string configFile){
       }
    }
 
-   int coilSet  = 0;
-   double thr   = 10E-3;         // in A 
+   int coilSet  = 1;             // 0 = bottom, 1 = top, -1 = azi  
+   double thr   = 100E-3;        // in A 
    double delta = 2.*60. + 40.;  // 2 min 40 sec   // for x, y 
    
    if(axis==2){
@@ -151,7 +153,7 @@ int DeltaB_trly_prod(std::string configFile){
 	 rc = LoadTRLYSCCTimes(probeNumber,sccOff,sccOn);
 	 if(sccOn[0]<sccOff[0]) sccStartOn = true;
       }else{
-	 rc = FindTransitionTimes(coilSet,thr,delta,sccData,sccOff,sccOn);
+	 rc = FindTransitionTimes(coilSet,axis,thr,delta,sccData,sccOff,sccOn);
 	 if(rc<0){
 	    std::cout << "No SCC transitions!" << std::endl;
 	    return 1;
@@ -185,9 +187,14 @@ int DeltaB_trly_prod(std::string configFile){
    double yMin = MEAN - 3.*STDEV;   
    double yMax = MEAN + 3.*STDEV;   
 
-   const int NL = sccOn.size();
-   TLine **tON  = new TLine*[NL];
-   TLine **tOFF = new TLine*[NL];
+   double yMin_scc = -3; 
+   double yMax_scc =  3; 
+
+   const int NL     = sccOn.size();
+   TLine **tON      = new TLine*[NL];
+   TLine **tOFF     = new TLine*[NL];
+   TLine **tON_scc  = new TLine*[NL];
+   TLine **tOFF_scc = new TLine*[NL];
    for(int i=0;i<NL;i++){
       tON[i] = new TLine(sccOn[i],yMin,sccOn[i],yMax);
       tON[i]->SetLineColor(kGreen+1);
@@ -197,6 +204,15 @@ int DeltaB_trly_prod(std::string configFile){
       tOFF[i]->SetLineColor(kRed);
       tOFF[i]->SetLineWidth(2);
       tOFF[i]->SetLineStyle(2);
+      // for the SCC plot 
+      tON_scc[i] = new TLine(sccOn[i],yMin_scc,sccOn[i],yMax_scc);
+      tON_scc[i]->SetLineColor(kGreen+1);
+      tON_scc[i]->SetLineWidth(2);
+      tON_scc[i]->SetLineStyle(2);
+      tOFF_scc[i] = new TLine(sccOff[i],yMin_scc,sccOff[i],yMax_scc);
+      tOFF_scc[i]->SetLineColor(kRed);
+      tOFF_scc[i]->SetLineWidth(2);
+      tOFF_scc[i]->SetLineStyle(2);
    }
 
    if(isBlind) ApplyBlindingTRLY(blindValue,trlyData);
@@ -213,22 +229,29 @@ int DeltaB_trly_prod(std::string configFile){
    rc = GetDifference(scc,sccErr,bare,bareErr,diff,diffErr); 
 
    double mean=0,stdev=0,err=0; 
-   // mean  = gm2fieldUtil::Math::GetMean<double>(diff); 
-   // stdev = gm2fieldUtil::Math::GetStandardDeviation<double>(diff);
    rc = GetWeightedAverageStats(diff,diffErr,mean,err,stdev); 
 
-   // ABA difference (bare first) 
-   std::vector<double> diff_aba,diffErr_aba;
-   if(sccStartOn){
-      rc = GetDifference_ABA_sccFirst(useTimeWeight,sccTime,scc,sccErr,bareTime,bare,bareErr,diff_aba,diffErr_aba);  
-   }else{
-      rc = GetDifference_ABA(useTimeWeight,sccTime,scc,sccErr,bareTime,bare,bareErr,diff_aba,diffErr_aba);  
-   }
+   int NN = bare.size(); 
 
-   double mean_aba=0,stdev_aba=0;
-   // mean_aba  = gm2fieldUtil::Math::GetMean<double>(diff_aba); 
-   // stdev_aba = gm2fieldUtil::Math::GetStandardDeviation<double>(diff_aba); 
-   rc = GetWeightedAverageStats(diff_aba,diffErr_aba,mean_aba,err,stdev_aba); 
+   // ABA difference 
+   double mean_aba=0,stdev_aba=0; 
+   std::vector<double> diff_aba,diffErr_aba;
+   if(NN>1){
+      if(sccStartOn){
+	 // SCC was first! A = SCC, B = baseline  
+	 rc = GetDifference_ABA_final(useTimeWeight,sccTime,scc,sccErr,bareTime,bare,bareErr,diff_aba,diffErr_aba);  
+      }else{
+	 // Baseline was first! A = baseline, B = SCC  
+	 rc = GetDifference_ABA_final(useTimeWeight,bareTime,bare,bareErr,sccTime,scc,sccErr,diff_aba,diffErr_aba); 
+	 // need to invert results since we want SCC - baseline 
+	 for(int i=0;i<NN;i++) diff_aba[i] *= -1.;  
+      }
+      rc = GetWeightedAverageStats(diff_aba,diffErr_aba,mean_aba,err,stdev_aba); 
+   }else{
+      // not enough events!
+      mean_aba  = 0;
+      stdev_aba = 0; 
+   }
  
    const int ND = diff.size();
    std::vector<double> trial; 
@@ -249,7 +272,10 @@ int DeltaB_trly_prod(std::string configFile){
 
    dB[1]     = mean_aba;
    dB_err[1] = stdev_aba;  
-   
+  
+   // if we have a single ABA trial, use statistical uncertainty as the error 
+   if(NDA==1) dB_err[1] = diffErr_aba[0];
+ 
    // Plots
 
    TGraph *gTR               = GetTRLYTGraph(probeNumber-1,"GpsTimeStamp","freq",trlyData);
@@ -270,7 +296,7 @@ int DeltaB_trly_prod(std::string configFile){
 
    TMultiGraph *mgDiff = new TMultiGraph();
    mgDiff->Add(gDiff      ,"lp");
-   mgDiff->Add(gDiff_aba  ,"lp");
+   if(NN>1) mgDiff->Add(gDiff_aba  ,"lp");
 
    std::cout << Form("====================== RESULTS FOR PROBE %02d ======================",probeNumber) << std::endl;
    std::cout << "Raw results: " << std::endl;
@@ -330,6 +356,40 @@ int DeltaB_trly_prod(std::string configFile){
    plotPath = Form("%s/trly_dB_%s-grad_pr-%02d_all-data.png",plotDir,gradName.c_str(),probeNumber); 
    c2->Print(plotPath);
    delete c2;  
+
+   TGraph *gSCCb = GetSCCPlot( 0,sccData);
+   TGraph *gSCCt = GetSCCPlot( 1,sccData);
+   TGraph *gSCCa = GetSCCPlot(-1,sccData);
+
+   gm2fieldUtil::Graph::SetGraphParameters(gSCCb,20,kBlack);
+   gm2fieldUtil::Graph::SetGraphParameters(gSCCt,20,kRed  );
+   gm2fieldUtil::Graph::SetGraphParameters(gSCCa,20,kBlue );
+
+   TMultiGraph *mgSCC = new TMultiGraph();
+   mgSCC->Add(gSCCb,"lp");
+   mgSCC->Add(gSCCt,"lp");
+   mgSCC->Add(gSCCa,"lp");
+
+   TString Title_scc = Form("SCC Data (black = bot, red = top, blue = azi)");
+
+   TCanvas *c3 = new TCanvas("c3","SCC Data",1200,600);
+   c3->cd();
+
+   mgSCC->Draw("a");
+   gm2fieldUtil::Graph::SetGraphLabels(mgSCC,Title_scc,"","Current (A)");
+   gm2fieldUtil::Graph::UseTimeDisplay(mgSCC);
+   mgSCC->GetYaxis()->SetRangeUser(yMin_scc,yMax_scc); 
+   mgSCC->Draw("a");
+   for(int i=0;i<NL;i++){
+      tON_scc[i]->Draw("same");
+      tOFF_scc[i]->Draw("same");
+   } 
+   c3->Update(); 
+
+   c3->cd();
+   plotPath = Form("%s/trly_dB_scc-currents_%s-grad_pr-%02d.png",plotDir,gradName.c_str(),probeNumber); 
+   c3->Print(plotPath);
+   delete c3;
 
    delete inputMgr; 
 

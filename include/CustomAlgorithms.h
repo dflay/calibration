@@ -48,14 +48,14 @@ int FindTRLYStopTimes(int probe,double angle,std::vector<trolleyAnaEvent_t> trly
                       std::vector<gm2field::galilTrolley_t> trlyGalil,
                       std::vector<double> &time); 
 
-int FindTransitionTimes(int type,double thr,double delta,std::vector<gm2field::surfaceCoils_t> data,
+int FindTransitionTimes(int type,int gradType,double thr,double delta,std::vector<gm2field::surfaceCoils_t> data,
                         std::vector<double> &timeOff,std::vector<double> &timeOn); 
 
 int CalculateTRLYAvg_Stationary(int probeNumber,std::vector<trolleyAnaEvent_t> Event,double &mean,double &stdev);
 
 // Difference calculations 
-int GetDifference(std::vector<double> scc ,std::vector<double> scc_err,
-                  std::vector<double> bare,std::vector<double> bare_err,
+int GetDifference(std::vector<double> A,std::vector<double> A_err,
+                  std::vector<double> B,std::vector<double> B_err,
                   std::vector<double> &diff,std::vector<double> &diff_err);
 
 int GetDifference_ABA(bool useTimeWeight,
@@ -67,6 +67,12 @@ int GetDifference_ABA_sccFirst(bool useTimeWeight,
                                std::vector<double> sccTime ,std::vector<double> scc ,std::vector<double> scc_err,
                                std::vector<double> bareTime,std::vector<double> bare,std::vector<double> bare_err,
                                std::vector<double> &diff_aba,std::vector<double> &diff_aba_err);
+
+// same as "sccFirst", but better notation 
+int GetDifference_ABA_final(bool useTimeWeight,
+                            std::vector<double> A_time,std::vector<double> A,std::vector<double> A_err,
+                            std::vector<double> B_time,std::vector<double> B,std::vector<double> B_err,
+                            std::vector<double> &diff_aba,std::vector<double> &diff_aba_err);
 
 // PP functions 
 int CalculateAveragePP(std::vector<plungingProbeAnaEvent_t> ppData,double &B,double &B_err); 

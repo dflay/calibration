@@ -89,7 +89,9 @@ int Process_pp_prod(std::string configFile){
    // ImportBlinding(blind);
    // double blindValue = blind.value_pp;
 
-   gm2fieldUtil::Blinder *myBlind = new gm2fieldUtil::Blinder("flay");
+   int blindUnits  = gm2fieldUtil::Constants::ppb;
+   double blindMag = 100.;
+   gm2fieldUtil::Blinder *myBlind = new gm2fieldUtil::Blinder("flay",blindMag,blindUnits);
    double blindValue = myBlind->GetBlinding(1); // in Hz
 
    std::vector<int> run;

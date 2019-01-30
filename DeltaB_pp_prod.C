@@ -14,6 +14,7 @@
 #include "TCanvas.h"
 #include "TLegend.h"
 #include "TSpline.h"
+#include "TLine.h"
 
 #include "RootTreeStructs.h"
 #include "gm2fieldMath.h"
@@ -72,7 +73,9 @@ int DeltaB_pp_prod(std::string configFile){
    // ImportBlinding(blind);
    // double blindValue = blind.value_pp; 
 
-   gm2fieldUtil::Blinder *myBlind = new gm2fieldUtil::Blinder("flay");
+   int blindUnits  = gm2fieldUtil::Constants::ppb;
+   double blindMag = 100.;
+   gm2fieldUtil::Blinder *myBlind = new gm2fieldUtil::Blinder("flay",blindMag,blindUnits);
    double blindValue = myBlind->GetBlinding(1); // in Hz
 
    std::string gradName;
@@ -96,13 +99,13 @@ int DeltaB_pp_prod(std::string configFile){
    for(int i=0;i<NRUN;i++) rc = gm2fieldUtil::RootHelper::GetSCCData(run[i],sccData);
    if(rc!=0) return 1; 
 
-   int coilSet  = 0;
+   int coilSet  = 1;
    if(axis==2) coilSet = -1;
  
-   double thr   = 10E-3;         // in A 
+   double thr   = 100E-3;        // in A 
    double delta = 2.*60. + 40.;  // 2 min 40 sec   
    std::vector<double> sccOff,sccOn;
-   rc = FindTransitionTimes(coilSet,thr,delta,sccData,sccOff,sccOn);
+   rc = FindTransitionTimes(coilSet,axis,thr,delta,sccData,sccOff,sccOn);
    if(rc<0) return 1; 
 
    bool sccStartOn = false; 
@@ -114,11 +117,17 @@ int DeltaB_pp_prod(std::string configFile){
       std::cout << "SCC was OFF to start the sequence" << std::endl;
    } 
 
-   const int NSCC = sccOn.size();
-   for(int i=0;i<NSCC;i++){
-      std::cout << "on = "   << gm2fieldUtil::GetStringTimeStampFromUTC( (unsigned long)sccOn[i] ) 
-                << " off = " << gm2fieldUtil::GetStringTimeStampFromUTC( (unsigned long)sccOff[i] ) << std::endl; 
-   }
+   const int NSCC     = sccOn.size();
+
+   // if(NSCC!=NSCC_off){
+   //    std::cout << "ERROR! SCC on/off swaps not equal!" << std::endl;
+   //    return 1;
+   // }
+
+   // for(int i=0;i<NSCC;i++){
+   //    std::cout << "on = "   << gm2fieldUtil::GetStringTimeStampFromUTC( (unsigned long)sccOn[i] ) 
+   //              << " off = " << gm2fieldUtil::GetStringTimeStampFromUTC( (unsigned long)sccOff[i] ) << std::endl; 
+   // }
 
    // PP data 
    const int N3 = run.size(); 
@@ -167,22 +176,27 @@ int DeltaB_pp_prod(std::string configFile){
    }
 
    double mean=0,stdev=0,err=0;
-   // mean  = gm2fieldUtil::Math::GetMean<double>(diff); 
-   // stdev = gm2fieldUtil::Math::GetStandardDeviation<double>(diff); 
    rc = GetWeightedAverageStats(diff,diffErr,mean,err,stdev); 
 
-   // ABA difference (bare first) 
+   double mean_aba=0,stdev_aba=0; 
    std::vector<double> diff_aba,diffErr_aba;
-   if(sccStartOn){
-      rc = GetDifference_ABA_sccFirst(useTimeWeight,sccTime,scc,sccErr,bareTime,bare,bareErr,diff_aba,diffErr_aba);  
+   if(NPP>1){
+      // ABA difference  
+      if(sccStartOn){
+	 // SCC is first; A = SCC, B = baseline 
+	 rc = GetDifference_ABA_final(useTimeWeight,sccTime,scc,sccErr,bareTime,bare,bareErr,diff_aba,diffErr_aba);  
+      }else{
+	 // baseline is first; A = baseline, B = SCC 
+	 rc = GetDifference_ABA_final(useTimeWeight,bareTime,bare,bareErr,sccTime,scc,sccErr,diff_aba,diffErr_aba); 
+	 // need to flip the sign; we want SCC - baseline 
+	 for(int i=0;i<NPP;i++) diff_aba[i] *= -1.;  
+      }
+      rc = GetWeightedAverageStats(diff_aba,diffErr_aba,mean_aba,err,stdev_aba); 
    }else{
-      rc = GetDifference_ABA(useTimeWeight,sccTime,scc,sccErr,bareTime,bare,bareErr,diff_aba,diffErr_aba);  
+      // not enough events! 
+      mean_aba  = 0;
+      stdev_aba = 0;
    }
-
-   double mean_aba=0,stdev_aba=0;
-   // mean_aba  = gm2fieldUtil::Math::GetMean<double>(diff_aba); 
-   // stdev_aba = gm2fieldUtil::Math::GetStandardDeviation<double>(diff_aba); 
-   rc = GetWeightedAverageStats(diff_aba,diffErr_aba,mean_aba,err,stdev_aba); 
  
    double dB[3]        = {0,0,0}; 
    double dB_err[3]    = {0,0,0};
@@ -191,9 +205,6 @@ int DeltaB_pp_prod(std::string configFile){
 
    dB[0]     = mean;
    dB_err[0] = stdev;
-
-   dB[1]     = mean_aba;
-   dB_err[1] = stdev_aba;  
 
    const int ND = diff.size();
    std::vector<double> trial; 
@@ -208,9 +219,15 @@ int DeltaB_pp_prod(std::string configFile){
       trial_aba.push_back(i+1);
       std::cout << Form("ABA trial %d: %.3lf +/- %.3lf Hz",i+1,diff_aba[i],diffErr_aba[i]) << std::endl;
    }
+
+   dB[1]     = mean_aba;
+   dB_err[1] = stdev_aba; 
+
+   // if we have a single ABA trial, use statistical uncertainty as the error 
+   if(NDA==1) dB_err[1] = diffErr_aba[0];  
    
    // Plots
- 
+
    TGraphErrors *gPP_bare  = gm2fieldUtil::Graph::GetTGraphErrors(bareTime ,bare      ,bareErr      );
    TGraphErrors *gPP_scc   = gm2fieldUtil::Graph::GetTGraphErrors(sccTime  ,scc       ,sccErr       );
    TGraphErrors *gDiff     = gm2fieldUtil::Graph::GetTGraphErrors(trial    ,diff      ,diffErr      );  
@@ -227,7 +244,7 @@ int DeltaB_pp_prod(std::string configFile){
 
    TMultiGraph *mgDiff = new TMultiGraph();
    mgDiff->Add(gDiff      ,"lp");
-   mgDiff->Add(gDiff_aba  ,"lp");
+   if(NPP>1) mgDiff->Add(gDiff_aba  ,"lp");
 
    TLegend *L = new TLegend(0.6,0.6,0.8,0.8); 
    L->AddEntry(gPP_bare   ,"Bare","p"); 
@@ -235,7 +252,7 @@ int DeltaB_pp_prod(std::string configFile){
    
    TLegend *LD = new TLegend(0.6,0.6,0.8,0.8); 
    LD->AddEntry(gDiff      ,"Raw"  ,"p");  
-   LD->AddEntry(gDiff_aba  ,"ABA"  ,"p");  
+   if(NPP>1) LD->AddEntry(gDiff_aba  ,"ABA"  ,"p");  
 
    std::cout << Form("====================== RESULTS FOR PROBE %02d ======================",probeNumber) << std::endl;
    std::cout << "Raw results: " << std::endl;
@@ -287,6 +304,22 @@ int DeltaB_pp_prod(std::string configFile){
    c1->Print(plotPath);
    delete c1;  
 
+   double yMin_scc = -3; 
+   double yMax_scc =  3; 
+
+   TLine **tON  = new TLine*[NSCC];
+   TLine **tOFF = new TLine*[NSCC];
+   for(int i=0;i<NSCC;i++){
+      tON[i] = new TLine(sccOn[i],yMin_scc,sccOn[i],yMax_scc);
+      tON[i]->SetLineColor(kGreen+1);
+      tON[i]->SetLineWidth(2);
+      tON[i]->SetLineStyle(2);
+      tOFF[i] = new TLine(sccOff[i],yMax_scc,sccOff[i],yMin_scc);
+      tOFF[i]->SetLineColor(kRed);
+      tOFF[i]->SetLineWidth(2);
+      tOFF[i]->SetLineStyle(2);
+   }
+
    TGraph *gSCCb = GetSCCPlot( 0,sccData);
    TGraph *gSCCt = GetSCCPlot( 1,sccData);
    TGraph *gSCCa = GetSCCPlot(-1,sccData);
@@ -300,13 +333,18 @@ int DeltaB_pp_prod(std::string configFile){
    mgSCC->Add(gSCCt,"lp");
    mgSCC->Add(gSCCa,"lp");
 
+   TString Title_scc = Form("SCC Data (black = bot, red = top, blue = azi)");
+
    TCanvas *c2 = new TCanvas("c2","SCC Data",1200,600);
    c2->cd();
 
    mgSCC->Draw("a");
-   gm2fieldUtil::Graph::SetGraphLabels(mgSCC,"SCC Data","","Current (A)");
+   gm2fieldUtil::Graph::SetGraphLabels(mgSCC,Title_scc,"","Current (A)");
    gm2fieldUtil::Graph::UseTimeDisplay(mgSCC);
+   mgSCC->GetYaxis()->SetRangeUser(yMin_scc,yMax_scc);
    mgSCC->Draw("a");
+   for(int i=0;i<NSCC;i++) tON[i]->Draw("same"); 
+   for(int i=0;i<NSCC;i++) tOFF[i]->Draw("same"); 
    c2->Update(); 
 
    c2->cd();

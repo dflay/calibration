@@ -501,7 +501,7 @@ int ImportNMRANAData(const char *inpath,std::vector<nmrAnaEvent_t> &Data){
 	    inData.freq[5] = ifc_ph;
 	    Data.push_back(inData);
          }else{
-           std::cout << "[ImportData]: Warning: rejected pulse "            << ipulse
+           std::cout << "[ImportData]: Warning for run " << irun << ": rejected pulse "            << ipulse
                      << " because number of zero crossings is less than 10" << std::endl;
          }
       }

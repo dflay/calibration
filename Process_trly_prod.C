@@ -91,7 +91,9 @@ int Process_trly_prod(std::string configFile){
    // ImportBlinding(blind);
    // double blindValue = blind.value_tr;
 
-   gm2fieldUtil::Blinder *myBlind = new gm2fieldUtil::Blinder("flay");
+   int blindUnits  = gm2fieldUtil::Constants::ppb; 
+   double blindMag = 100.; 
+   gm2fieldUtil::Blinder *myBlind = new gm2fieldUtil::Blinder("flay",blindMag,blindUnits);
    double blindValue = myBlind->GetBlinding(2); // in Hz 
 
    std::vector<int> run;
