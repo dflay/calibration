@@ -56,10 +56,39 @@ int LoadImageParameters(std::string inpath,std::string type,std::vector<imagePar
    return rc;
 }
 //______________________________________________________________________________
-int LoadTRLYSCCTimes(int probe,std::vector<double> &sccOff,std::vector<double> &sccOn){
+int LoadTimes(int probe,std::string type,std::string dev,std::vector<double> &time){
+   // load in the by-hand determined swap times 
+   std::vector<std::string> stime;
+   unsigned long int aTime;
+   std::string st;
+   char inpath[200];
+   sprintf(inpath,"./input/%s-times/%s-%02d.txt",type.c_str(),dev.c_str(),probe);
+   std::ifstream infile;
+   infile.open(inpath);
+   if( infile.fail() ){
+      std::cout << "Cannot open the file: " << inpath << std::endl;
+      return 1;
+   }else{
+      while( !infile.eof() ){
+         std::getline(infile,st);
+         aTime = gm2fieldUtil::GetUTCTimeStampFromString(st,true);
+         stime.push_back(st);
+         time.push_back(aTime);
+      }
+      time.pop_back();
+      infile.close();
+   }
+
+   const int N = time.size();
+   for(int i=0;i<N;i++) std::cout << Form("%s (%.0lf)",stime[i].c_str(),time[i]) << std::endl;
+
+   return 0;
+}
+//______________________________________________________________________________
+int LoadSCCTimes(int probe,std::string dev,std::vector<double> &sccOff,std::vector<double> &sccOn){
    // load in the by-hand determined SCC times 
    std::vector<double> time;
-   int rc = LoadTRLYTimes(probe,"scc",time); 
+   int rc = LoadTimes(probe,"scc",dev,time); 
    // now fill the vectors appropriately 
    int N = time.size();
    for(int i=0;i<N;i++){
@@ -100,35 +129,7 @@ int LoadIMGTimes(std::string type,int trial,std::vector<double> &time){
 
    return 0;
 }
-//______________________________________________________________________________
-int LoadTRLYTimes(int probe,std::string type,std::vector<double> &time){
-   // load in the by-hand determined swap times 
-   std::vector<std::string> stime;
-   unsigned long int aTime;
-   std::string st;
-   char inpath[200];
-   sprintf(inpath,"./input/%s-times/tr-%02d.txt",type.c_str(),probe);
-   std::ifstream infile;
-   infile.open(inpath);
-   if( infile.fail() ){
-      std::cout << "Cannot open the file: " << inpath << std::endl;
-      return 1;
-   }else{
-      while( !infile.eof() ){
-         std::getline(infile,st);
-         aTime = gm2fieldUtil::GetUTCTimeStampFromString(st,true);
-         stime.push_back(st);
-         time.push_back(aTime);
-      }
-      time.pop_back();
-      infile.close();
-   }
 
-   const int N = time.size();
-   for(int i=0;i<N;i++) std::cout << Form("%s (%.0lf)",stime[i].c_str(),time[i]) << std::endl;
-
-   return 0;
-}
 //______________________________________________________________________________
 int LoadResultsProdFinalData(const char *inpath,result_prod_t &data){
 

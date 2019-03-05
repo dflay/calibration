@@ -107,10 +107,19 @@ int InputManager::Parse(){
    bool tempStatus  = DoesKeyExist("use-trly-temp-cor"); 
 
    // parameters common to all 
+   std::string unitStr=""; 
    if(dateStatus)  fAnaDate      = fParams["date"];
-   if(blindStatus) fIsBlind      = (bool)( (int)fParams["blinding"]  ); 
    if(trlyStatus)  fTrolleyProbe = (int)fParams["trly-probe"]; 
    if(fxprStatus)  fFXPRListTag  = (int)fParams["fxpr-set"]; 
+   if(blindStatus){
+      fIsBlind    = (bool)( (int)fParams["blinding"]["enable"]  );
+      fBlindLabel = fParams["blinding"]["label"];
+      fBlindScale = (double)fParams["blinding"]["scale"]; 
+      unitStr     = fParams["blinding"]["units"];
+      if( unitStr.compare("Hz")==0  ) fBlindUnits = gm2fieldUtil::Constants::Hz;  
+      if( unitStr.compare("ppm")==0 ) fBlindUnits = gm2fieldUtil::Constants::ppm;  
+      if( unitStr.compare("ppb")==0 ) fBlindUnits = gm2fieldUtil::Constants::ppb;  
+   } 
 
    if(runStatus){ 
       NRUNS = (int)fParams["nruns"];

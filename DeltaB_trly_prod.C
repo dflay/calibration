@@ -57,19 +57,20 @@ int DeltaB_trly_prod(std::string configFile){
    inputMgr->Load(configFile);
    inputMgr->Print();
 
-   std::string date   = inputMgr->GetAnalysisDate();
-   bool isBlind       = inputMgr->IsBlind();
-   bool useTimeWeight = inputMgr->GetTimeWeightStatus();  
-   bool loadTimes     = inputMgr->GetSCCTimeStatus(); 
-   int probeNumber    = inputMgr->GetTrolleyProbe();
-   int axis           = inputMgr->GetAxis();
+   std::string date       = inputMgr->GetAnalysisDate();
+   std::string blindLabel = inputMgr->GetBlindLabel();
+   bool isBlind           = inputMgr->IsBlind();
+   bool useTimeWeight     = inputMgr->GetTimeWeightStatus();  
+   bool loadTimes         = inputMgr->GetSCCTimeStatus(); 
+   int probeNumber        = inputMgr->GetTrolleyProbe();
+   int axis               = inputMgr->GetAxis();
 
    date_t theDate; 
    GetDate(theDate);
 
    char outpath[200],outdir[200];
-   if(isBlind)  sprintf(outdir,"./output/blinded/%s"  ,theDate.getDateString().c_str()); 
-   if(!isBlind) sprintf(outdir,"./output/unblinded/%s",theDate.getDateString().c_str());
+   if(isBlind)  sprintf(outdir,"./output/blinded/%s/%s",blindLabel.c_str(),theDate.getDateString().c_str()); 
+   if(!isBlind) sprintf(outdir,"./output/unblinded/%s" ,theDate.getDateString().c_str());
    rc = MakeDirectory(outdir); 
  
    std::string gradName;
@@ -79,13 +80,9 @@ int DeltaB_trly_prod(std::string configFile){
 
    sprintf(outpath,"%s/dB-trly_final-location_%s-grad_pr-%02d.csv",outdir,gradName.c_str(),probeNumber);
 
-   // blind_t blind; 
-   // ImportBlinding(blind);
-   // double blindValue = blind.value_tr; 
-
-   int blindUnits  = gm2fieldUtil::Constants::ppb;
-   double blindMag = 100.;
-   gm2fieldUtil::Blinder *myBlind = new gm2fieldUtil::Blinder("flay",blindMag,blindUnits);
+   int blindUnits  = inputMgr->GetBlindUnits(); 
+   double blindMag = inputMgr->GetBlindScale(); 
+   gm2fieldUtil::Blinder *myBlind = new gm2fieldUtil::Blinder(blindLabel,blindMag,blindUnits);
    double blindValue = myBlind->GetBlinding(2); // in Hz
 
    std::vector<int> run;
@@ -150,7 +147,7 @@ int DeltaB_trly_prod(std::string configFile){
    }else{
       if(loadTimes){
 	 // better to use pre-defined transition times   
-	 rc = LoadTRLYSCCTimes(probeNumber,sccOff,sccOn);
+	 rc = LoadSCCTimes(probeNumber,"tr",sccOff,sccOn);
 	 if(sccOn[0]<sccOff[0]) sccStartOn = true;
       }else{
 	 rc = FindTransitionTimes(coilSet,axis,thr,delta,sccData,sccOff,sccOn);
@@ -310,7 +307,8 @@ int DeltaB_trly_prod(std::string configFile){
    rc = PrintToFile(outpath,gradName,dB,dB_err,drift,drift_err); 
 
    char plotDir[200];
-   sprintf(plotDir,"./plots/%s",theDate.getDateString().c_str()); 
+   if(isBlind)  sprintf(plotDir,"./plots/blinded/%s/%s",blindLabel.c_str(),theDate.getDateString().c_str()); 
+   if(!isBlind) sprintf(plotDir,"./plots/unblinded/%s",theDate.getDateString().c_str()); 
    rc = MakeDirectory(plotDir); 
 
    // draw some plots 

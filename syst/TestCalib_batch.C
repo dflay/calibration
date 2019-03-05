@@ -5,6 +5,7 @@
 #include "TCanvas.h"
 #include "TRandom3.h"
 
+#include "gm2fieldFunc.h"
 #include "gm2fieldMath.h"
 #include "gm2fieldGraph.h"
 
@@ -16,8 +17,10 @@
 double gXsize = 0.05; 
 double gYsize = 0.06; 
  
-int writeDataToFile(int epoch,double mean,double err); 
+int writeDataToFile(std::string label,int epoch,double mean,double err); 
 double getRandomNumber(double range);
+double getRandomNumber_alt(double range); 
+double getRandomNumber_usrRange(double min,double max); 
 double driftFunc(double *par,double x); 
 double fieldOscillation(double *par,double x); 
 
@@ -28,9 +31,15 @@ int TestCalib_batch(int epoch,std::string config){
    InputManager *inputMgr = new InputManager(); 
    inputMgr->Load(config); 
 
-   bool enableOsc   = (bool)inputMgr->GetValueFromSubKey<int>("field-osc","enable");
-   bool enableDrift = (bool)inputMgr->GetValueFromSubKey<int>("field-drift","enable");
-   bool smearTime   = (bool)inputMgr->GetValueFromSubKey<int>("timestamp-smear","enable"); 
+   bool enableOsc     = (bool)inputMgr->GetValueFromSubKey<int>("field-osc","enable");
+   bool enableOscRand = (bool)inputMgr->GetValueFromSubKey<int>("field-osc","rand"); 
+   bool enableDrift   = (bool)inputMgr->GetValueFromSubKey<int>("field-drift","enable");
+   bool smearTime     = (bool)inputMgr->GetValueFromSubKey<int>("timestamp-smear","enable"); 
+
+   std::string label  = inputMgr->GetValueFromKey<std::string>("label"); 
+   char plotdir[200]; 
+   sprintf(plotdir,"./plots/%s",label.c_str());
+   int rc = gm2fieldUtil::MakeDirectory(plotdir);  
 
    double smearPCT  = inputMgr->GetValueFromSubKey<double>("timestamp-smear","percent");
    smearPCT /= 100; 
@@ -45,9 +54,17 @@ int TestCalib_batch(int epoch,std::string config){
    const int oscNPAR = 3; 
    double ampl  = inputMgr->GetValueFromSubKey<double>("field-osc","ampl");  
    double freq  = inputMgr->GetValueFromSubKey<double>("field-osc","freq");   
-   double phase = getRandomNumber( TMath::Pi() );  // random phase on the range of +/- pi rad
+   double phase = getRandomNumber_usrRange(0.,2.*TMath::Pi() );  // random phase on the range of (0,2pi) rad
    double oscPar[oscNPAR] = {ampl,freq,phase};  
+
+   double fMin = 1./(150.);   // 2.5 min   
+   double fMax = 1./(2.*60.); // 2 min 
  
+   if(enableOscRand){
+      ampl = 0.06179*getRandomNumber_usrRange(10.,20.);  // (10 ppb, 20 ppb) 
+      freq = getRandomNumber_usrRange(fMin,fMax);  
+   }
+
    // set up the test data
    double baseline = inputMgr->GetValueFromSubKey<double>("meas","baseline"); // 6.; 
    double signal   = inputMgr->GetValueFromSubKey<double>("meas","signal");   // 60.;
@@ -101,13 +118,13 @@ int TestCalib_batch(int epoch,std::string config){
 
    bool useTimeWeight = true; 
    std::vector<double> trial,diff,diffErr; 
-   int rc = GetDifference_ABA_final(useTimeWeight,tA,fA,eA,tB,fB,eB,diff,diffErr); 
+   rc = GetDifference_ABA_final(useTimeWeight,tA,fA,eA,tB,fB,eB,diff,diffErr); 
 
    double mean=0,err=0,stdev=0; 
    rc = GetWeightedAverageStats(diff,diffErr,mean,err,stdev); 
 
    std::cout << Form("MEAN = %.3lf +/- %.3lf",mean,stdev) << std::endl;
-   rc = writeDataToFile(epoch,mean,stdev);
+   rc = writeDataToFile(label,epoch,mean,stdev);
    if(rc!=0) return 1;  
 
    double min =-1E+3,max=1E+3; 
@@ -187,7 +204,7 @@ int TestCalib_batch(int epoch,std::string config){
 
    if(smearTime) TitleM += Form(" [Timestamps smeared by up to %.0lf%]",smearPCT*100);
 
-   TString plotPath = Form("./plots/aba-test_swap_epoch-%04d.png",epoch); 
+   TString plotPath = Form("%s/aba-test_swap_%s_epoch-%04d.png",plotdir,label.c_str(),epoch); 
 
    TCanvas *c1 = new TCanvas("c1","ABA Difference Trial",1200,600);
    c1->Divide(1,2); 
@@ -225,7 +242,7 @@ int TestCalib_batch(int epoch,std::string config){
    LS->Draw("same"); 
    c2->Update();
   
-   plotPath = Form("./plots/aba-test_env_epoch-%04d.png",epoch); 
+   plotPath = Form("%s/aba-test_env_%s_epoch-%04d.png",plotdir,label.c_str(),epoch); 
    c2->Print(plotPath);
 
    delete c2; 
@@ -234,9 +251,28 @@ int TestCalib_batch(int epoch,std::string config){
 }
 //______________________________________________________________________________
 double getRandomNumber(double range){
+   // goes from (-range,range) 
    TRandom3 *R = new TRandom3(0); 
    double r = R->Rndm();
    double val = (-1.)*range + 2.*r*range; 
+   delete R;
+   return val; 
+}
+//______________________________________________________________________________
+double getRandomNumber_alt(double range){
+   // goes from (0,range) 
+   TRandom3 *R = new TRandom3(0); 
+   double r = R->Rndm();
+   double val = r*range; 
+   delete R;
+   return val; 
+}
+//______________________________________________________________________________
+double getRandomNumber_usrRange(double min,double max){
+   // goes from (0,range) 
+   TRandom3 *R = new TRandom3(0); 
+   double r = R->Rndm();   // on (0,1) 
+   double val = min + r*(max-min); // if r = 1, val = max; if r = 0, val = min  
    delete R;
    return val; 
 }
@@ -251,17 +287,17 @@ double fieldOscillation(double *par,double x){
    return f;
 }
 //______________________________________________________________________________
-int writeDataToFile(int epoch,double mean,double err){
+int writeDataToFile(std::string label,int epoch,double mean,double err){
    // append data to a single file
    char outpath[200],outStr[200]; 
-   sprintf(outpath,"./output/test-data.csv"); 
+   sprintf(outpath,"./output/result_%s.csv",label.c_str()); 
    std::ofstream outfile;
    outfile.open(outpath,std::ios::app); 
    if( outfile.fail() ){
       std::cout << "Cannot open the file: " << outpath << std::endl;
       return 1;
    }else{
-      sprintf(outStr,"%04d,%.3lf,%.3lf",epoch,mean,err); 
+      sprintf(outStr,"%.3lf,%.3lf",mean,err); 
       outfile << outStr << std::endl;
       outfile.close(); 
    }

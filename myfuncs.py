@@ -81,10 +81,19 @@ def writeConfigFileProd(data,tag,keyList,axis,fitData,outpath):
    outData['load-trly-scc-times']  = data['load-trly-scc-times'] 
    outData['use-aba-time-weight']  = data['use-aba-time-weight']
    outData['use-trly-temp-cor']    = data['use-trly-temp-cor'] 
+
+   if(axis==0): 
+      outData['load-pp-scc-times'] = data['dB-pp_x']['load-times']
+   elif(axis==1): 
+      outData['load-pp-scc-times'] = data['dB-pp_y']['load-times']
+   elif(axis==2):  
+      outData['load-pp-scc-times'] = data['dB-pp_z']['load-times']
+
    if(fitData): 
       outData['fit'] = data[tag]['fit']  
    else: 
       outData['fit'] = "NONE"
+
    outData['nruns']      = len(runList) 
    outData['run-list']   = runList   
    outData['run-label']  = labelList  

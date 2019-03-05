@@ -58,21 +58,22 @@ int ProcessResults_prod(std::string configFile){
    inputMgr->Load(configFile);
    inputMgr->Print();
 
-   std::string anaDate = inputMgr->GetAnalysisDate();
-   bool isBlind        = inputMgr->IsBlind();
-   int probeNumber     = inputMgr->GetTrolleyProbe(); 
+   std::string anaDate    = inputMgr->GetAnalysisDate();
+   std::string blindLabel = inputMgr->GetBlindLabel();
+   bool isBlind           = inputMgr->IsBlind();
+   int probeNumber        = inputMgr->GetTrolleyProbe(); 
 
    date_t theDate;
    GetDate(theDate);
 
    char plotDir[200];
-   sprintf(plotDir,"./plots/%s",theDate.getDateString().c_str());
+   if(isBlind)  sprintf(plotDir,"./plots/blinded/%s/%s",blindLabel.c_str(),theDate.getDateString().c_str());
+   if(!isBlind) sprintf(plotDir,"./plots/unblinded/%s",theDate.getDateString().c_str());
    rc = MakeDirectory(plotDir);
 
    char outDir[200];
-   sprintf(outDir,"./output"); 
-   if(isBlind)  sprintf(outDir,"%s/blinded"  ,outDir);
-   if(!isBlind) sprintf(outDir,"%s/unblinded",outDir);
+   if(isBlind)  sprintf(outDir,"./output/blinded/%s",blindLabel.c_str());
+   if(!isBlind) sprintf(outDir,"./output/unblinded");
    sprintf(outDir,"%s/%s",outDir,theDate.getDateString().c_str()); 
    rc = MakeDirectory(outDir);
 

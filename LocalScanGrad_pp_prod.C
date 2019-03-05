@@ -60,12 +60,13 @@ int LocalScanGrad_pp_prod(std::string configFile){
    inputMgr->Load(configFile);
    inputMgr->Print(); 
 
-   std::string date    = inputMgr->GetAnalysisDate(); 
-   std::string fitFunc = inputMgr->GetValue("fit");
-   bool isBlind        = inputMgr->IsBlind();
-   int probeNumber     = inputMgr->GetTrolleyProbe(); 
-   int axis            = inputMgr->GetAxis();
-   int fxprSet         = inputMgr->GetFixedProbeListTag();  
+   std::string date       = inputMgr->GetAnalysisDate(); 
+   std::string fitFunc    = inputMgr->GetValue("fit");
+   std::string blindLabel = inputMgr->GetBlindLabel();
+   bool isBlind           = inputMgr->IsBlind();
+   int probeNumber        = inputMgr->GetTrolleyProbe(); 
+   int axis               = inputMgr->GetAxis();
+   int fxprSet            = inputMgr->GetFixedProbeListTag();  
 
    date_t theDate;
    GetDate(theDate);
@@ -81,21 +82,18 @@ int LocalScanGrad_pp_prod(std::string configFile){
 
    // make output directories 
    char outdir[200];
-   if(isBlind)  sprintf(outdir,"./output/blinded/%s"  ,theDate.getDateString().c_str());
-   if(!isBlind) sprintf(outdir,"./output/unblinded/%s",theDate.getDateString().c_str());
+   if(isBlind)  sprintf(outdir,"./output/blinded/%s/%s",blindLabel.c_str(),theDate.getDateString().c_str());
+   if(!isBlind) sprintf(outdir,"./output/unblinded/%s" ,theDate.getDateString().c_str());
    rc = MakeDirectory(outdir);
 
    char plotDir[200];
-   sprintf(plotDir,"./plots/%s",theDate.getDateString().c_str());
+   if(isBlind)  sprintf(plotDir,"./plots/blinded/%s/%s",blindLabel.c_str(),theDate.getDateString().c_str());
+   if(!isBlind) sprintf(plotDir,"./plots/unblinded/%s" ,theDate.getDateString().c_str());
    MakeDirectory(plotDir);
 
-   // blind_t blind;
-   // ImportBlinding(blind);
-   // double blindValue = blind.value_pp;
-
-   int blindUnits  = gm2fieldUtil::Constants::ppb;
-   double blindMag = 100.;
-   gm2fieldUtil::Blinder *myBlind = new gm2fieldUtil::Blinder("flay",blindMag,blindUnits);
+   int blindUnits  = inputMgr->GetBlindUnits(); 
+   double blindMag = inputMgr->GetBlindScale(); 
+   gm2fieldUtil::Blinder *myBlind = new gm2fieldUtil::Blinder(blindLabel,blindMag,blindUnits);
    double blindValue = myBlind->GetBlinding(1); // in Hz
 
    // outpaths  

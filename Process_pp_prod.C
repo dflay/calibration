@@ -61,21 +61,23 @@ int Process_pp_prod(std::string configFile){
    inputMgr->Load(configFile);
    inputMgr->Print();
 
-   std::string anaDate = inputMgr->GetAnalysisDate();
-   bool isBlind        = inputMgr->IsBlind();
-   int probeNumber     = inputMgr->GetTrolleyProbe(); 
+   std::string anaDate    = inputMgr->GetAnalysisDate();
+   std::string blindLabel = inputMgr->GetBlindLabel(); 
+   bool isBlind           = inputMgr->IsBlind();
+   int probeNumber        = inputMgr->GetTrolleyProbe(); 
 
    date_t theDate;
    GetDate(theDate);
 
    char plotDir[200];
-   sprintf(plotDir,"./plots/%s",theDate.getDateString().c_str());
+   if(isBlind)  sprintf(plotDir,"./plots/blinded/%s/%s",blindLabel.c_str(),theDate.getDateString().c_str());
+   if(!isBlind) sprintf(plotDir,"./plots/unblinded/%s" ,theDate.getDateString().c_str());
    rc = MakeDirectory(plotDir);
 
    char outDir[200];
    sprintf(outDir,"./output"); 
-   if(isBlind)  sprintf(outDir,"%s/blinded"  ,outDir);
-   if(!isBlind) sprintf(outDir,"%s/unblinded",outDir);
+   if(isBlind)  sprintf(outDir,"%s/blinded/%s",outDir,blindLabel.c_str());
+   if(!isBlind) sprintf(outDir,"%s/unblinded" ,outDir);
    sprintf(outDir,"%s/%s",outDir,theDate.getDateString().c_str()); 
    rc = MakeDirectory(outDir);
 
@@ -85,13 +87,9 @@ int Process_pp_prod(std::string configFile){
    sprintf(outPath,"%s/pp-swap-data_free-prot_pr-%02d_%s.csv",outDir,probeNumber,anaDate.c_str());
    std::string outpath_free = outPath;  
 
-   // blind_t blind;
-   // ImportBlinding(blind);
-   // double blindValue = blind.value_pp;
-
-   int blindUnits  = gm2fieldUtil::Constants::ppb;
-   double blindMag = 100.;
-   gm2fieldUtil::Blinder *myBlind = new gm2fieldUtil::Blinder("flay",blindMag,blindUnits);
+   int blindUnits  = inputMgr->GetBlindUnits(); 
+   double blindMag = inputMgr->GetBlindScale(); 
+   gm2fieldUtil::Blinder *myBlind = new gm2fieldUtil::Blinder(blindLabel,blindMag,blindUnits);
    double blindValue = myBlind->GetBlinding(1); // in Hz
 
    std::vector<int> run;

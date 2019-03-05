@@ -60,22 +60,19 @@ int DeltaB_pp_prod(std::string configFile){
    inputMgr->Load(configFile);
    inputMgr->Print();
 
-   std::string date   = inputMgr->GetAnalysisDate();
-   bool isBlind       = inputMgr->IsBlind();
-   bool useTimeWeight = inputMgr->GetTimeWeightStatus(); 
-   int probeNumber    = inputMgr->GetTrolleyProbe();
-   int axis           = inputMgr->GetAxis();
+   std::string date       = inputMgr->GetAnalysisDate();
+   std::string blindLabel = inputMgr->GetBlindLabel();
+   bool isBlind           = inputMgr->IsBlind();
+   bool useTimeWeight     = inputMgr->GetTimeWeightStatus();
+   int probeNumber        = inputMgr->GetTrolleyProbe();
+   int axis               = inputMgr->GetAxis();
 
    date_t theDate; 
    GetDate(theDate);
 
-   // blind_t blind; 
-   // ImportBlinding(blind);
-   // double blindValue = blind.value_pp; 
-
-   int blindUnits  = gm2fieldUtil::Constants::ppb;
-   double blindMag = 100.;
-   gm2fieldUtil::Blinder *myBlind = new gm2fieldUtil::Blinder("flay",blindMag,blindUnits);
+   int blindUnits  = inputMgr->GetBlindUnits(); 
+   double blindMag = inputMgr->GetBlindScale(); 
+   gm2fieldUtil::Blinder *myBlind = new gm2fieldUtil::Blinder(blindLabel,blindMag,blindUnits);
    double blindValue = myBlind->GetBlinding(1); // in Hz
 
    std::string gradName;
@@ -99,17 +96,38 @@ int DeltaB_pp_prod(std::string configFile){
    for(int i=0;i<NRUN;i++) rc = gm2fieldUtil::RootHelper::GetSCCData(run[i],sccData);
    if(rc!=0) return 1; 
 
-   int coilSet  = 1;
-   if(axis==2) coilSet = -1;
+   // load SCC times or not? 
+   std::string dB_key = "load-pp-scc-times"; 
+   bool loadTimes = inputMgr->GetValueFromKey<bool>(dB_key); 
  
+   int coilSet  = 1;
    double thr   = 100E-3;        // in A 
    double delta = 2.*60. + 40.;  // 2 min 40 sec   
    std::vector<double> sccOff,sccOn;
-   rc = FindTransitionTimes(coilSet,axis,thr,delta,sccData,sccOff,sccOn);
-   if(rc<0) return 1; 
+   bool sccStartOn = false;
 
-   bool sccStartOn = false; 
-   if(rc==1) sccStartOn = true;
+   std::string ppLabel; 
+   if(axis==0) ppLabel = "ppx"; 
+   if(axis==1) ppLabel = "ppy"; 
+   if(axis==2) ppLabel = "ppz"; 
+   
+   if(axis==2){
+      coilSet = -1;
+      delta   = 100.;  // 1 min 40 sec  
+   }
+ 
+   if(loadTimes){
+      // better to use pre-defined transition times   
+      rc = LoadSCCTimes(probeNumber,ppLabel,sccOff,sccOn);
+      if(sccOn[0]<sccOff[0]) sccStartOn = true;
+   }else{
+      rc = FindTransitionTimes(coilSet,axis,thr,delta,sccData,sccOff,sccOn);
+      if(rc<0){
+	 std::cout << "No SCC transitions!" << std::endl;
+	 return 1;
+      }
+      if(rc==1) sccStartOn = true;
+   }
 
    if(sccStartOn){
       std::cout << "SCC was ON to start the sequence" << std::endl;
@@ -273,7 +291,8 @@ int DeltaB_pp_prod(std::string configFile){
    rc = PrintToFile(outpath,gradName,dB,dB_err,drift,drift_err); 
 
    char plotDir[200];
-   sprintf(plotDir,"./plots/%s",theDate.getDateString().c_str()); 
+   if(isBlind)  sprintf(plotDir,"./plots/blinded/%s/%s",blindLabel.c_str(),theDate.getDateString().c_str()); 
+   if(!isBlind) sprintf(plotDir,"./plots/unblinded/%s" ,theDate.getDateString().c_str()); 
    rc = MakeDirectory(plotDir); 
 
    // draw some plots 
@@ -352,8 +371,8 @@ int DeltaB_pp_prod(std::string configFile){
    c2->Print(plotPath);
    delete c2;  
 
-   delete inputMgr; 
-
+   delete inputMgr;
+ 
    return 0;
 }
 //______________________________________________________________________________

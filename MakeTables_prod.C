@@ -75,15 +75,14 @@ int PrintResults(const char *outpath,std::vector<result_prod_t> r,std::vector<re
                  std::vector<misalignment_t> mis); 
 
 
-int MakeTables_prod(bool isBlind,std::string theDate){
+int MakeTables_prod(bool isBlind,bool blindLabel,std::string theDate){
 
    int rc=0;
    int method = gm2fieldUtil::Constants::kPhaseDerivative;
 
    char outDir[200];
-   sprintf(outDir,"./output"); 
-   if(isBlind)  sprintf(outDir,"%s/blinded"  ,outDir);
-   if(!isBlind) sprintf(outDir,"%s/unblinded",outDir);
+   if(isBlind)  sprintf(outDir,"./output/blinded/%s",blindLabel.c_str());
+   if(!isBlind) sprintf(outDir,"./output/unblinded");
    sprintf(outDir,"%s/%s",outDir,theDate.c_str()); 
 
    char rfPath[200]; 
@@ -365,7 +364,6 @@ int PrintResults(const char *outpath,std::vector<result_prod_t> r,std::vector<re
    rd.treeName      = "CAL";
    rd.branchName    = "B";
    rd.leafStructure = calib_result_str; 
-   // rd.leafStructure = "calibCoeff/D:calibCoeffErr/D:calibCoeff_aba/D:calibCoeffErr_aba:calibCoeffFree/D:calibCoeffFreeErr/D:calibCoeffFree_aba/D:calibCoeffFreeErr_aba:freeErr/D:dx/D:dy/D:dz/D:dr/D:deltaB_pp_x/D:deltaB_pp_y/D:deltaB_pp_z/D:deltaB_pp_xErr/D:deltaB_pp_yErr/D:deltaB_pp_zErr/D:deltaB_tr_x/D:deltaB_tr_y/D:deltaB_tr_z/D:deltaB_tr_xErr/D:deltaB_tr_yErr/D:deltaB_tr_zErr/D:dBdx_imp/D:dBdy_imp/D:dBdz_imp/D:dBdx_impErr/D:dBdy_impErr/D:dBdz_impErr/D:dBdx_shim/D:dBdy_shim/D:dBdz_shim/D:dBdx_shimErr/D:dBdy_shimErr/D:dBdz_shimErr/D";
 
    int rc = gm2fieldUtil::Export::PrintToROOTFile<calib_result_t>(rd,x); 
    return rc;

@@ -16,8 +16,9 @@ class InputManager{
       json fParams; 
       bool fIsSimple,fIsFullAnalysis,fIsBlind,fUseP2PFit,fIsFinalLocation;
       bool fUseAxis,fIsFreeProton,fLoadSwapTime,fLoadSCCTime,fUseTimeWeight,fUseTempCor;
-      int fTrolleyProbe,fAxis,fFXPRListTag;  
-      std::string fType,fDevice,fAnaDate,fFitFunc;
+      int fTrolleyProbe,fAxis,fFXPRListTag,fBlindUnits; 
+      double fBlindScale; 
+      std::string fType,fDevice,fAnaDate,fFitFunc,fBlindLabel;
       std::vector<int> fRunList; 
       std::vector<std::string> fRunLabel; 
 
@@ -51,12 +52,16 @@ class InputManager{
      
       int GetTrolleyProbe()         const { return fTrolleyProbe;    } 
       int GetAxis()                 const { return fAxis;            }
-      int GetFixedProbeListTag()    const { return fFXPRListTag;     } 
+      int GetFixedProbeListTag()    const { return fFXPRListTag;     }
+      int GetBlindUnits()           const { return fBlindUnits;      }
+
+      double GetBlindScale()        const { return fBlindScale;      }   
 
       std::string GetType()         const { return fType;            } 
       std::string GetDevice()       const { return fDevice;          } 
       std::string GetAnalysisDate() const { return fAnaDate;         } 
       std::string GetFitFunction()  const { return fFitFunc;         } 
+      std::string GetBlindLabel()   const { return fBlindLabel;      } 
 
       std::string GetValue(std::string key)                       const { return fParams[key]; }  
       std::string GetValue(std::string key,std::string subKey)    const { return fParams[key][subKey]; } 
