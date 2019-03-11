@@ -2,8 +2,9 @@
 //______________________________________________________________________________
 int GetOmegaP_err(perturbation_t pert,double &err){
    // error on delta_t  
-   double err_sq   = pert.sigma_err*pert.sigma_err + pert.delta_m_err*pert.delta_m_err 
-                   + pert.delta_eps_err*pert.delta_eps_err + pert.delta_mag_err*pert.delta_mag_err;
+   double err_sq = pert.sigma_err*pert.sigma_err     + pert.chi_err*pert.chi_err 
+                 + pert.delta_m_err*pert.delta_m_err + pert.delta_eps_err*pert.delta_eps_err 
+                 + pert.delta_mag_err*pert.delta_mag_err;
    err = TMath::Sqrt(err_sq)*0.06179;  // convert to Hz
    return 0;
 }
@@ -18,16 +19,13 @@ int GetOmegaP_free(perturbation_t pert,double freq,double freqErr,double temp,do
    // magnetic sucseptibility  
    double chi=0;
    GetMagneticSusceptibility(pert.chi,temp,chi);
-   // double delta_t  = sigma*1E-9 - pert.delta_m*1E-9 
-   //                 + (eps-4.*TMath::Pi()/3.)*chi*1E-9 - pert.delta_eps*1E-9 - pert.delta_mag*1E-9; 
    double delta_t  = GetDeltaTerm(sigma,pert.delta_m,chi,eps,pert.delta_eps,pert.delta_mag); 
-   // error on delta_t  
-   double err_sq   = pert.sigma_err*pert.sigma_err + pert.delta_m_err*pert.delta_m_err 
-                   + pert.delta_eps_err*pert.delta_eps_err + pert.delta_mag_err*pert.delta_mag_err;
-   double err      = TMath::Sqrt(err_sq)*0.06179;  // convert to Hz 
+   // error on delta_t 
+   double err=0;
+   int rc = GetOmegaP_err(pert,err);  
    // calculate omega_p_free  
-   freqFree    = freq/(1.-delta_t); 
-   freqFreeErr = TMath::Sqrt(err*err + freqErr*freqErr); 
+   freqFree    = freq/(1.-delta_t);
+   freqFreeErr = 0; // don't add in systematic uncertainties yet! TMath::Sqrt(err*err + freqErr*freqErr); 
    return 0;
 }
 //______________________________________________________________________________
@@ -40,32 +38,28 @@ int GetOmegaP_free(nmr_meas_t pp,perturbation_t pert,double *freq_free,double *f
    // magnetic sucseptibility  
    double chi=0;
    GetMagneticSusceptibility(pert.chi,pp.T,chi);
-   // double delta_t  = sigma*1E-9 - pert.delta_m*1E-9 
-   //                 + (eps-4.*TMath::Pi()/3.)*chi*1E-9 - pert.delta_eps*1E-9 - pert.delta_mag*1E-9; 
-   double delta_t  = GetDeltaTerm(sigma,pert.delta_m,chi,eps,pert.delta_eps,pert.delta_mag); 
+   double delta_t  = GetDeltaTerm(sigma,pert.delta_m,chi,eps,pert.delta_eps,pert.delta_mag);
    // error on delta_t  
-   double err_sq   = pert.sigma_err*pert.sigma_err + pert.delta_m_err*pert.delta_m_err 
-                   + pert.delta_eps_err*pert.delta_eps_err + pert.delta_mag_err*pert.delta_mag_err;
-   double err      = TMath::Sqrt(err_sq)*0.06179;  // convert to Hz 
+   double err=0;
+   int rc = GetOmegaP_err(pert,err);  
    // get the measured frequency -- USING ABSOLUTE FREQUENCY  
    double freq[3]     = {pp.freq    ,pp.freq_fxpr    ,pp.freq_trly};
    double freq_err[3] = {pp.freq_err,pp.freq_fxpr_err,pp.freq_trly_err};
    // calculate omega_p_free  
    for(int i=0;i<3;i++){
       freq_free[i]     = freq[i]/(1.-delta_t);  
-      freq_free_err[i] = TMath::Sqrt(err*err + freq_err[i]*freq_err[i]);  
+      freq_free_err[i] = 0; // don't add in systematic uncertainties yet! TMath::Sqrt(err*err + freqErr*freqErr); 
    }
    return 0;
 }
 //______________________________________________________________________________
 double GetDeltaTerm(double sigma,double delta_m,double chi,double eps,double delta_eps,double delta_mag){
-   // compute the delta_t term.  note the minus signs.  
+   // compute the delta_t term.   
    // in the published formula, these signs are all positive 
-   // however, when correcting for the material effect, we need to 
-   // apply the OPPOSITE sign of what we measured.  The same goes 
-   // for the magnetic image and the error in the epsilon term.
+   // input file carries the sign of the perturbation as measured (delta_m, delta_eps, delta_mag).  
+   // if these delta terms are negative, minus sign in GetOmegaP_free corrects that. 
    // the factor of 1E-9 converts to 'absolute' scale, since the input is in ppb.
-   double delta_t = 1E-9*(sigma - delta_m + (eps-4.*TMath::Pi()/3.)*chi - delta_eps - delta_mag);
+   double delta_t = 1E-9*(sigma + delta_m + (eps-4.*TMath::Pi()/3.)*chi + delta_eps + delta_mag);
    return delta_t;
 }
 //______________________________________________________________________________

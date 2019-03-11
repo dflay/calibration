@@ -49,6 +49,54 @@ def writeConfigFile(data,tag,keyList,isFullAnalysis,isFinalLocation,axis,fitData
    json.dump(outData,outfile)
    outfile.close()
 #_______________________________________________________________________________
+def writeConfigFileProd_trlyDB(data,tag,keyList,axis,fitData,outpath): 
+   # write a JSON file for the ROOT script defined by tag 
+   # get the run list 
+   runList   = []
+   labelList = []  
+   subList   = []
+   i=0
+   for key in keyList: 
+      if(key=="ppx" or key=="ppy" or key=="ppz" or key=="midas-runs"):
+         # for PP NMR-DAQ runs  
+         subList = data[tag][key] # this is a list!  
+         for subRun in subList: 
+            runList.append(subRun) 
+            labelList.append("sr{0}".format(i+1))
+            i = i + 1 
+      elif(key=="NONE"): 
+         print("No runs to use!") 
+      else: 
+         # single MIDAS runs 
+         runList.append(data[tag][key])   
+         labelList.append(key) 
+   outData = {} 
+   outData['type']                 = data['type'] 
+   outData['date']                 = data['date']
+   outData['blinding']             = data['blinding'] 
+   outData['run-period']           = data['run-period'] 
+   outData['trly-probe']           = data['trly-probe'] 
+   outData['fxpr-set']             = data['fxpr-set']
+   outData['free-proton-cor']      = data['free-proton-cor'] 
+   outData['load-trly-swap-times'] = data['load-trly-swap-times'] 
+   outData['load-trly-scc-times']  = data['load-trly-scc-times'] 
+   outData['use-aba-time-weight']  = data['use-aba-time-weight']
+   outData['use-trly-temp-cor']    = data['use-trly-temp-cor'] 
+
+   if(fitData): 
+      outData['fit'] = data[tag]['fit']  
+   else: 
+      outData['fit'] = "NONE"
+
+   outData['nruns']      = len(runList) 
+   outData['run-list']   = runList   
+   outData['run-label']  = labelList  
+   outData['axis']       = axis 
+   # print("{0}".format(outData) )
+   outfile = open(outpath,'w')
+   json.dump(outData,outfile)
+   outfile.close()
+#_______________________________________________________________________________
 def writeConfigFileProd(data,tag,keyList,axis,fitData,outpath): 
    # write a JSON file for the ROOT script defined by tag 
    # get the run list 
@@ -74,6 +122,7 @@ def writeConfigFileProd(data,tag,keyList,axis,fitData,outpath):
    outData['type']                 = data['type'] 
    outData['date']                 = data['date']
    outData['blinding']             = data['blinding'] 
+   outData['run-period']           = data['run-period'] 
    outData['trly-probe']           = data['trly-probe'] 
    outData['fxpr-set']             = data['fxpr-set']
    outData['free-proton-cor']      = data['free-proton-cor'] 

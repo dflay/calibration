@@ -64,31 +64,38 @@ int DeltaB_trly_prod(std::string configFile){
    bool loadTimes         = inputMgr->GetSCCTimeStatus(); 
    int probeNumber        = inputMgr->GetTrolleyProbe();
    int axis               = inputMgr->GetAxis();
+   int runPeriod          = inputMgr->GetRunPeriod();
+
+   std::cout << __LINE__ << std::endl;  
 
    date_t theDate; 
    GetDate(theDate);
+   std::cout << __LINE__ << std::endl;  
 
-   char outpath[200],outdir[200];
-   if(isBlind)  sprintf(outdir,"./output/blinded/%s/%s",blindLabel.c_str(),theDate.getDateString().c_str()); 
-   if(!isBlind) sprintf(outdir,"./output/unblinded/%s" ,theDate.getDateString().c_str());
-   rc = MakeDirectory(outdir); 
+   std::string plotDir = GetPath("plots" ,isBlind,blindLabel,theDate.getDateString());
+   std::string outDir  = GetPath("output",isBlind,blindLabel,theDate.getDateString());
+   std::cout << __LINE__ << std::endl;  
  
    std::string gradName;
    if(axis==0) gradName = "rad"; 
    if(axis==1) gradName = "vert"; 
    if(axis==2) gradName = "azi";
 
-   sprintf(outpath,"%s/dB-trly_final-location_%s-grad_pr-%02d.csv",outdir,gradName.c_str(),probeNumber);
+   char outpath[200];
+   sprintf(outpath,"%s/dB-trly_final-location_%s-grad_pr-%02d.csv",outDir.c_str(),gradName.c_str(),probeNumber);
+   std::cout << __LINE__ << std::endl;  
 
    int blindUnits  = inputMgr->GetBlindUnits(); 
    double blindMag = inputMgr->GetBlindScale(); 
    gm2fieldUtil::Blinder *myBlind = new gm2fieldUtil::Blinder(blindLabel,blindMag,blindUnits);
    double blindValue = myBlind->GetBlinding(2); // in Hz
 
+   std::cout << __LINE__ << std::endl;  
    std::vector<int> run;
    std::vector<std::string> label;
    inputMgr->GetRunList(run);
    inputMgr->GetRunLabels(label);
+   std::cout << __LINE__ << std::endl;  
 
    const int NRUN = run.size();
    if(NRUN==0){
@@ -103,6 +110,7 @@ int DeltaB_trly_prod(std::string configFile){
          std::cout << "Will load online Delta-B value" << std::endl;
       }
    }
+   std::cout << __LINE__ << std::endl;  
 
    int coilSet  = 1;             // 0 = bottom, 1 = top, -1 = azi  
    double thr   = 100E-3;        // in A 
@@ -113,12 +121,14 @@ int DeltaB_trly_prod(std::string configFile){
       delta = 1.*60.;
    }
 
+   std::cout << "LOADING SCC " << __LINE__ << std::endl;  
    // determine the correct ordering of the SCC on/off cycles 
    std::vector<gm2field::surfaceCoils_t> sccData;
    if(!loadOnline){
       for(int i=0;i<NRUN;i++) rc = gm2fieldUtil::RootHelper::GetSCCData(run[i],sccData);
       if(rc!=0) return 1;
    } 
+   std::cout << __LINE__ << std::endl;  
    
    bool sccStartOn = false; 
    std::vector<double> sccOff,sccOn;
@@ -126,12 +136,14 @@ int DeltaB_trly_prod(std::string configFile){
    std::vector<deltab_t> trly_dB; 
 
    char inpath_db[200];
-   sprintf(inpath_db,"./input/delta-b/trly_xyz_07-18.csv");
+   sprintf(inpath_db,"./input/delta-b/trly_xyz_run-%d.csv",runPeriod);
 
    double dB[3]        = {0,0,0}; 
    double dB_err[3]    = {0,0,0};
    double drift[3]     = {0,0,0};  
    double drift_err[3] = {0,0,0};  
+   
+   std::cout << __LINE__ << std::endl;  
 
    if(loadOnline){
       // use online results since we don't have a run to work with 
@@ -166,8 +178,10 @@ int DeltaB_trly_prod(std::string configFile){
    } 
 
    // TRLY data
+   std::cout << "LOADING " << __LINE__ << std::endl;  
    std::vector<trolleyAnaEvent_t> trlyData;
    for(int i=0;i<NRUN;i++){
+      std::cout << __LINE__ << std::endl;  
       rc = GetTrolleyData("",run[i],method,trlyData);
       if(rc!=0){
 	 std::cout << "No data!" << std::endl;
@@ -306,11 +320,6 @@ int DeltaB_trly_prod(std::string configFile){
 
    rc = PrintToFile(outpath,gradName,dB,dB_err,drift,drift_err); 
 
-   char plotDir[200];
-   if(isBlind)  sprintf(plotDir,"./plots/blinded/%s/%s",blindLabel.c_str(),theDate.getDateString().c_str()); 
-   if(!isBlind) sprintf(plotDir,"./plots/unblinded/%s",theDate.getDateString().c_str()); 
-   rc = MakeDirectory(plotDir); 
-
    // draw some plots 
    TCanvas *c1 = new TCanvas("c1","Data",1200,600);
    c1->Divide(1,2); 
@@ -333,7 +342,7 @@ int DeltaB_trly_prod(std::string configFile){
    c1->Update();
 
    c1->cd();
-   TString plotPath = Form("%s/trly_dB_%s-grad_pr-%02d.png",plotDir,gradName.c_str(),probeNumber); 
+   TString plotPath = Form("%s/trly_dB_%s-grad_pr-%02d.png",plotDir.c_str(),gradName.c_str(),probeNumber); 
    c1->Print(plotPath);
    delete c1;  
 
@@ -351,7 +360,7 @@ int DeltaB_trly_prod(std::string configFile){
    c2->Update();
 
    c2->cd();
-   plotPath = Form("%s/trly_dB_%s-grad_pr-%02d_all-data.png",plotDir,gradName.c_str(),probeNumber); 
+   plotPath = Form("%s/trly_dB_%s-grad_pr-%02d_all-data.png",plotDir.c_str(),gradName.c_str(),probeNumber); 
    c2->Print(plotPath);
    delete c2;  
 
@@ -385,7 +394,7 @@ int DeltaB_trly_prod(std::string configFile){
    c3->Update(); 
 
    c3->cd();
-   plotPath = Form("%s/trly_dB_scc-currents_%s-grad_pr-%02d.png",plotDir,gradName.c_str(),probeNumber); 
+   plotPath = Form("%s/trly_dB_scc-currents_%s-grad_pr-%02d.png",plotDir.c_str(),gradName.c_str(),probeNumber); 
    c3->Print(plotPath);
    delete c3;
 

@@ -62,30 +62,22 @@ int ProcessResults_prod(std::string configFile){
    std::string blindLabel = inputMgr->GetBlindLabel();
    bool isBlind           = inputMgr->IsBlind();
    int probeNumber        = inputMgr->GetTrolleyProbe(); 
+   int runPeriod          = inputMgr->GetRunPeriod(); 
 
    date_t theDate;
    GetDate(theDate);
-
-   char plotDir[200];
-   if(isBlind)  sprintf(plotDir,"./plots/blinded/%s/%s",blindLabel.c_str(),theDate.getDateString().c_str());
-   if(!isBlind) sprintf(plotDir,"./plots/unblinded/%s",theDate.getDateString().c_str());
-   rc = MakeDirectory(plotDir);
-
-   char outDir[200];
-   if(isBlind)  sprintf(outDir,"./output/blinded/%s",blindLabel.c_str());
-   if(!isBlind) sprintf(outDir,"./output/unblinded");
-   sprintf(outDir,"%s/%s",outDir,theDate.getDateString().c_str()); 
-   rc = MakeDirectory(outDir);
-
+  
+   std::string outDir  = GetPath("output",isBlind,blindLabel,theDate.getDateString());
+ 
    // results  
    char outPath_result[500]; 
-   sprintf(outPath_result,"%s/results_pr-%02d.csv",outDir,probeNumber);
+   sprintf(outPath_result,"%s/results_pr-%02d.csv",outDir.c_str(),probeNumber);
 
    result_prod_t result;
    rc = LoadResultsProdData(outPath_result,result); 
 
    char outPath_result_free[500]; 
-   sprintf(outPath_result_free,"%s/results_free-prot_pr-%02d.csv",outDir,probeNumber);
+   sprintf(outPath_result_free,"%s/results_free-prot_pr-%02d.csv",outDir.c_str(),probeNumber);
 
    result_prod_t result_free;
    rc = LoadResultsProdData(outPath_result_free,result_free); 
@@ -98,7 +90,7 @@ int ProcessResults_prod(std::string configFile){
 
    // misalignments 
    char outPath_misalign[500]; 
-   sprintf(outPath_misalign,"%s/misalignment_results_pr-%02d.csv",outDir,probeNumber);
+   sprintf(outPath_misalign,"%s/misalignment_results_pr-%02d.csv",outDir.c_str(),probeNumber);
 
    // load misalignment results 
    misalignment_t mErr; 
@@ -110,8 +102,8 @@ int ProcessResults_prod(std::string configFile){
    // load in perturbation data (just in case we need it) 
    char inpath_pert[200];
    perturbation_t ppPert;
-   sprintf(inpath_pert,"./input/perturbation/pp-pert.csv");
-   LoadPerturbationData(inpath_pert,probeNumber,ppPert);
+   sprintf(inpath_pert,"./input/perturbation/pp-pert_run-%d.json",runPeriod);
+   LoadPerturbationData_json(inpath_pert,ppPert);
 
    // compute errors from free proton corrections 
    double freeProtErr=0;
@@ -145,12 +137,12 @@ int ProcessResults_prod(std::string configFile){
 
    // results  
    char outPath_final[500]; 
-   sprintf(outPath_final,"%s/results_final_pr-%02d.csv",outDir,probeNumber);
+   sprintf(outPath_final,"%s/results_final_pr-%02d.csv",outDir.c_str(),probeNumber);
    std::string outpath_final = outPath_final;  
    rc = PrintResults(outpath_final,result);
 
    char outPath_final_free[500]; 
-   sprintf(outPath_final_free,"%s/results_final_free-prot_pr-%02d.csv",outDir,probeNumber);
+   sprintf(outPath_final_free,"%s/results_final_free-prot_pr-%02d.csv",outDir.c_str(),probeNumber);
    std::string outpath_final_free = outPath_final_free;  
    rc = PrintResults(outpath_final_free,result_free);
 

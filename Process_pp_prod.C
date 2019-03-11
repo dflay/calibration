@@ -64,27 +64,19 @@ int Process_pp_prod(std::string configFile){
    std::string anaDate    = inputMgr->GetAnalysisDate();
    std::string blindLabel = inputMgr->GetBlindLabel(); 
    bool isBlind           = inputMgr->IsBlind();
-   int probeNumber        = inputMgr->GetTrolleyProbe(); 
+   int probeNumber        = inputMgr->GetTrolleyProbe();
+   int runPeriod          = inputMgr->GetRunPeriod();  
 
    date_t theDate;
    GetDate(theDate);
 
-   char plotDir[200];
-   if(isBlind)  sprintf(plotDir,"./plots/blinded/%s/%s",blindLabel.c_str(),theDate.getDateString().c_str());
-   if(!isBlind) sprintf(plotDir,"./plots/unblinded/%s" ,theDate.getDateString().c_str());
-   rc = MakeDirectory(plotDir);
-
-   char outDir[200];
-   sprintf(outDir,"./output"); 
-   if(isBlind)  sprintf(outDir,"%s/blinded/%s",outDir,blindLabel.c_str());
-   if(!isBlind) sprintf(outDir,"%s/unblinded" ,outDir);
-   sprintf(outDir,"%s/%s",outDir,theDate.getDateString().c_str()); 
-   rc = MakeDirectory(outDir);
+   std::string plotDir = GetPath("plots" ,isBlind,blindLabel,theDate.getDateString());
+   std::string outDir  = GetPath("output",isBlind,blindLabel,theDate.getDateString());
 
    char outPath[500]; 
-   sprintf(outPath,"%s/pp-swap-data_pr-%02d_%s.csv",outDir,probeNumber,anaDate.c_str());
+   sprintf(outPath,"%s/pp-swap-data_pr-%02d_%s.csv",outDir.c_str(),probeNumber,anaDate.c_str());
    std::string outpath_raw = outPath;  
-   sprintf(outPath,"%s/pp-swap-data_free-prot_pr-%02d_%s.csv",outDir,probeNumber,anaDate.c_str());
+   sprintf(outPath,"%s/pp-swap-data_free-prot_pr-%02d_%s.csv",outDir.c_str(),probeNumber,anaDate.c_str());
    std::string outpath_free = outPath;  
 
    int blindUnits  = inputMgr->GetBlindUnits(); 
@@ -125,8 +117,8 @@ int Process_pp_prod(std::string configFile){
    // load in perturbation data 
    char inpath[200]; 
    perturbation_t ppPert;
-   sprintf(inpath,"./input/perturbation/pp-pert.csv");
-   LoadPerturbationData(inpath,probeNumber,ppPert);
+   sprintf(inpath,"./input/perturbation/pp-pert_run-%d.json",runPeriod);
+   LoadPerturbationData_json(inpath,ppPert);
 
    int M=0;
 
@@ -169,7 +161,7 @@ int Process_pp_prod(std::string configFile){
 
    // save the plot  
    c1->cd(); 
-   ppPlotPath = Form("%s/pp-swap-data_pr-%02d.png",plotDir,probeNumber);
+   ppPlotPath = Form("%s/pp-swap-data_pr-%02d.png",plotDir.c_str(),probeNumber);
    c1->Print(ppPlotPath);
 
    return 0;

@@ -16,7 +16,7 @@ class InputManager{
       json fParams; 
       bool fIsSimple,fIsFullAnalysis,fIsBlind,fUseP2PFit,fIsFinalLocation;
       bool fUseAxis,fIsFreeProton,fLoadSwapTime,fLoadSCCTime,fUseTimeWeight,fUseTempCor;
-      int fTrolleyProbe,fAxis,fFXPRListTag,fBlindUnits; 
+      int fTrolleyProbe,fAxis,fFXPRListTag,fBlindUnits,fRunPeriod; 
       double fBlindScale; 
       std::string fType,fDevice,fAnaDate,fFitFunc,fBlindLabel;
       std::vector<int> fRunList; 
@@ -54,6 +54,7 @@ class InputManager{
       int GetAxis()                 const { return fAxis;            }
       int GetFixedProbeListTag()    const { return fFXPRListTag;     }
       int GetBlindUnits()           const { return fBlindUnits;      }
+      int GetRunPeriod()            const { return fRunPeriod;       } 
 
       double GetBlindScale()        const { return fBlindScale;      }   
 

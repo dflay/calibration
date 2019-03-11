@@ -1,6 +1,7 @@
 {
 "date"                : "07-13-18",
 "blinding"            : {"enable": true, "label": "flay","scale": 100, "units": "ppb" },
+"run-period"          : 1,
 "trly-probe"          : 15,
 "fxpr-set"            : 3,
 "type"                : "calib-prod",

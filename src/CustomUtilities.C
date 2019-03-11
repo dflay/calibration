@@ -42,3 +42,19 @@ int MakeDirectory(const char *path){
 
    return rc;
 }
+//______________________________________________________________________________
+std::string GetPath(std::string base,bool isBlind,std::string blindLabel,std::string date){
+   // create the path based upon the top-level directory, blinding, and the date provided
+   int rc=0;
+   char theDir[200];
+   if(isBlind){
+      sprintf(theDir,"./%s/blinded/%s/%s",base.c_str(),blindLabel.c_str(),date.c_str());
+   }else{
+      sprintf(theDir,"./%s/unblinded/%s",base.c_str(),date.c_str());
+   }
+
+   std::string THE_DIR = theDir; 
+   // std::cout << "[GetPath]: Using directory '" << theDir << "'" << std::endl; 
+
+   return THE_DIR;
+}

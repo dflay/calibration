@@ -23,6 +23,9 @@ int InputManager::Init(){
    fTrolleyProbe    = -1; 
    fAxis            = -1;
    fFXPRListTag     = -1;
+   fRunPeriod       = -1;
+   fBlindUnits      = -1;  
+   fBlindScale      = -1; 
    fType            = "NONE";
    fDevice          = "NONE";  
    fAnaDate         = "NONE";  
@@ -104,15 +107,16 @@ int InputManager::Parse(){
    bool swapStatus  = DoesKeyExist("load-trly-swap-times");  
    bool sccStatus   = DoesKeyExist("load-trly-scc-times");  
    bool timeStatus  = DoesKeyExist("use-aba-time-weight");
-   bool tempStatus  = DoesKeyExist("use-trly-temp-cor"); 
+   bool tempStatus  = DoesKeyExist("use-trly-temp-cor");
+   bool runpStatus  = DoesKeyExist("run-period");  
 
    // parameters common to all 
-   std::string unitStr=""; 
+   std::string unitStr="";
    if(dateStatus)  fAnaDate      = fParams["date"];
    if(trlyStatus)  fTrolleyProbe = (int)fParams["trly-probe"]; 
    if(fxprStatus)  fFXPRListTag  = (int)fParams["fxpr-set"]; 
    if(blindStatus){
-      fIsBlind    = (bool)( (int)fParams["blinding"]["enable"]  );
+      fIsBlind    = (bool)( (int)fParams["blinding"]["enable"] );
       fBlindLabel = fParams["blinding"]["label"];
       fBlindScale = (double)fParams["blinding"]["scale"]; 
       unitStr     = fParams["blinding"]["units"];
@@ -131,6 +135,7 @@ int InputManager::Parse(){
    
    // calibration: production 
    if( fType.compare("calib-prod")==0 ){
+      if(runpStatus) fRunPeriod     = fParams["run-period"];  
       if(axisStatus) fAxis          = (int)fParams["axis"];
       if(protStatus) fIsFreeProton  = (bool)( (int)fParams["free-proton-cor"] );  
       if(fitStatus)  fFitFunc       = fParams["fit"];
@@ -169,6 +174,7 @@ int InputManager::Print(){
    if(fType.compare("calib-prod")==0){
 	 std::cout << "Axis:               " << fAxis << " (" << axis << ")" << std::endl;
          std::cout << "Load TRLY swap time " << fLoadSwapTime << std::endl;
+         std::cout << "Run period:         " << fRunPeriod    << std::endl;
    }else{
       if(fIsSimple){
 	 std::cout << "FXPR set:           " << fFXPRListTag     << std::endl;
@@ -182,7 +188,7 @@ int InputManager::Print(){
       }
    }
    int N = fRunList.size(); 
-   std::cout << "Number of runs:    " << N                << std::endl;
+   std::cout << "Number of runs:     " << N                << std::endl;
    for(int i=0;i<N;i++) std::cout << Form("run = %d, label = %s",fRunList[i],fRunLabel[i].c_str()) << std::endl;
    std::cout << "-----------------------------------------------------" << std::endl;
    return 0;

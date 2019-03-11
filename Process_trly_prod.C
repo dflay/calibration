@@ -77,17 +77,8 @@ int Process_trly_prod(std::string configFile){
    date_t theDate;
    GetDate(theDate);
 
-   char plotDir[200];
-   if(isBlind)  sprintf(plotDir,"./plots/blinded/%s/%s",blindLabel.c_str(),theDate.getDateString().c_str());
-   if(!isBlind) sprintf(plotDir,"./plots/unblinded/%s" ,theDate.getDateString().c_str());
-   rc = MakeDirectory(plotDir);
-
-   char outDir[200];
-   sprintf(outDir,"./output");
-   if(isBlind)  sprintf(outDir,"%s/blinded/%s"  ,outDir,blindLabel.c_str());
-   if(!isBlind) sprintf(outDir,"%s/unblinded",outDir);
-   sprintf(outDir,"%s/%s",outDir,theDate.getDateString().c_str());
-   rc = MakeDirectory(outDir);
+   std::string plotDir = GetPath("plots" ,isBlind,blindLabel,theDate.getDateString()); 
+   std::string outDir  = GetPath("output",isBlind,blindLabel,theDate.getDateString()); 
 
    int blindUnits  = inputMgr->GetBlindUnits(); 
    double blindMag = inputMgr->GetBlindScale(); 
@@ -150,7 +141,7 @@ int Process_trly_prod(std::string configFile){
    rc = GetTRLYStatsAtTime(useTempCor,probeNumber-1,nev,fLO,time,trlyData,trlySwap);
 
    char outPath[500];
-   sprintf(outPath,"%s/trly-swap-data_pr-%02d_%s.csv",outDir,probeNumber,anaDate.c_str());
+   sprintf(outPath,"%s/trly-swap-data_pr-%02d_%s.csv",outDir.c_str(),probeNumber,anaDate.c_str());
    std::string outpath = outPath;
 
    rc = PrintToFile(outpath,trlySwap); 
@@ -225,7 +216,7 @@ int Process_trly_prod(std::string configFile){
    mgt->Draw("a");
    c1->Update();
    
-   TString plotPath = Form("%s/trly-swap_pr-%02d.png",plotDir,probeNumber);
+   TString plotPath = Form("%s/trly-swap_pr-%02d.png",plotDir.c_str(),probeNumber);
    c1->cd(); 
    c1->Print(plotPath); 
    delete c1; 

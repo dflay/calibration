@@ -374,7 +374,7 @@ int LoadImposedGradientData(const char *inpath,std::vector<imposed_gradient_t> &
    return 0;
 }
 //______________________________________________________________________________
-int LoadImposedAziGradData(const char *inpath,int probe,double &dBdz){
+int LoadImposedAziGradData_bak(const char *inpath,int probe,double &dBdz){
 
    int ipr=0;
    std::string stp,sbg,sig_82,sg,sg_per_A,ssc;  // bare grad, grad at 0.82 A, grad, grad/Amp,shim current (A) 
@@ -394,6 +394,29 @@ int LoadImposedAziGradData(const char *inpath,int probe,double &dBdz){
          std::getline(infile,ssc);
          ipr = std::atoi( stp.c_str() ); 
          if(ipr==probe) dBdz = std::atof( sg.c_str() ); 
+      }
+      infile.close();
+   }
+
+   return 0;
+}
+//______________________________________________________________________________
+int LoadImposedAziGradData(const char *inpath,int probe,double &dBdz){
+
+   int ipr=0;
+   std::string stp,sgr;  // probe, imposed gradient @ 0.82 A (Hz/mm)  
+
+   ifstream infile;
+   infile.open(inpath);
+   if( infile.fail() ){
+      cout << "Cannot open the file: " << inpath << endl;
+      return 1;
+   }else{
+      while( !infile.eof() ){
+         std::getline(infile,stp,',');
+         std::getline(infile,sgr);
+         ipr = std::atoi( stp.c_str() ); 
+         if(ipr==probe) dBdz = std::atof( sgr.c_str() ); 
       }
       infile.close();
    }
@@ -659,6 +682,30 @@ int ImportDeltaBFileList_csv(const char *inpath,
       x3.pop_back();
    }
 
+   return 0;
+}
+//______________________________________________________________________________
+int LoadPerturbationData_json(const char *inpath,perturbation_t &pert){
+   json obj; 
+   std::string inpath_str = inpath; 
+   int rc = gm2fieldUtil::Import::ImportJSON(inpath_str,obj);
+   if(rc!=0){
+      std::cout << "Cannot open the file: " << inpath_str << std::endl; 
+      return 1;
+   }else{
+      pert.sigma         = obj["sigma"];  
+      pert.sigma_err     = obj["sigma-err"];  
+      pert.chi           = obj["chi"];  
+      pert.chi_err       = obj["chi-err"];  
+      pert.eps           = obj["eps"];  
+      pert.eps_err       = obj["eps-err"];  
+      pert.delta_m       = obj["delta-mat"];  
+      pert.delta_m_err   = obj["delta-mat-err"];  
+      pert.delta_eps     = obj["delta-eps"];  
+      pert.delta_eps_err = obj["delta-eps-err"];  
+      pert.delta_mag     = obj["delta-mag"];  
+      pert.delta_mag_err = obj["delta-mag-err"]; 
+   } 
    return 0;
 }
 //______________________________________________________________________________

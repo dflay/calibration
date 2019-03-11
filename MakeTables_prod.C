@@ -75,7 +75,7 @@ int PrintResults(const char *outpath,std::vector<result_prod_t> r,std::vector<re
                  std::vector<misalignment_t> mis); 
 
 
-int MakeTables_prod(bool isBlind,bool blindLabel,std::string theDate){
+int MakeTables_prod(int runPeriod,bool isBlind,std::string blindLabel,std::string theDate){
 
    int rc=0;
    int method = gm2fieldUtil::Constants::kPhaseDerivative;
@@ -151,7 +151,7 @@ int MakeTables_prod(bool isBlind,bool blindLabel,std::string theDate){
       db.clear();
       // load TRLY Delta-B values
       // rad and vert already computed offline
-      sprintf(inpath,"./input/delta-b/trly_xy_07-18.csv");
+      sprintf(inpath,"./input/delta-b/trly_xy_run-%d.csv",runPeriod);
       LoadDeltaBData_trlyXY(inpath,probeNumber,db);
       // z axis 
       sprintf(inpath,"%s/dB-trly_final-location_azi-grad_pr-%02d.csv",outDir,probeNumber);

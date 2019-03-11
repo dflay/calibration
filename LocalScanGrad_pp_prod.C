@@ -81,15 +81,8 @@ int LocalScanGrad_pp_prod(std::string configFile){
    if( Axis.compare("z")==0 ) gradType = "azi";
 
    // make output directories 
-   char outdir[200];
-   if(isBlind)  sprintf(outdir,"./output/blinded/%s/%s",blindLabel.c_str(),theDate.getDateString().c_str());
-   if(!isBlind) sprintf(outdir,"./output/unblinded/%s" ,theDate.getDateString().c_str());
-   rc = MakeDirectory(outdir);
-
-   char plotDir[200];
-   if(isBlind)  sprintf(plotDir,"./plots/blinded/%s/%s",blindLabel.c_str(),theDate.getDateString().c_str());
-   if(!isBlind) sprintf(plotDir,"./plots/unblinded/%s" ,theDate.getDateString().c_str());
-   MakeDirectory(plotDir);
+   std::string plotDir = GetPath("plots" ,isBlind,blindLabel,theDate.getDateString());
+   std::string outDir  = GetPath("output",isBlind,blindLabel,theDate.getDateString());
 
    int blindUnits  = inputMgr->GetBlindUnits(); 
    double blindMag = inputMgr->GetBlindScale(); 
@@ -99,7 +92,7 @@ int LocalScanGrad_pp_prod(std::string configFile){
    // outpaths  
    char outpath[200],tag[10];
    sprintf(tag    ,"%s-grad",gradType.c_str()); 
-   sprintf(outpath,"%s/%s_pr-%02d.csv" ,outdir,tag,probeNumber);
+   sprintf(outpath,"%s/%s_pr-%02d.csv" ,outDir.c_str(),tag,probeNumber);
    std::string strTag = tag;
 
    std::vector<int> run,subRun;
@@ -184,17 +177,16 @@ int LocalScanGrad_pp_prod(std::string configFile){
    min -= 5; 
    max += 5; 
 
-
    // plunging probe swap data 
    std::vector<calibSwap_t> ppCalib_data;
    char inpath_pp[200]; 
-   sprintf(inpath_pp,"%s/pp-swap-data_pr-%02d_%s.csv",outdir,probeNumber,date.c_str());
+   sprintf(inpath_pp,"%s/pp-swap-data_pr-%02d_%s.csv",outDir.c_str(),probeNumber,date.c_str());
    rc = LoadCalibSwapData(inpath_pp,ppCalib_data);  
 
    // trolley swap data 
    std::vector<calibSwap_t> trlyCalib_data;
    char inpath_tr[200]; 
-   sprintf(inpath_tr,"%s/trly-swap-data_pr-%02d_%s.csv",outdir,probeNumber,date.c_str());
+   sprintf(inpath_tr,"%s/trly-swap-data_pr-%02d_%s.csv",outDir.c_str(),probeNumber,date.c_str());
    rc = LoadCalibSwapData(inpath_tr,trlyCalib_data);  
 
    // get the coordinates of the PP and trly probe  
@@ -265,7 +257,7 @@ int LocalScanGrad_pp_prod(std::string configFile){
    if(axis!=2) evalPoint->Draw("same"); 
    c1->Update(); 
 
-   TString plotPath = Form("%s/pp-shimmed-scan-%s_pr-%02d.png",plotDir,Axis.c_str(),probeNumber); 
+   TString plotPath = Form("%s/pp-shimmed-scan-%s_pr-%02d.png",plotDir.c_str(),Axis.c_str(),probeNumber); 
    c1->cd();
    c1->Print(plotPath); 
 
@@ -278,7 +270,7 @@ int LocalScanGrad_pp_prod(std::string configFile){
    gFXPR->Draw("alp");
    c2->Update(); 
 
-   plotPath = Form("%s/pp-shimmed-scan_fxpr-avg_pr-%02d.png",plotDir,probeNumber); 
+   plotPath = Form("%s/pp-shimmed-scan_fxpr-avg_pr-%02d.png",plotDir.c_str(),probeNumber); 
    c2->cd();
    c2->Print(plotPath);
 

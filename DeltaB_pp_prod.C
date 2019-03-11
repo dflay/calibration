@@ -70,6 +70,9 @@ int DeltaB_pp_prod(std::string configFile){
    date_t theDate; 
    GetDate(theDate);
 
+   std::string plotDir = GetPath("plots" ,isBlind,blindLabel,theDate.getDateString());
+   std::string outDir  = GetPath("output",isBlind,blindLabel,theDate.getDateString());
+
    int blindUnits  = inputMgr->GetBlindUnits(); 
    double blindMag = inputMgr->GetBlindScale(); 
    gm2fieldUtil::Blinder *myBlind = new gm2fieldUtil::Blinder(blindLabel,blindMag,blindUnits);
@@ -281,19 +284,9 @@ int DeltaB_pp_prod(std::string configFile){
    std::cout << Form("dB (%s): %.3lf +/- %.3lf Hz (%.3lf +/- %.3lf ppb)",gradName.c_str(),
                      dB[1],dB_err[1],dB[1]/0.06179,dB_err[1]/0.06179) << std::endl;
 
-   char outpath[200],outdir[200];
-
-   if(isBlind)  sprintf(outdir,"./output/blinded/%s"  ,theDate.getDateString().c_str()); 
-   if(!isBlind) sprintf(outdir,"./output/unblinded/%s",theDate.getDateString().c_str()); 
-
-   rc = MakeDirectory(outdir); 
-   sprintf(outpath,"%s/dB-pp_final-location_%s-grad_pr-%02d.csv",outdir,gradName.c_str(),probeNumber);
+   char outpath[200];
+   sprintf(outpath,"%s/dB-pp_final-location_%s-grad_pr-%02d.csv",outDir.c_str(),gradName.c_str(),probeNumber);
    rc = PrintToFile(outpath,gradName,dB,dB_err,drift,drift_err); 
-
-   char plotDir[200];
-   if(isBlind)  sprintf(plotDir,"./plots/blinded/%s/%s",blindLabel.c_str(),theDate.getDateString().c_str()); 
-   if(!isBlind) sprintf(plotDir,"./plots/unblinded/%s" ,theDate.getDateString().c_str()); 
-   rc = MakeDirectory(plotDir); 
 
    // draw some plots 
    TCanvas *c1 = new TCanvas("c1","Data",1200,600);
@@ -319,7 +312,7 @@ int DeltaB_pp_prod(std::string configFile){
    c1->Update();
 
    c1->cd();
-   TString plotPath = Form("%s/pp_dB_%s-grad_pr-%02d.png",plotDir,gradName.c_str(),probeNumber); 
+   TString plotPath = Form("%s/pp_dB_%s-grad_pr-%02d.png",plotDir.c_str(),gradName.c_str(),probeNumber); 
    c1->Print(plotPath);
    delete c1;  
 
@@ -367,7 +360,7 @@ int DeltaB_pp_prod(std::string configFile){
    c2->Update(); 
 
    c2->cd();
-   plotPath = Form("%s/pp_dB_scc-currents_%s-grad_pr-%02d.png",plotDir,gradName.c_str(),probeNumber); 
+   plotPath = Form("%s/pp_dB_scc-currents_%s-grad_pr-%02d.png",plotDir.c_str(),gradName.c_str(),probeNumber); 
    c2->Print(plotPath);
    delete c2;  
 
