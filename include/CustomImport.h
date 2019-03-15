@@ -3,12 +3,14 @@
 
 // extra import functions 
 
-#include <cstdlib> 
+#include <cstdlib>
+#include <iostream>  
 #include <vector>
 #include <string> 
 
 #include "gm2fieldFunc.h"
 #include "gm2fieldImport.h"
+#include "gm2fieldRootHelper.h"
 
 #include "runSummary.h"
 #include "imageResult.h"
@@ -24,6 +26,20 @@
 #include "deltab.h"
 #include "blind.h"
 
+// Reading trolley data 
+int GetTrolleyData(int run,int method,std::vector<trolleyAnaEvent_t> &trlyEvent,std::string version);
+int GetTrolleyFrequencies(int run,std::vector<gm2field::trolleyProbeFrequency_t> &data,std::string version);
+int GetTrolleyFrequencies_new(int run,std::vector<gm2field::newtrolleyProbeFrequency_t> &data,std::string version);
+int GetTrolleyPosition(int run,std::vector<gm2field::trolleyPosition_t> &data,std::string version);
+int GetTrolleyPosition_new(int run,std::vector<gm2field::newtrolleyPosition_t> &data,std::string version);
+int GetTrolleyTimeStamps(int run,std::vector<gm2field::trolleyTimeStamp_t> &data,std::string version);
+int GetTrolleyMonitor(int run,std::vector<gm2field::trolleyMonitor_t> &data,std::string version);
+int GetTrolleyGalil(int run,std::vector<gm2field::galilTrolley_t> &data,std::string version);
+
+// Reading PP data 
+
+
+// Everything else 
 int LoadImageResults(std::string inpath,std::vector<imageResult_t> &data); 
 int LoadIMGTimes(std::string type,int trial,std::vector<double> &time); 
 int LoadImageParameters(std::string inpath,std::string type,std::vector<imageParameter_t> &data);

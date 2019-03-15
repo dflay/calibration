@@ -1,4 +1,177 @@
 #include "../include/CustomImport.h"
+
+//______________________________________________________________________________
+int GetTrolleyData(int run,int method,std::vector<trolleyAnaEvent_t> &trlyEvent,std::string version){
+
+   int rc=0;
+
+   std::vector<gm2field::trolleyProbeFrequency_t> trlyFreq;
+   std::vector<gm2field::newtrolleyProbeFrequency_t> trlyFreq_new;
+
+   std::vector<gm2field::trolleyPosition_t> trlyPos;
+   std::vector<gm2field::newtrolleyPosition_t> trlyPos_new;
+
+   std::vector<gm2field::trolleyTimeStamp_t> trlyTime; // only one version of trolley monitor 
+   std::vector<gm2field::trolleyMonitor_t> trlyMon;  // only one version of the trolley monitor 
+
+   int NT=0,NP=0,NM=0,NF=0;
+
+   // these items don't change based upon data production    
+   rc = GetTrolleyTimeStamps(run,trlyTime,version);
+   rc = GetTrolleyMonitor(run,trlyMon,version);
+   NT = trlyTime.size();
+   NM = trlyMon.size();
+
+   if(version.compare("run-1")==0){
+      rc = GetTrolleyFrequencies(run,trlyFreq,version);
+      rc = GetTrolleyPosition(run,trlyPos,version);
+      NP = trlyPos.size();
+      NF = trlyFreq.size();
+   }else{
+      rc = GetTrolleyFrequencies_new(run,trlyFreq_new,version);
+      rc = GetTrolleyTimeStamps(run,trlyTime,version);
+      rc = GetTrolleyPosition_new(run,trlyPos_new,version);
+      rc = GetTrolleyMonitor(run,trlyMon,version);
+      NP = trlyPos_new.size();
+      NF = trlyFreq_new.size();
+   }
+
+   if(NT<=1 || NP<=1 || NM<=1 || NF<=1) return 1;
+
+   trolleyAnaEvent_t data;
+
+   int startIndex=10;
+   // FIXME: special case...
+   if(run==3030) startIndex = 10;
+   if(run==4911) startIndex = 35;
+
+   double arg_phi=0,arg_freq=0,arg_time=0,arg_temp=0;
+   bool validEvent = false;
+   for(int i=startIndex;i<NT;i++){
+      for(int j=0;j<NUM_TRLY;j++){
+         if(version.compare("run-1")==0){
+            arg_phi  = trlyPos[i].Phi[j][0]*gm2fieldUtil::Constants::DEG_PER_RAD;
+            arg_freq = trlyFreq[i].Frequency[j][method];
+         }else{
+            arg_phi  = trlyPos_new[i].Phi[j][0]*gm2fieldUtil::Constants::DEG_PER_RAD;
+            arg_freq = trlyFreq_new[i].Frequency[j][method];
+         }
+         arg_time = trlyTime[i].GpsCycleStart[j];
+         arg_temp = trlyMon[i].TemperatureExt[j];
+         if(arg_phi<0) arg_phi += 360.;
+         if(arg_freq>0){
+            validEvent   = true;
+            data.time[j] = arg_time;
+            data.freq[j] = arg_freq;
+            data.r[j]    = 0; // trlyPos[i].X[j];
+            data.y[j]    = 0; // trlyPos[i].Y[j];
+            data.phi[j]  = arg_phi;
+            data.temp[j] = arg_temp;
+         }
+         // if(data.freq[j]<20E+3){
+         //    std::cout << gm2fieldUtil::GetStringTimeStampFromUTC( data.time[j]/1E+9 ) << " " << data.freq[j] << std::endl; 
+         // }
+      }
+      if(validEvent) trlyEvent.push_back(data);
+      validEvent = false;
+   }
+
+   return 0;
+}
+//______________________________________________________________________________
+int SetDataFileParameters(std::string version,std::string &fileName,std::string &dataPath){
+   // determine file name prefix and data path based upon version tag 
+   if( version.compare("run-1")==0 ){
+      fileName = "default";
+      dataPath = "default";
+   }else if( version.compare("run-2")==0 ){
+      fileName = "default";
+      dataPath = "/mnt/nfs/g2field-server-2/newg2/DataProduction/Nearline/ArtTFSDir";  // use this for now... 
+   }else if( version.compare("v09_04")==0 ){
+      fileName = "FieldPlainRootOutput_";
+      dataPath = "/home/newg2/DataProduction/Offline/ArtTFSDir/v09_04";
+   }
+   return 0;
+}
+//______________________________________________________________________________
+int GetTrolleyFrequencies_new(int run,std::vector<gm2field::newtrolleyProbeFrequency_t> &data,std::string version){
+   int rc=0;
+   std::string dirName    = "TreeGenTrolley";
+   std::string treeName   = "trolley";
+   std::string branchName = "ProbeFrequency";
+   std::string fileName,dataPath;
+   rc = SetDataFileParameters(version,fileName,dataPath);
+   rc = gm2fieldUtil::RootHelper::GetDataFromTree<gm2field::newtrolleyProbeFrequency_t>(run,dirName,treeName,branchName,data,-1,-1,fileName,dataPath);
+   return rc;
+}
+//______________________________________________________________________________
+int GetTrolleyFrequencies(int run,std::vector<gm2field::trolleyProbeFrequency_t> &data,std::string version){
+   int rc=0;
+   std::string dirName    = "TreeGenTrolley";
+   std::string treeName   = "trolley";
+   std::string branchName = "ProbeFrequency";
+   std::string fileName,dataPath;
+   rc = SetDataFileParameters(version,fileName,dataPath);
+   rc = gm2fieldUtil::RootHelper::GetDataFromTree<gm2field::trolleyProbeFrequency_t>(run,dirName,treeName,branchName,data,-1,-1,fileName,dataPath);
+   return rc;
+}
+//______________________________________________________________________________
+int GetTrolleyTimeStamps(int run,std::vector<gm2field::trolleyTimeStamp_t> &data,std::string version){
+   int rc=0;
+   std::string dirName    = "TreeGenTrolley";
+   std::string treeName   = "trolley";
+   std::string branchName = "TimeStamp";
+   std::string fileName,dataPath;
+   rc = SetDataFileParameters(version,fileName,dataPath);
+   rc = gm2fieldUtil::RootHelper::GetDataFromTree<gm2field::trolleyTimeStamp_t>(run,dirName,treeName,branchName,data,-1,-1,fileName,dataPath);
+   return rc;
+}
+//______________________________________________________________________________
+int GetTrolleyPosition_new(int run,std::vector<gm2field::newtrolleyPosition_t> &data,std::string version){
+   int rc=0;
+   std::string dirName    = "TreeGenTrolley";
+   std::string treeName   = "trolley";
+   std::string branchName = "Position";
+   std::string fileName,dataPath;
+   rc = SetDataFileParameters(version,fileName,dataPath);
+   rc = gm2fieldUtil::RootHelper::GetDataFromTree<gm2field::newtrolleyPosition_t>(run,dirName,treeName,branchName,data,-1,-1,fileName,dataPath);
+   return rc;
+}
+//______________________________________________________________________________
+int GetTrolleyPosition(int run,std::vector<gm2field::trolleyPosition_t> &data,std::string version){
+   int rc=0;
+   std::string dirName    = "TreeGenTrolley";
+   std::string treeName   = "trolley";
+   std::string branchName = "Position";
+   std::string fileName,dataPath;
+   rc = SetDataFileParameters(version,fileName,dataPath);
+   rc = gm2fieldUtil::RootHelper::GetDataFromTree<gm2field::trolleyPosition_t>(run,dirName,treeName,branchName,data,-1,-1,fileName,dataPath);
+   return rc;
+}
+//______________________________________________________________________________
+int GetTrolleyMonitor(int run,std::vector<gm2field::trolleyMonitor_t> &data,std::string version){
+   int rc=0;
+   std::string dirName    = "TreeGenTrolley";
+   std::string treeName   = "trolley";
+   std::string branchName = "Monitor";
+   std::string fileName,dataPath;
+   rc = SetDataFileParameters(version,fileName,dataPath);
+   rc = gm2fieldUtil::RootHelper::GetDataFromTree<gm2field::trolleyMonitor_t>(run,dirName,treeName,branchName,data,-1,-1,fileName,dataPath);
+   return rc;
+}
+//______________________________________________________________________________
+int GetTrolleyGalil(int run,std::vector<gm2field::galilTrolley_t> &data,std::string version){
+   int rc=0;
+   std::string dirName    = "TreeGenGalilTrolley";
+   std::string treeName   = "tGalil";
+   std::string branchName = "Trolley";
+   std::string fileName,dataPath;
+   rc = SetDataFileParameters(version,fileName,dataPath);
+   rc = gm2fieldUtil::RootHelper::GetDataFromTree<gm2field::galilTrolley_t>(run,dirName,treeName,branchName,data,-1,-1,fileName,dataPath);
+   return rc;
+}
+
+
 //______________________________________________________________________________
 int LoadImageResults(std::string inpath,std::vector<imageResult_t> &data){
 
