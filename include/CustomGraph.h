@@ -17,11 +17,10 @@
 #include "trolleyAnaEvent.h"
 #include "sccEvent.h"
 
-#include "FXPRFuncs.h"
 #include "TRLYFuncs.h"
 
 // scc plots
-TGraph *GetSCCPlot(int type,std::vector<gm2field::surfaceCoils_t> data); 
+TGraph *GetSCCPlot(int type,std::vector<surfaceCoilEvent_t> data); 
 
 // gradient plots
 TGraphErrors *GetTGraphErrors(std::vector<imposed_gradient_t> data); 
@@ -52,23 +51,23 @@ TGraphErrors *GetSCCTestGraphTRLY(int probe,TString xAxis,TString yAxis,std::vec
 TGraphErrors *GetTRLYTGraph_aziScan(int probe,double thr,TString yAxis,std::vector<trolleyAnaEvent_t> data); 
 
 // fixed probe plots 
-TGraph *GetTGraphNew(int method,unsigned long long timeStart,unsigned long long timeStop,unsigned long long timeStep,
-                  std::vector<int> fxprList,std::vector<gm2field::fixedProbeFrequency_t> fxprData);
-TGraph *GetTGraph(int method,unsigned long long timeStart,unsigned long long timeStop,unsigned long long timeStep,
-                  std::vector<int> fxprList,std::vector<gm2field::fixedProbeFrequency_t> fxprData);
-TGraph *GetTGraph(int method,unsigned long long t0,unsigned long long timeStart,unsigned long long timeStop,unsigned long long timeStep,
-                  std::vector<int> fxprList,std::vector<gm2field::fixedProbeFrequency_t> fxprData);
-
-TGraph *GetInterpolatedTGraph(int method,std::vector<int> probe,
-                              unsigned long long tStart,unsigned long long tStop,unsigned long long tStep,
-                              std::vector<gm2field::fixedProbeFrequency_t> fxprData,
-                              std::vector<double> &stats);
-
-TGraph *GetTGraph2Runs(int method,std::vector<int> probe, 
-                       unsigned long long tStart,unsigned long long tStop,unsigned long long tStep,
-                       std::vector<gm2field::fixedProbeFrequency_t> fxprData);
-
-TGraphErrors *GetTGraphErrors(int method,unsigned long long timeStart,unsigned long long timeStop,unsigned long long timeStep,
-                              std::vector<int> fxprList,std::vector<gm2field::fixedProbeFrequency_t> fxprData);
+// TGraph *GetTGraphNew(int method,unsigned long long timeStart,unsigned long long timeStop,unsigned long long timeStep,
+//                   std::vector<int> fxprList,std::vector<gm2field::fixedProbeFrequency_t> fxprData);
+// TGraph *GetTGraph(int method,unsigned long long timeStart,unsigned long long timeStop,unsigned long long timeStep,
+//                   std::vector<int> fxprList,std::vector<gm2field::fixedProbeFrequency_t> fxprData);
+// TGraph *GetTGraph(int method,unsigned long long t0,unsigned long long timeStart,unsigned long long timeStop,unsigned long long timeStep,
+//                   std::vector<int> fxprList,std::vector<gm2field::fixedProbeFrequency_t> fxprData);
+// 
+// TGraph *GetInterpolatedTGraph(int method,std::vector<int> probe,
+//                               unsigned long long tStart,unsigned long long tStop,unsigned long long tStep,
+//                               std::vector<gm2field::fixedProbeFrequency_t> fxprData,
+//                               std::vector<double> &stats);
+// 
+// TGraph *GetTGraph2Runs(int method,std::vector<int> probe, 
+//                        unsigned long long tStart,unsigned long long tStop,unsigned long long tStep,
+//                        std::vector<gm2field::fixedProbeFrequency_t> fxprData);
+// 
+// TGraphErrors *GetTGraphErrors(int method,unsigned long long timeStart,unsigned long long timeStop,unsigned long long timeStep,
+//                               std::vector<int> fxprList,std::vector<gm2field::fixedProbeFrequency_t> fxprData);
 
 #endif 

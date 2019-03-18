@@ -1,5 +1,14 @@
 #include "../include/CustomUtilities.h"
 //______________________________________________________________________________
+int PrintMessage(std::string label,std::string msg,int lineNumber){
+   if(lineNumber>=0){
+      std::cout << "[" << label << "]: line " << lineNumber << ": " << msg << std::endl;
+   }else{
+      std::cout << "[" << label << "]: " << msg << std::endl;
+   }
+   return 0; 
+}
+//______________________________________________________________________________
 int GetDate(date_t &aDate){
 
    std::time_t t = std::time(0);   // get time now

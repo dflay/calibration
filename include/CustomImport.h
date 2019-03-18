@@ -12,6 +12,7 @@
 #include "gm2fieldImport.h"
 #include "gm2fieldRootHelper.h"
 
+#include "sccEvent.h"
 #include "runSummary.h"
 #include "imageResult.h"
 #include "imageParameter.h"
@@ -27,19 +28,17 @@
 #include "blind.h"
 
 // Reading trolley data 
-int GetTrolleyData(int run,int method,std::vector<trolleyAnaEvent_t> &trlyEvent,std::string version);
-int GetTrolleyFrequencies(int run,std::vector<gm2field::trolleyProbeFrequency_t> &data,std::string version);
-int GetTrolleyFrequencies_new(int run,std::vector<gm2field::newtrolleyProbeFrequency_t> &data,std::string version);
-int GetTrolleyPosition(int run,std::vector<gm2field::trolleyPosition_t> &data,std::string version);
-int GetTrolleyPosition_new(int run,std::vector<gm2field::newtrolleyPosition_t> &data,std::string version);
-int GetTrolleyTimeStamps(int run,std::vector<gm2field::trolleyTimeStamp_t> &data,std::string version);
-int GetTrolleyMonitor(int run,std::vector<gm2field::trolleyMonitor_t> &data,std::string version);
-int GetTrolleyGalil(int run,std::vector<gm2field::galilTrolley_t> &data,std::string version);
+int GetTrolleyData(std::string date,int run,int method,std::vector<trolleyAnaEvent_t> &trlyEvent,std::string version);
 
-// Reading PP data 
+// Reading PP data
+int GetPlungingProbeData(int run,int prMethod,int ppMethod,std::vector<plungingProbeAnaEvent_t> &data,std::string version); 
+int ModifyPlungingProbeData(int method,plungingProbeAnaEvent_t &data); 
 
+// Reading SCC data 
+int GetSurfaceCoilData(int run,std::vector<surfaceCoilEvent_t> &data,std::string version);  
 
 // Everything else 
+int SetDataFileParameters(std::string version,std::string &fileName,std::string &dataPath); 
 int LoadImageResults(std::string inpath,std::vector<imageResult_t> &data); 
 int LoadIMGTimes(std::string type,int trial,std::vector<double> &time); 
 int LoadImageParameters(std::string inpath,std::string type,std::vector<imageParameter_t> &data);
@@ -90,5 +89,110 @@ int SortRunsAlt(std::vector<std::string> label,std::vector<int> allRuns,
              std::vector<int> &run,std::vector<int> &index);
 
 int ImportResults(std::string inpath,result_t &data); 
+
+// templated functions
+// trolley  
+//______________________________________________________________________________
+template <typename T> int GetTrolleyFrequencies(int run,std::vector<T> &data,std::string version){
+   int rc=0;
+   std::string dirName    = "TreeGenTrolley";
+   std::string treeName   = "trolley";
+   std::string branchName = "ProbeFrequency";
+   std::string fileName,dataPath;
+   rc = SetDataFileParameters(version,fileName,dataPath);
+   rc = gm2fieldUtil::RootHelper::GetDataFromTree<T>(run,dirName,treeName,branchName,data,-1,-1,fileName,dataPath);
+   return rc;
+}
+//______________________________________________________________________________
+template <typename T> int GetTrolleyTimeStamps(int run,std::vector<T> &data,std::string version){
+   int rc=0;
+   std::string dirName    = "TreeGenTrolley";
+   std::string treeName   = "trolley";
+   std::string branchName = "TimeStamp";
+   std::string fileName,dataPath;
+   rc = SetDataFileParameters(version,fileName,dataPath);
+   rc = gm2fieldUtil::RootHelper::GetDataFromTree<T>(run,dirName,treeName,branchName,data,-1,-1,fileName,dataPath);
+   return rc;
+}
+//______________________________________________________________________________
+template <typename T> int GetTrolleyPosition(int run,std::vector<T> &data,std::string version){
+   int rc=0;
+   std::string dirName    = "TreeGenTrolley";
+   std::string treeName   = "trolley";
+   std::string branchName = "Position";
+   std::string fileName,dataPath;
+   rc = SetDataFileParameters(version,fileName,dataPath);
+   rc = gm2fieldUtil::RootHelper::GetDataFromTree<T>(run,dirName,treeName,branchName,data,-1,-1,fileName,dataPath);
+   return rc;
+}
+//______________________________________________________________________________
+template <typename T> int GetTrolleyMonitor(int run,std::vector<T> &data,std::string version){
+   int rc=0;
+   std::string dirName    = "TreeGenTrolley";
+   std::string treeName   = "trolley";
+   std::string branchName = "Monitor";
+   std::string fileName,dataPath;
+   rc = SetDataFileParameters(version,fileName,dataPath);
+   rc = gm2fieldUtil::RootHelper::GetDataFromTree<T>(run,dirName,treeName,branchName,data,-1,-1,fileName,dataPath);
+   return rc;
+}
+//______________________________________________________________________________
+template <typename T> int GetTrolleyGalil(int run,std::vector<T> &data,std::string version){
+   int rc=0;
+   std::string dirName    = "TreeGenGalilTrolley";
+   std::string treeName   = "tGalil";
+   std::string branchName = "Trolley";
+   std::string fileName,dataPath;
+   rc = SetDataFileParameters(version,fileName,dataPath);
+   rc = gm2fieldUtil::RootHelper::GetDataFromTree<T>(run,dirName,treeName,branchName,data,-1,-1,fileName,dataPath);
+   return rc;
+}
+// plunging probe
+//______________________________________________________________________________
+template <typename T> int GetPlungingProbeFrequencies(int run,std::vector<T> &data,std::string version){
+   int rc=0;
+   std::string dirName    = "TreeGenPlungingProbe";
+   std::string treeName   = "plungingProbe";
+   std::string branchName = "Frequency";
+   std::string fileName,dataPath;
+   rc = SetDataFileParameters(version,fileName,dataPath);
+   rc = gm2fieldUtil::RootHelper::GetDataFromTree<T>(run,dirName,treeName,branchName,data,-1,-1,fileName,dataPath);
+   return rc;
+}
+//______________________________________________________________________________
+template <typename T> int GetPlungingProbeInfo(int run,std::vector<T> &data,std::string version){
+   int rc=0;
+   std::string dirName    = "TreeGenPlungingProbe";
+   std::string treeName   = "plungingProbe";
+   std::string branchName = "Info";
+   std::string fileName,dataPath;
+   rc = SetDataFileParameters(version,fileName,dataPath);
+   rc = gm2fieldUtil::RootHelper::GetDataFromTree<T>(run,dirName,treeName,branchName,data,-1,-1,fileName,dataPath);
+   return rc;
+}
+// fixed probes 
+//______________________________________________________________________________
+template <typename T> int GetFixedProbeFrequencies(int run,std::vector<T> &data,std::string version){
+   int rc=0;
+   std::string dirName    = "TreeGenFixedProbe";
+   std::string treeName   = "fixedProbe";
+   std::string branchName = "Frequency";
+   std::string fileName,dataPath;
+   rc = SetDataFileParameters(version,fileName,dataPath);
+   rc = gm2fieldUtil::RootHelper::GetDataFromTree<T>(run,dirName,treeName,branchName,data,-1,-1,fileName,dataPath);
+   return rc;
+}
+// surface coils
+//______________________________________________________________________________
+template <typename T> int GetSurfaceCoil(int run,std::vector<T> &data,std::string version){
+   int rc=0;
+   std::string dirName    = "TreeGenSurfaceCoil";
+   std::string treeName   = "surfaceCoils";
+   std::string branchName = "data";
+   std::string fileName,dataPath;
+   rc = SetDataFileParameters(version,fileName,dataPath);
+   rc = gm2fieldUtil::RootHelper::GetDataFromTree<T>(run,dirName,treeName,branchName,data,-1,-1,fileName,dataPath);
+   return rc;
+}
 
 #endif 

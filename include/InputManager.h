@@ -18,7 +18,7 @@ class InputManager{
       bool fUseAxis,fIsFreeProton,fLoadSwapTime,fLoadSCCTime,fUseTimeWeight,fUseTempCor;
       int fTrolleyProbe,fAxis,fFXPRListTag,fBlindUnits,fRunPeriod; 
       double fBlindScale; 
-      std::string fType,fDevice,fAnaDate,fFitFunc,fBlindLabel;
+      std::string fType,fDevice,fAnaDate,fFitFunc,fBlindLabel,fProdTag;
       std::vector<int> fRunList; 
       std::vector<std::string> fRunLabel; 
 
@@ -40,29 +40,30 @@ class InputManager{
 
       bool DoesKeyExist(std::string keyName); 
 
-      bool IsFullAnalysis()         const { return fIsFullAnalysis;  } 
-      bool IsBlind()                const { return fIsBlind;         } 
-      bool IsFinalLocation()        const { return fIsFinalLocation; } 
-      bool UseP2PFit()              const { return fUseP2PFit;       } 
-      bool GetFreeProtonStatus()    const { return fIsFreeProton;    }
-      bool GetSwapTimeStatus()      const { return fLoadSwapTime;    }  
-      bool GetSCCTimeStatus()       const { return fLoadSCCTime;     }  
-      bool GetTimeWeightStatus()    const { return fUseTimeWeight;   } 
-      bool GetTempCorStatus()       const { return fUseTempCor;      }  
+      bool IsFullAnalysis()          const { return fIsFullAnalysis;  } 
+      bool IsBlind()                 const { return fIsBlind;         } 
+      bool IsFinalLocation()         const { return fIsFinalLocation; } 
+      bool UseP2PFit()               const { return fUseP2PFit;       } 
+      bool GetFreeProtonStatus()     const { return fIsFreeProton;    }
+      bool GetSwapTimeStatus()       const { return fLoadSwapTime;    }  
+      bool GetSCCTimeStatus()        const { return fLoadSCCTime;     }  
+      bool GetTimeWeightStatus()     const { return fUseTimeWeight;   } 
+      bool GetTempCorStatus()        const { return fUseTempCor;      }  
      
-      int GetTrolleyProbe()         const { return fTrolleyProbe;    } 
-      int GetAxis()                 const { return fAxis;            }
-      int GetFixedProbeListTag()    const { return fFXPRListTag;     }
-      int GetBlindUnits()           const { return fBlindUnits;      }
-      int GetRunPeriod()            const { return fRunPeriod;       } 
+      int GetTrolleyProbe()          const { return fTrolleyProbe;    } 
+      int GetAxis()                  const { return fAxis;            }
+      int GetFixedProbeListTag()     const { return fFXPRListTag;     }
+      int GetBlindUnits()            const { return fBlindUnits;      }
+      int GetRunPeriod()             const { return fRunPeriod;       } 
 
-      double GetBlindScale()        const { return fBlindScale;      }   
+      double GetBlindScale()         const { return fBlindScale;      }   
 
-      std::string GetType()         const { return fType;            } 
-      std::string GetDevice()       const { return fDevice;          } 
-      std::string GetAnalysisDate() const { return fAnaDate;         } 
-      std::string GetFitFunction()  const { return fFitFunc;         } 
-      std::string GetBlindLabel()   const { return fBlindLabel;      } 
+      std::string GetType()          const { return fType;            } 
+      std::string GetDevice()        const { return fDevice;          } 
+      std::string GetAnalysisDate()  const { return fAnaDate;         } 
+      std::string GetFitFunction()   const { return fFitFunc;         } 
+      std::string GetBlindLabel()    const { return fBlindLabel;      } 
+      std::string GetProductionTag() const { return fProdTag;         }
 
       std::string GetValue(std::string key)                       const { return fParams[key]; }  
       std::string GetValue(std::string key,std::string subKey)    const { return fParams[key][subKey]; } 

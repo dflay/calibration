@@ -20,7 +20,6 @@
 #include "Constants.h"
 #include "plungingProbeAnaEvent.h"
 #include "trolleyAnaEvent.h"
-#include "FXPRFuncs.h"
 
 int CalculatePPDeltaB_ABA(bool correctDrift,
                           plungingProbeAnaEvent_t bare,plungingProbeAnaEvent_t grad,plungingProbeAnaEvent_t bare2,
@@ -56,7 +55,7 @@ int CalculateTRLYDeltaB_Stationary(bool correctDrift,int method,int probe,std::v
                                    double &deltaB,double &deltaB_err,
                                    double &drift ,double &drift_err);
 
-TGraph *CalculateTRLYDeltaB_Moving(int method,int probe,std::vector<int> fxprList,std::vector<gm2field::fixedProbeFrequency_t> fxprData,
-                                   std::vector<trolleyAnaEvent_t> bare,std::vector<trolleyAnaEvent_t> grad); 
+// TGraph *CalculateTRLYDeltaB_Moving(int method,int probe,std::vector<int> fxprList,std::vector<gm2field::fixedProbeFrequency_t> fxprData,
+//                                    std::vector<trolleyAnaEvent_t> bare,std::vector<trolleyAnaEvent_t> grad); 
 
 #endif 

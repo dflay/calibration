@@ -31,16 +31,15 @@
 #include "./include/trolleyAnaEvent.h"
 #include "./include/sccEvent.h" 
 
+#include "./src/BlindFuncs.C"
 #include "./src/InputManager.C"
 #include "./src/FitFuncs.C"
-#include "./src/FXPRFuncs.C"
 #include "./src/TRLYFuncs.C"
-#include "./src/Consolidate.C"
 #include "./src/CustomUtilities.C"
-#include "./src/CustomMath.C"
-#include "./src/CustomGraph.C"
 #include "./src/CustomImport.C"
 #include "./src/CustomExport.C"
+#include "./src/CustomMath.C"
+#include "./src/CustomGraph.C"
 #include "./src/CustomAlgorithms.C"
 
 double gMarkerSize = 0.8; 
@@ -67,12 +66,14 @@ int Process_trly_prod(std::string configFile){
    inputMgr->Load(configFile);
    inputMgr->Print();
 
-   std::string anaDate    = inputMgr->GetAnalysisDate();
-   std::string blindLabel = inputMgr->GetBlindLabel(); 
-   bool isBlind           = inputMgr->IsBlind();
-   bool loadSwapTimes     = inputMgr->GetSwapTimeStatus();
-   bool useTempCor        = inputMgr->GetTempCorStatus();  
-   int probeNumber        = inputMgr->GetTrolleyProbe(); 
+   std::string prodVersion = inputMgr->GetProductionTag();  
+   std::string anaDate     = inputMgr->GetAnalysisDate();
+   std::string blindLabel  = inputMgr->GetBlindLabel();
+ 
+   bool isBlind            = inputMgr->IsBlind();
+   bool loadSwapTimes      = inputMgr->GetSwapTimeStatus();
+   bool useTempCor         = inputMgr->GetTempCorStatus();  
+   int probeNumber         = inputMgr->GetTrolleyProbe(); 
 
    date_t theDate;
    GetDate(theDate);
@@ -95,12 +96,12 @@ int Process_trly_prod(std::string configFile){
  
    const int NRUNS = run.size();
    for(int i=0;i<NRUNS;i++){
-      rc = GetTrolleyData("",run[i],method,trlyData);
+      rc = GetTrolleyData(run[i],method,trlyData,prodVersion);
       if(rc!=0){
 	 std::cout << "No data!" << std::endl;
 	 return 1;
       }
-      rc = gm2fieldUtil::RootHelper::GetTrolleyGalil(run[i],trlyGalil);
+      rc = GetTrolleyGalil<gm2field::galilTrolley_t>(run[i],trlyGalil,prodVersion);
       if(rc!=0){
 	 std::cout << "No data!" << std::endl;
 	 return 1;

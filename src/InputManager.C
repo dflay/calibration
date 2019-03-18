@@ -108,11 +108,13 @@ int InputManager::Parse(){
    bool sccStatus   = DoesKeyExist("load-trly-scc-times");  
    bool timeStatus  = DoesKeyExist("use-aba-time-weight");
    bool tempStatus  = DoesKeyExist("use-trly-temp-cor");
-   bool runpStatus  = DoesKeyExist("run-period");  
+   bool runpStatus  = DoesKeyExist("run-period"); 
+   bool prodStatus  = DoesKeyExist("prod-tag");  
 
    // parameters common to all 
    std::string unitStr="";
    if(dateStatus)  fAnaDate      = fParams["date"];
+   if(prodStatus)  fProdTag      = fParams["prod-tag"]; 
    if(trlyStatus)  fTrolleyProbe = (int)fParams["trly-probe"]; 
    if(fxprStatus)  fFXPRListTag  = (int)fParams["fxpr-set"]; 
    if(blindStatus){
@@ -169,12 +171,14 @@ int InputManager::Print(){
    if(fAxis==1) axis = 'y'; 
    if(fAxis==2) axis = 'z'; 
    std::cout << "------------------- Input Manager -------------------" << std::endl;
-   std::cout << "Is blinded:         " << fIsBlind         << std::endl;
    std::cout << "Trolley probe:      " << fTrolleyProbe    << std::endl;
+   std::cout << "Is blinded:         " << fIsBlind         << std::endl;
+   std::cout << "Blind label:        " << fBlindLabel      << std::endl;
+   std::cout << "Production tag:     " << fProdTag         << std::endl; 
    if(fType.compare("calib-prod")==0){
+         std::cout << "Run period:         " << fRunPeriod    << std::endl;
 	 std::cout << "Axis:               " << fAxis << " (" << axis << ")" << std::endl;
          std::cout << "Load TRLY swap time " << fLoadSwapTime << std::endl;
-         std::cout << "Run period:         " << fRunPeriod    << std::endl;
    }else{
       if(fIsSimple){
 	 std::cout << "FXPR set:           " << fFXPRListTag     << std::endl;

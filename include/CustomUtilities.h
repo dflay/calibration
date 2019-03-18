@@ -12,8 +12,9 @@
 
 #include "date.h" 
 
-// void mkdirTree(string sub, string dir); 
-
+// void mkdirTree(string sub, string dir);
+ 
+int PrintMessage(std::string label,std::string msg,int lineNumber=-1);
 int GetDate(date_t &aDate);
 int MakeDirectory(const char *path);
 

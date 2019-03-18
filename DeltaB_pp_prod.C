@@ -31,17 +31,16 @@
 #include "./include/plungingProbeAnaEvent.h"
 #include "./include/trolleyAnaEvent.h"
 
+#include "./src/BlindFuncs.C"
 #include "./src/InputManager.C"
 #include "./src/FitFuncs.C"
-#include "./src/FXPRFuncs.C"
-#include "./src/Consolidate.C"
-#include "./src/CustomMath.C"
-#include "./src/CustomGraph.C"
+#include "./src/CustomUtilities.C"
 #include "./src/CustomImport.C"
 #include "./src/CustomExport.C"
+#include "./src/CustomMath.C"
+#include "./src/CustomGraph.C"
 #include "./src/CustomAlgorithms.C"
-#include "./src/CustomUtilities.C"
-#include "./src/DeltaBFuncs.C"
+// #include "./src/DeltaBFuncs.C"
 
 int SortPPDAQRuns(std::vector<plungingProbeAnaEvent_t> data,bool sccStartOn,
                   std::vector<double> &sccTime ,std::vector<double> &scc ,std::vector<double> &sccErr,
@@ -53,19 +52,22 @@ int DeltaB_pp_prod(std::string configFile){
    std::cout << "PP DELTA B CALCULATION (ABA Method)" << std::endl;
 
    int rc=0;
-   int method = gm2fieldUtil::Constants::kPhaseDerivative;
+   int prMethod = gm2fieldUtil::Constants::kPhaseDerivative;
+   int ppMethod = plungingProbeAnalysis::kLeastSquaresPhase;
 
    InputManager *inputMgr = new InputManager();
    inputMgr->UseAxis(); 
    inputMgr->Load(configFile);
    inputMgr->Print();
 
-   std::string date       = inputMgr->GetAnalysisDate();
-   std::string blindLabel = inputMgr->GetBlindLabel();
-   bool isBlind           = inputMgr->IsBlind();
-   bool useTimeWeight     = inputMgr->GetTimeWeightStatus();
-   int probeNumber        = inputMgr->GetTrolleyProbe();
-   int axis               = inputMgr->GetAxis();
+   std::string prodVersion = inputMgr->GetProductionTag();
+   std::string date        = inputMgr->GetAnalysisDate();
+   std::string blindLabel  = inputMgr->GetBlindLabel();
+
+   bool isBlind            = inputMgr->IsBlind();
+   bool useTimeWeight      = inputMgr->GetTimeWeightStatus();
+   int probeNumber         = inputMgr->GetTrolleyProbe();
+   int axis                = inputMgr->GetAxis();
 
    date_t theDate; 
    GetDate(theDate);
@@ -93,10 +95,10 @@ int DeltaB_pp_prod(std::string configFile){
       std::cout << "No data!" << std::endl;
       return 1;
    }
-
+   
    // determine the correct ordering of the SCC on/off cycles 
-   std::vector<gm2field::surfaceCoils_t> sccData;
-   for(int i=0;i<NRUN;i++) rc = gm2fieldUtil::RootHelper::GetSCCData(run[i],sccData);
+   std::vector<surfaceCoilEvent_t> sccData;
+   for(int i=0;i<NRUN;i++) rc = GetSurfaceCoilData(run[i],sccData,prodVersion);
    if(rc!=0) return 1; 
 
    // load SCC times or not? 
@@ -154,16 +156,15 @@ int DeltaB_pp_prod(std::string configFile){
    const int N3 = run.size(); 
    std::vector<plungingProbeAnaEvent_t> PP,ppEvent; 
    for(int i=0;i<N3;i++){
-      std::cout << "Getting run " << run[i] << std::endl; 
-      rc = GetPlungingProbeData(run[i],method,ppEvent);
+      std::cout << "Getting PP data for run " << run[i] << "..." << std::endl; 
+      rc = GetPlungingProbeData(run[i],prMethod,ppMethod,ppEvent,prodVersion);
       if(rc!=0){
 	 std::cout << "No data!" << std::endl;
 	 return 1;
       }
    }
 
-   const int NPP = ppEvent.size();
-   for(int i=0;i<NPP;i++) rc = ModifyPlungingProbeData(kLeastSquaresPhase,ppEvent[i]);
+   const int NPP = ppEvent.size(); 
 
    // int rejIndex=500; 
    // for(int i=0;i<NPP;i++){

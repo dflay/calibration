@@ -408,76 +408,76 @@ int CalculateTRLYDeltaB_Stationary(bool correctDrift,int method,int probe,std::v
 
    return 0;
 }
-//______________________________________________________________________________
-TGraph *CalculateTRLYDeltaB_Moving(int method,int probe,std::vector<int> fxprList,std::vector<gm2field::fixedProbeFrequency_t> fxprData,
-                                  std::vector<trolleyAnaEvent_t> bare,std::vector<trolleyAnaEvent_t> grad){
-   // compute delta B for trolley measurements
-   // since we don't know if two runs have the same position, should probably fit to a spline and subtract... 
-   std::vector<double> tb,fb,tg,fg;
-
-   // gather bare field data
-   int NB = bare.size();
-   for(int i=0;i<NB;i++){
-      tb.push_back( bare[i].time[probe]/1E+9 ); 
-      fb.push_back( bare[i].freq[probe] ); 
-   }
-   
-   TGraph *gb = gm2fieldUtil::Graph::GetTGraph(tb,fb);
- 
-   // gather gradient field data
-   int NG = grad.size();
-   for(int i=0;i<NG;i++){
-      tg.push_back( grad[i].time[probe]/1E+9 ); 
-      fg.push_back( grad[i].freq[probe] ); 
-   }
-
-   TGraph *gg = gm2fieldUtil::Graph::GetTGraph(tg,fg);
-
-   // determine bounds for new plot 
-   // which data set came first?
-   unsigned long long t0b = bare[0].time[probe]; 
-   unsigned long long t0g = grad[0].time[probe];
-
-   bool bare_came_first=false;
-   double timeStart=0,timeStop=0,timeStep=1.; 
-   if(t0b<=t0g){
-      bare_came_first = true;
-      timeStart = t0b/1E+9;
-      timeStop = grad[NG-1].time[probe]/1E+9;
-   }else{
-      timeStart = t0g/1E+9;
-      timeStop = bare[NB-1].time[probe]/1E+9;
-   } 
-
-   if(timeStop<timeStart){
-      std::cout << "ERROR! timeStart = " << timeStart << " timeStop = " << timeStop << std::endl;
-      exit(1);
-   }
-
-   // find drift between the datasets 
-   double mean_fxpr_bare=0,stdev_fxpr_bare=0;
-   GetAverageFXPR(method,bare[0].time[probe],fxprList,fxprData,mean_fxpr_bare,stdev_fxpr_bare); 
-   
-   double mean_fxpr_grad=0,stdev_fxpr_grad=0;
-   GetAverageFXPR(method,grad[0].time[probe],fxprList,fxprData,mean_fxpr_grad,stdev_fxpr_grad);
-
-   // basically assuming the bare came last here intentionally 
-   double drift = mean_fxpr_bare - mean_fxpr_grad;
-   if(bare_came_first) drift *= -1; 
-
-   // find DeltaB between the graphs, correcting for field drift  
-   double arg_t=0,arg_f=0;
-   std::vector<double> T,F; 
-   int NPTS = (timeStop-timeStart)/timeStep;
-   for(int i=0;i<NPTS;i++){
-      arg_t = timeStart + i*timeStep;
-      arg_f = gg->Eval(arg_t) - gb->Eval(arg_t) - drift;  
-      T.push_back(arg_t);
-      F.push_back(arg_f);
-   }
-  
-   TGraph *gDeltaB = gm2fieldUtil::Graph::GetTGraph(T,F);
-   return gDeltaB; 
- 
-   return 0; 
-}
+// //______________________________________________________________________________
+// TGraph *CalculateTRLYDeltaB_Moving(int method,int probe,std::vector<int> fxprList,std::vector<gm2field::fixedProbeFrequency_t> fxprData,
+//                                   std::vector<trolleyAnaEvent_t> bare,std::vector<trolleyAnaEvent_t> grad){
+//    // compute delta B for trolley measurements
+//    // since we don't know if two runs have the same position, should probably fit to a spline and subtract... 
+//    std::vector<double> tb,fb,tg,fg;
+// 
+//    // gather bare field data
+//    int NB = bare.size();
+//    for(int i=0;i<NB;i++){
+//       tb.push_back( bare[i].time[probe]/1E+9 ); 
+//       fb.push_back( bare[i].freq[probe] ); 
+//    }
+//    
+//    TGraph *gb = gm2fieldUtil::Graph::GetTGraph(tb,fb);
+//  
+//    // gather gradient field data
+//    int NG = grad.size();
+//    for(int i=0;i<NG;i++){
+//       tg.push_back( grad[i].time[probe]/1E+9 ); 
+//       fg.push_back( grad[i].freq[probe] ); 
+//    }
+// 
+//    TGraph *gg = gm2fieldUtil::Graph::GetTGraph(tg,fg);
+// 
+//    // determine bounds for new plot 
+//    // which data set came first?
+//    unsigned long long t0b = bare[0].time[probe]; 
+//    unsigned long long t0g = grad[0].time[probe];
+// 
+//    bool bare_came_first=false;
+//    double timeStart=0,timeStop=0,timeStep=1.; 
+//    if(t0b<=t0g){
+//       bare_came_first = true;
+//       timeStart = t0b/1E+9;
+//       timeStop = grad[NG-1].time[probe]/1E+9;
+//    }else{
+//       timeStart = t0g/1E+9;
+//       timeStop = bare[NB-1].time[probe]/1E+9;
+//    } 
+// 
+//    if(timeStop<timeStart){
+//       std::cout << "ERROR! timeStart = " << timeStart << " timeStop = " << timeStop << std::endl;
+//       exit(1);
+//    }
+// 
+//    // find drift between the datasets 
+//    double mean_fxpr_bare=0,stdev_fxpr_bare=0;
+//    GetAverageFXPR(method,bare[0].time[probe],fxprList,fxprData,mean_fxpr_bare,stdev_fxpr_bare); 
+//    
+//    double mean_fxpr_grad=0,stdev_fxpr_grad=0;
+//    GetAverageFXPR(method,grad[0].time[probe],fxprList,fxprData,mean_fxpr_grad,stdev_fxpr_grad);
+// 
+//    // basically assuming the bare came last here intentionally 
+//    double drift = mean_fxpr_bare - mean_fxpr_grad;
+//    if(bare_came_first) drift *= -1; 
+// 
+//    // find DeltaB between the graphs, correcting for field drift  
+//    double arg_t=0,arg_f=0;
+//    std::vector<double> T,F; 
+//    int NPTS = (timeStop-timeStart)/timeStep;
+//    for(int i=0;i<NPTS;i++){
+//       arg_t = timeStart + i*timeStep;
+//       arg_f = gg->Eval(arg_t) - gb->Eval(arg_t) - drift;  
+//       T.push_back(arg_t);
+//       F.push_back(arg_f);
+//    }
+//   
+//    TGraph *gDeltaB = gm2fieldUtil::Graph::GetTGraph(T,F);
+//    return gDeltaB; 
+//  
+//    return 0; 
+// }

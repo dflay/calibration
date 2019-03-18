@@ -30,17 +30,16 @@
 #include "./include/sccEvent.h"
 #include "./include/nmr_meas.h" 
 
+#include "./src/BlindFuncs.C"
 #include "./src/InputManager.C"
 #include "./src/FitFuncs.C"
-#include "./src/FXPRFuncs.C"
 #include "./src/TRLYFuncs.C"
 #include "./src/CalibFuncs.C"
-#include "./src/Consolidate.C"
 #include "./src/CustomUtilities.C"
-#include "./src/CustomMath.C"
-#include "./src/CustomGraph.C"
 #include "./src/CustomImport.C"
 #include "./src/CustomExport.C"
+#include "./src/CustomMath.C"
+#include "./src/CustomGraph.C"
 #include "./src/CustomAlgorithms.C"
 
 double gMarkerSize = 0.8; 
@@ -55,17 +54,20 @@ int PrintToFile(std::string outpath,std::vector<calibSwap_t> data);
 int Process_pp_prod(std::string configFile){
 
    int rc=0;
-   int method = gm2fieldUtil::Constants::kPhaseDerivative;
+   int prMethod = gm2fieldUtil::Constants::kPhaseDerivative;
+   int ppMethod = plungingProbeAnalysis::kLeastSquaresPhase;
 
    InputManager *inputMgr = new InputManager();
    inputMgr->Load(configFile);
    inputMgr->Print();
 
-   std::string anaDate    = inputMgr->GetAnalysisDate();
-   std::string blindLabel = inputMgr->GetBlindLabel(); 
-   bool isBlind           = inputMgr->IsBlind();
-   int probeNumber        = inputMgr->GetTrolleyProbe();
-   int runPeriod          = inputMgr->GetRunPeriod();  
+   std::string prodVersion = inputMgr->GetProductionTag();
+   std::string anaDate     = inputMgr->GetAnalysisDate();
+   std::string blindLabel  = inputMgr->GetBlindLabel();
+ 
+   bool isBlind            = inputMgr->IsBlind();
+   int probeNumber         = inputMgr->GetTrolleyProbe();
+   int runPeriod           = inputMgr->GetRunPeriod();  
 
    date_t theDate;
    GetDate(theDate);
@@ -101,15 +103,11 @@ int Process_pp_prod(std::string configFile){
    int NPP=0; 
    for(int i=0;i<NRUNS;i++){
       std::cout << "Getting PP data for run " << run[i] << "..." << std::endl;
-      rc = GetPlungingProbeData(run[i],method,ppData);
+      rc = GetPlungingProbeData(run[i],prMethod,ppMethod,ppData,prodVersion);
       if(rc!=0){
 	 std::cout << "No data!" << std::endl;
 	 return 1;
       }
-      // bring in your frequencies 
-      NPP = ppData.size();
-      for(int j=0;j<NPP;j++) rc = ModifyPlungingProbeData(kLeastSquaresPhase,ppData[j]);
-      std::cout << "--> Done." << std::endl;
    }
 
    if(isBlind) ApplyBlindingPP(blindValue,ppData);

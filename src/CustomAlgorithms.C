@@ -1,5 +1,98 @@
 #include "../include/CustomAlgorithms.h"
 //______________________________________________________________________________
+int CopyTrolleyProbe(std::vector<trolleyAnaEvent_t> x,std::vector<trolleyAnaEvent_t> &y){
+   // copy a trolley probe vector to a new one 
+   trolleyAnaEvent_t data;
+   const int N = x.size();
+   if(N==0){
+      std::cout << "[CopyTrolleyProbe]: No data!" << std::endl;
+      return 1;
+   }
+   for(int i=0;i<N;i++){
+      for(int j=0;j<NUM_TRLY;j++){
+         data.time[j] = x[i].time[j];
+         data.freq[j] = x[i].freq[j];
+         data.r[j]    = x[i].r[j];
+         data.y[j]    = x[i].y[j];
+         data.phi[j]  = x[i].phi[j];
+         data.temp[j] = x[i].temp[j];
+      }
+      y.push_back(data);
+   }
+   return 0;
+}
+//______________________________________________________________________________
+int CopyPlungingProbe(plungingProbeAnaEvent_t x,plungingProbeAnaEvent_t &y){
+   // copy a plunging probe vector to a new one 
+   int M = x.numTraces;
+   y.numTraces = M;
+   y.run = x.run;
+   for(int i=0;i<M;i++){
+      y.time[i]     = x.time[i];
+      y.freq_LO[i]  = x.freq_LO[i];
+      y.freq_RF[i]  = x.freq_RF[i];
+      y.freq[i]     = x.freq[i];
+      y.freq_err[i] = x.freq_err[i];
+      y.r[i]        = x.r[i];
+      y.y[i]        = x.y[i];
+      y.phi[i]      = x.phi[i];
+      y.temp[i]     = x.temp[i];
+      y.temp_err[i] = x.temp_err[i];
+   }
+   return 0;
+}
+//______________________________________________________________________________
+int CopyPlungingProbe(std::vector<plungingProbeAnaEvent_t> x,std::vector<plungingProbeAnaEvent_t> &y){
+   // copy a plunging probe vector to a new one 
+   plungingProbeAnaEvent_t data;
+   int M=0;
+   const int N = x.size();
+   if(N==0){
+      std::cout << "[CopyPlungingProbe]: No data!" << std::endl;
+      return 1;
+   }
+   for(int i=0;i<N;i++){
+      M = x[i].numTraces;
+      data.numTraces = M;
+      data.run = x[i].run;
+      for(int j=0;j<M;j++){
+         data.time[j]     = x[i].time[j];
+         data.freq_LO[j]  = x[i].freq_LO[j];
+         data.freq_RF[j]  = x[i].freq_RF[j];
+         data.freq[j]     = x[i].freq[j];
+         data.freq_err[j] = x[i].freq_err[j];
+         data.r[j]        = x[i].r[j];
+         data.y[j]        = x[i].y[j];
+         data.phi[j]      = x[i].phi[j];
+         data.temp[j]     = x[i].temp[j];
+         data.temp_err[j] = x[i].temp_err[j];
+      }
+      y.push_back(data);
+   }
+   return 0;
+}
+//______________________________________________________________________________
+int FilterPlungingProbeData(std::vector<int> subRun,
+                            std::vector<plungingProbeAnaEvent_t> x,
+                            std::vector<plungingProbeAnaEvent_t> &y){
+   // copy over events from vector x into vector y 
+   // that correspond to the proper runs listed in subRun (NMR-DAQ runs) 
+   int nmrDAQ_run=0;
+   const int N = x.size();
+   const int M = subRun.size();
+   plungingProbeAnaEvent_t data;
+   for(int i=0;i<N;i++){
+      nmrDAQ_run = x[i].run;
+      for(int j=0;j<M;j++){
+         if(nmrDAQ_run==subRun[j]){
+            CopyPlungingProbe(x[i],data);
+            y.push_back(data);
+         }
+      }
+   }
+   return 0;
+}
+//______________________________________________________________________________
 int GetWeightedAverageStats(std::vector<double> x,std::vector<double> dx,double &mean,double &err,double &stdev){
    // get weighted mean, stdev of a data set x +/- dx
    double arg=0;
@@ -244,7 +337,7 @@ int FindTRLYStopTimes(int probe,double angle,std::vector<trolleyAnaEvent_t> trly
 //    return rc;  
 // }
 //______________________________________________________________________________
-int FindTransitionTimes(int type,int gradType,double thr,double delta,std::vector<gm2field::surfaceCoils_t> data,
+int FindTransitionTimes(int type,int gradType,double thr,double delta,std::vector<surfaceCoilEvent_t> data,
                         std::vector<double> &timeOff,std::vector<double> &timeOn){
    // find the transition times of turning off and on the surface coils 
    // use the sum of the coils to determine if they're on or off 
@@ -709,80 +802,80 @@ int CorrectPPForDriftDuringMeasurement(int method,TF1 *fxprFit,
 
    return 0;
 }
-//______________________________________________________________________________
-int CorrectPPForDriftDuringMeasurement(std::vector<fixedProbeEvent_t> fxprData,
-                                       plungingProbeAnaEvent_t ppEvent,plungingProbeAnaEvent_t &ppEventCor,bool isScan){
-   // correct the PP data for drift as monitored by the fixed probes
-   // uses a fit to the fixed probes 
-
-   // copy over all data into the new vector 
-   CopyPlungingProbe(ppEvent,ppEventCor);
-
-   double drift=0,fxpr0=0,mean_fxpr=0,stdev_fxpr=0,freq_cor=0;
-   GetAverageFXPR(ppEvent.time[0]/1E+9,fxprData,fxpr0,stdev_fxpr); 
-
-   // std::cout << "CORRECTING RUN " << ppEvent.run << std::endl; 
-   const int M = ppEvent.numTraces;
-   for(int i=0;i<M;i++){
-      GetAverageFXPR(ppEvent.time[i]/1E+9,fxprData,mean_fxpr,stdev_fxpr); 
-      // compute drift: take difference in current fxpr freq and subtract starting fxpr freq  
-      drift    = mean_fxpr - fxpr0;
-      freq_cor = ppEvent.freq[i] - drift;
-      // update PP frequency 
-      ppEventCor.freq[i] = freq_cor;
-      // std::cout << "time = "          << Form("%s",gm2fieldUtil::GetStringTimeStampFromUTC(ppEvent.time[i]/1E+9 ).c_str() )  << " "
-      //           << "temp = "          << Form("%.3lf deg C",ppEvent.temp[i])  << " "
-      //           // << "pos (mm) = "      << Form("(%.3lf,%.3lf,%.3lf)",ppEvent.r[i],ppEvent.y[i],ppEvent.phi[i]) << " "
-      //           << "pp freq = "       << Form("%.3lf Hz",ppEvent.freq[i]) << " " 
-      //           << "fxpr = "          << Form("%.3lf Hz",mean_fxpr)          << " " 
-      //           << "drift = "         << Form("%.3lf Hz",drift)              << " " 
-      //           << "pp freq (cor) = " << Form("%.3lf Hz",freq_cor)       << std::endl; 
-   }
-   // std::cout << "--------------------" << std::endl;
-
-   return 0;
-}
-//______________________________________________________________________________
-int CorrectPPForDriftDuringMeasurement(std::vector<fixedProbeEvent_t> fxprData,
-                                       std::vector<plungingProbeAnaEvent_t> ppEvent,
-                                       std::vector<plungingProbeAnaEvent_t> &ppEventCor,
-                                       bool isScan){
-   // correct the PP data for drift as monitored by the fixed probes
-   // uses the average field seen by fixed probes 
-
-   // copy over all data into the new vector 
-   CopyPlungingProbe(ppEvent,ppEventCor);
-
-   double drift=0,fxpr0=0,mean_fxpr=0,stdev_fxpr=0,freq_cor=0;
-   GetAverageFXPR(ppEvent[0].time[0]/1E+9,fxprData,fxpr0,stdev_fxpr); 
-   // std::cout << "fxpr0 = " << Form("%.3lf",fxpr0) << std::endl; 
-
-   int M=0;
-   const int NPP = ppEvent.size();
-   for(int i=0;i<NPP;i++){
-      // std::cout << "RUN " << Form("%d",ppEvent[i].run)  << std::endl; 
-      M = ppEvent[i].numTraces;
-      for(int j=0;j<M;j++){ 
-         if(isScan && j==0) GetAverageFXPR(ppEvent[i].time[j]/1E+9,fxprData,fxpr0,stdev_fxpr); 
-	 GetAverageFXPR(ppEvent[i].time[j]/1E+9,fxprData,mean_fxpr,stdev_fxpr); 
-         // compute drift: take difference in current fxpr freq and subtract starting fxpr freq  
-         drift    = mean_fxpr - fxpr0;
-         freq_cor = ppEvent[i].freq[j] - drift;
-         // update PP frequency 
-         ppEventCor[i].freq[j] = freq_cor;
-         // std::cout << "time = "          << Form("%s",gm2fieldUtil::GetStringTimeStampFromUTC(ppEvent[i].time[j]/1E+9 ).c_str() )  << " "
-         //           << "temp = "          << Form("%.3lf deg C",ppEvent[i].temp[j])  << " "
-         //           // << "pos (mm) = "      << Form("(%.3lf,%.3lf,%.3lf)",ppEvent[i].r[j],ppEvent[i].y[j],ppEvent[i].phi[j]) << " "
-         //           << "pp freq = "       << Form("%.3lf Hz",ppEvent[i].freq[j]) << " " 
-         //           << "fxpr = "          << Form("%.3lf Hz",mean_fxpr)          << " " 
-         //           << "drift = "         << Form("%.3lf Hz",drift)              << " " 
-         //           << "pp freq (cor) = " << Form("%.3lf Hz",freq_cor)       << std::endl; 
-      }
-      // std::cout << "--------------------" << std::endl;
-   }
-
-   return 0;
-}
+// //______________________________________________________________________________
+// int CorrectPPForDriftDuringMeasurement(std::vector<fixedProbeEvent_t> fxprData,
+//                                        plungingProbeAnaEvent_t ppEvent,plungingProbeAnaEvent_t &ppEventCor,bool isScan){
+//    // correct the PP data for drift as monitored by the fixed probes
+//    // uses a fit to the fixed probes 
+// 
+//    // copy over all data into the new vector 
+//    CopyPlungingProbe(ppEvent,ppEventCor);
+// 
+//    double drift=0,fxpr0=0,mean_fxpr=0,stdev_fxpr=0,freq_cor=0;
+//    GetAverageFXPR(ppEvent.time[0]/1E+9,fxprData,fxpr0,stdev_fxpr); 
+// 
+//    // std::cout << "CORRECTING RUN " << ppEvent.run << std::endl; 
+//    const int M = ppEvent.numTraces;
+//    for(int i=0;i<M;i++){
+//       GetAverageFXPR(ppEvent.time[i]/1E+9,fxprData,mean_fxpr,stdev_fxpr); 
+//       // compute drift: take difference in current fxpr freq and subtract starting fxpr freq  
+//       drift    = mean_fxpr - fxpr0;
+//       freq_cor = ppEvent.freq[i] - drift;
+//       // update PP frequency 
+//       ppEventCor.freq[i] = freq_cor;
+//       // std::cout << "time = "          << Form("%s",gm2fieldUtil::GetStringTimeStampFromUTC(ppEvent.time[i]/1E+9 ).c_str() )  << " "
+//       //           << "temp = "          << Form("%.3lf deg C",ppEvent.temp[i])  << " "
+//       //           // << "pos (mm) = "      << Form("(%.3lf,%.3lf,%.3lf)",ppEvent.r[i],ppEvent.y[i],ppEvent.phi[i]) << " "
+//       //           << "pp freq = "       << Form("%.3lf Hz",ppEvent.freq[i]) << " " 
+//       //           << "fxpr = "          << Form("%.3lf Hz",mean_fxpr)          << " " 
+//       //           << "drift = "         << Form("%.3lf Hz",drift)              << " " 
+//       //           << "pp freq (cor) = " << Form("%.3lf Hz",freq_cor)       << std::endl; 
+//    }
+//    // std::cout << "--------------------" << std::endl;
+// 
+//    return 0;
+// }
+// //______________________________________________________________________________
+// int CorrectPPForDriftDuringMeasurement(std::vector<fixedProbeEvent_t> fxprData,
+//                                        std::vector<plungingProbeAnaEvent_t> ppEvent,
+//                                        std::vector<plungingProbeAnaEvent_t> &ppEventCor,
+//                                        bool isScan){
+//    // correct the PP data for drift as monitored by the fixed probes
+//    // uses the average field seen by fixed probes 
+// 
+//    // copy over all data into the new vector 
+//    CopyPlungingProbe(ppEvent,ppEventCor);
+// 
+//    double drift=0,fxpr0=0,mean_fxpr=0,stdev_fxpr=0,freq_cor=0;
+//    GetAverageFXPR(ppEvent[0].time[0]/1E+9,fxprData,fxpr0,stdev_fxpr); 
+//    // std::cout << "fxpr0 = " << Form("%.3lf",fxpr0) << std::endl; 
+// 
+//    int M=0;
+//    const int NPP = ppEvent.size();
+//    for(int i=0;i<NPP;i++){
+//       // std::cout << "RUN " << Form("%d",ppEvent[i].run)  << std::endl; 
+//       M = ppEvent[i].numTraces;
+//       for(int j=0;j<M;j++){ 
+//          if(isScan && j==0) GetAverageFXPR(ppEvent[i].time[j]/1E+9,fxprData,fxpr0,stdev_fxpr); 
+// 	 GetAverageFXPR(ppEvent[i].time[j]/1E+9,fxprData,mean_fxpr,stdev_fxpr); 
+//          // compute drift: take difference in current fxpr freq and subtract starting fxpr freq  
+//          drift    = mean_fxpr - fxpr0;
+//          freq_cor = ppEvent[i].freq[j] - drift;
+//          // update PP frequency 
+//          ppEventCor[i].freq[j] = freq_cor;
+//          // std::cout << "time = "          << Form("%s",gm2fieldUtil::GetStringTimeStampFromUTC(ppEvent[i].time[j]/1E+9 ).c_str() )  << " "
+//          //           << "temp = "          << Form("%.3lf deg C",ppEvent[i].temp[j])  << " "
+//          //           // << "pos (mm) = "      << Form("(%.3lf,%.3lf,%.3lf)",ppEvent[i].r[j],ppEvent[i].y[j],ppEvent[i].phi[j]) << " "
+//          //           << "pp freq = "       << Form("%.3lf Hz",ppEvent[i].freq[j]) << " " 
+//          //           << "fxpr = "          << Form("%.3lf Hz",mean_fxpr)          << " " 
+//          //           << "drift = "         << Form("%.3lf Hz",drift)              << " " 
+//          //           << "pp freq (cor) = " << Form("%.3lf Hz",freq_cor)       << std::endl; 
+//       }
+//       // std::cout << "--------------------" << std::endl;
+//    }
+// 
+//    return 0;
+// }
 //______________________________________________________________________________
 int CorrectPPForDriftDuringMeasurement(int method,TF1 *fxprFit,
                                        std::vector<plungingProbeAnaEvent_t> ppEvent,std::vector<plungingProbeAnaEvent_t> &ppEventCor){
@@ -821,74 +914,74 @@ int CorrectPPForDriftDuringMeasurement(int method,TF1 *fxprFit,
 
    return 0;
 }
-//______________________________________________________________________________
-int CorrectPPForDriftDuringMeasurement(int method,std::vector<int> fxprList,std::vector<gm2field::fixedProbeFrequency_t> fxprData,
-                                       plungingProbeAnaEvent_t ppEvent,plungingProbeAnaEvent_t &ppEventCor){
-   // correct the PP data for drift as monitored by the fixed probes 
-
-   // copy over all data into the new vector 
-   CopyPlungingProbe(ppEvent,ppEventCor);
-
-   double drift=0,fxpr0=0,mean_fxpr=0,stdev_fxpr=0,freq_cor=0;
-   GetAverageFXPR(method,ppEvent.time[0],fxprList,fxprData,fxpr0,stdev_fxpr); 
-   // std::cout << "fxpr0 = " << Form("%.3lf",fxpr0) << std::endl; 
-
-   const int M = ppEvent.numTraces;
-   for(int i=0;i<M;i++){
-      GetAverageFXPR(method,ppEvent.time[i],fxprList,fxprData,mean_fxpr,stdev_fxpr);
-      // compute drift: take difference in current fxpr freq and subtract starting fxpr freq  
-      drift    = mean_fxpr - fxpr0;
-      freq_cor = ppEvent.freq[i] - drift;
-      // update PP frequency 
-      ppEventCor.freq[i] = freq_cor;
-      // std::cout << "time = "          << Form("%s",gm2fieldUtil::GetStringTimeStampFromUTC(ppEvent[i].time[j]/1E+9 ).c_str() )  << " "
-      //           << "temp = "          << Form("%.3lf deg C",ppEvent[i].temp[j])  << " "
-      //           // << "pos (mm) = "      << Form("(%.3lf,%.3lf,%.3lf)",ppEvent[i].r[j],ppEvent[i].y[j],ppEvent[i].phi[j]) << " "
-      //           << "pp freq = "       << Form("%.3lf Hz",ppEvent[i].freq[j]) << " " 
-      //           << "fxpr = "          << Form("%.3lf Hz",mean_fxpr)          << " " 
-      //           << "drift = "         << Form("%.3lf Hz",drift)              << " " 
-      //           << "pp freq (cor) = " << Form("%.3lf Hz",freq_cor)       << std::endl; 
-   }
-
-   return 0;
-}
-//______________________________________________________________________________
-int CorrectPPForDriftDuringMeasurement(int method,std::vector<int> fxprList,std::vector<gm2field::fixedProbeFrequency_t> fxprData,
-                                       std::vector<plungingProbeAnaEvent_t> ppEvent,std::vector<plungingProbeAnaEvent_t> &ppEventCor){
-   // correct the PP data for drift as monitored by the fixed probes 
-
-   // copy over all data into the new vector 
-   CopyPlungingProbe(ppEvent,ppEventCor);
-
-   double drift=0,fxpr0=0,mean_fxpr=0,stdev_fxpr=0,freq_cor=0;
-   GetAverageFXPR(method,ppEvent[0].time[0],fxprList,fxprData,fxpr0,stdev_fxpr); 
-   // std::cout << "fxpr0 = " << Form("%.3lf",fxpr0) << std::endl; 
-
-   int M=0;
-   const int NPP = ppEvent.size();
-   for(int i=0;i<NPP;i++){
-      // std::cout << "RUN " << Form("%d",ppEvent[i].run)  << std::endl; 
-      M = ppEvent[i].numTraces;
-      for(int j=0;j<M;j++){
-         GetAverageFXPR(method,ppEvent[i].time[j],fxprList,fxprData,mean_fxpr,stdev_fxpr);
-         // compute drift: take difference in current fxpr freq and subtract starting fxpr freq  
-         drift    = mean_fxpr - fxpr0;
-         freq_cor = ppEvent[i].freq[j] - drift;
-         // update PP frequency 
-         ppEventCor[i].freq[j] = freq_cor;
-         // std::cout << "time = "          << Form("%s",gm2fieldUtil::GetStringTimeStampFromUTC(ppEvent[i].time[j]/1E+9 ).c_str() )  << " "
-         //           << "temp = "          << Form("%.3lf deg C",ppEvent[i].temp[j])  << " "
-         //           // << "pos (mm) = "      << Form("(%.3lf,%.3lf,%.3lf)",ppEvent[i].r[j],ppEvent[i].y[j],ppEvent[i].phi[j]) << " "
-         //           << "pp freq = "       << Form("%.3lf Hz",ppEvent[i].freq[j]) << " " 
-         //           << "fxpr = "          << Form("%.3lf Hz",mean_fxpr)          << " " 
-         //           << "drift = "         << Form("%.3lf Hz",drift)              << " " 
-         //           << "pp freq (cor) = " << Form("%.3lf Hz",freq_cor)       << std::endl; 
-      }
-      // std::cout << "--------------------" << std::endl;
-   }
-
-   return 0;
-}
+// //______________________________________________________________________________
+// int CorrectPPForDriftDuringMeasurement(int method,std::vector<int> fxprList,std::vector<gm2field::fixedProbeFrequency_t> fxprData,
+//                                        plungingProbeAnaEvent_t ppEvent,plungingProbeAnaEvent_t &ppEventCor){
+//    // correct the PP data for drift as monitored by the fixed probes 
+// 
+//    // copy over all data into the new vector 
+//    CopyPlungingProbe(ppEvent,ppEventCor);
+// 
+//    double drift=0,fxpr0=0,mean_fxpr=0,stdev_fxpr=0,freq_cor=0;
+//    GetAverageFXPR(method,ppEvent.time[0],fxprList,fxprData,fxpr0,stdev_fxpr); 
+//    // std::cout << "fxpr0 = " << Form("%.3lf",fxpr0) << std::endl; 
+// 
+//    const int M = ppEvent.numTraces;
+//    for(int i=0;i<M;i++){
+//       GetAverageFXPR(method,ppEvent.time[i],fxprList,fxprData,mean_fxpr,stdev_fxpr);
+//       // compute drift: take difference in current fxpr freq and subtract starting fxpr freq  
+//       drift    = mean_fxpr - fxpr0;
+//       freq_cor = ppEvent.freq[i] - drift;
+//       // update PP frequency 
+//       ppEventCor.freq[i] = freq_cor;
+//       // std::cout << "time = "          << Form("%s",gm2fieldUtil::GetStringTimeStampFromUTC(ppEvent[i].time[j]/1E+9 ).c_str() )  << " "
+//       //           << "temp = "          << Form("%.3lf deg C",ppEvent[i].temp[j])  << " "
+//       //           // << "pos (mm) = "      << Form("(%.3lf,%.3lf,%.3lf)",ppEvent[i].r[j],ppEvent[i].y[j],ppEvent[i].phi[j]) << " "
+//       //           << "pp freq = "       << Form("%.3lf Hz",ppEvent[i].freq[j]) << " " 
+//       //           << "fxpr = "          << Form("%.3lf Hz",mean_fxpr)          << " " 
+//       //           << "drift = "         << Form("%.3lf Hz",drift)              << " " 
+//       //           << "pp freq (cor) = " << Form("%.3lf Hz",freq_cor)       << std::endl; 
+//    }
+// 
+//    return 0;
+// }
+// //______________________________________________________________________________
+// int CorrectPPForDriftDuringMeasurement(int method,std::vector<int> fxprList,std::vector<gm2field::fixedProbeFrequency_t> fxprData,
+//                                        std::vector<plungingProbeAnaEvent_t> ppEvent,std::vector<plungingProbeAnaEvent_t> &ppEventCor){
+//    // correct the PP data for drift as monitored by the fixed probes 
+// 
+//    // copy over all data into the new vector 
+//    CopyPlungingProbe(ppEvent,ppEventCor);
+// 
+//    double drift=0,fxpr0=0,mean_fxpr=0,stdev_fxpr=0,freq_cor=0;
+//    GetAverageFXPR(method,ppEvent[0].time[0],fxprList,fxprData,fxpr0,stdev_fxpr); 
+//    // std::cout << "fxpr0 = " << Form("%.3lf",fxpr0) << std::endl; 
+// 
+//    int M=0;
+//    const int NPP = ppEvent.size();
+//    for(int i=0;i<NPP;i++){
+//       // std::cout << "RUN " << Form("%d",ppEvent[i].run)  << std::endl; 
+//       M = ppEvent[i].numTraces;
+//       for(int j=0;j<M;j++){
+//          GetAverageFXPR(method,ppEvent[i].time[j],fxprList,fxprData,mean_fxpr,stdev_fxpr);
+//          // compute drift: take difference in current fxpr freq and subtract starting fxpr freq  
+//          drift    = mean_fxpr - fxpr0;
+//          freq_cor = ppEvent[i].freq[j] - drift;
+//          // update PP frequency 
+//          ppEventCor[i].freq[j] = freq_cor;
+//          // std::cout << "time = "          << Form("%s",gm2fieldUtil::GetStringTimeStampFromUTC(ppEvent[i].time[j]/1E+9 ).c_str() )  << " "
+//          //           << "temp = "          << Form("%.3lf deg C",ppEvent[i].temp[j])  << " "
+//          //           // << "pos (mm) = "      << Form("(%.3lf,%.3lf,%.3lf)",ppEvent[i].r[j],ppEvent[i].y[j],ppEvent[i].phi[j]) << " "
+//          //           << "pp freq = "       << Form("%.3lf Hz",ppEvent[i].freq[j]) << " " 
+//          //           << "fxpr = "          << Form("%.3lf Hz",mean_fxpr)          << " " 
+//          //           << "drift = "         << Form("%.3lf Hz",drift)              << " " 
+//          //           << "pp freq (cor) = " << Form("%.3lf Hz",freq_cor)       << std::endl; 
+//       }
+//       // std::cout << "--------------------" << std::endl;
+//    }
+// 
+//    return 0;
+// }
 //______________________________________________________________________________
 int CorrectPPForDriftDuringMeasurement(int method,std::vector<int> trlyList,std::vector<trolleyAnaEvent_t> trlyData,
                                        std::vector<plungingProbeAnaEvent_t> ppEvent,std::vector<plungingProbeAnaEvent_t> &ppEventCor){
@@ -929,79 +1022,79 @@ int CorrectPPForDriftDuringMeasurement(int method,std::vector<int> trlyList,std:
 
    return 0;
 }
-//______________________________________________________________________________
-int CorrectPPForDriftDuringMeasurementAlt(int method,std::vector<int> fxprList,std::vector<gm2field::fixedProbeFrequency_t> fxprData,
-                                          std::vector<plungingProbeAnaEvent_t> ppEvent,std::vector<plungingProbeAnaEvent_t> &ppEventCor,
-                                          std::vector<drift_t> &drift){
-   // correct the PP data for drift as monitored by the fixed probes 
-   double intercept=0,slope=0,r=0;
-   double mean_fxpr=0,stdev_fxpr=0;
-   std::vector<double> TIME,FREQ; // for fixed probe drift calc 
-
-   drift_t drift_calc;
-
-   double fxpr0=0;
-
-   int M=0;
-   const int NPP = ppEvent.size();
-   for(int i=0;i<NPP;i++){
-      std::cout << "RUN " << Form("%d",ppEvent[i].run)  << std::endl;
-      M = ppEvent[i].numTraces;
-      for(int j=0;j<M;j++){
-            GetAverageFXPR(method,ppEvent[i].time[j],fxprList,fxprData,mean_fxpr,stdev_fxpr);
-            TIME.push_back(ppEvent[i].time[j]/1E+9);
-            FREQ.push_back(mean_fxpr);
-            gm2fieldUtil::Math::LeastSquaresFitting(TIME,FREQ,intercept,slope,r);
-            // std::cout << "time = "      << Form("%s",gm2fieldUtil::GetStringTimeStampFromUTC(ppEvent[i].time[j]/1E+9 ).c_str() )  << " "
-            //           << "temp = "      << Form("%.3lf deg C",ppEvent[i].temp[j])  << " "
-            //           << "pos (mm) = "  << Form("(%.3lf,%.3lf,%.3lf)",ppEvent[i].r[j],ppEvent[i].y[j],ppEvent[i].phi[j]) << " "
-            //           << "pp freq = "   << Form("%.3lf Hz",ppEvent[i].freq[j]) << " "
-            //           << "fxpr freq = " << Form("%.3lf Hz",mean_fxpr)          << std::endl;
-      }
-      drift_calc.intercept = intercept;
-      drift_calc.slope     = slope;
-      drift.push_back(drift_calc);
-      // std::cout << "--------------------" << std::endl;
-      // clean up 
-      TIME.clear();
-      FREQ.clear();
-   }
-
-   // copy over all data into the new vector 
-   CopyPlungingProbe(ppEvent,ppEventCor);
-   double t0=0;
-   double freq_cor=0,mean_before=0,mean_after=0,stdev_before=0,stdev_after=0;
-   std::vector<double> fb,fa;
-   // apply correction for drift 
-   for(int i=0;i<NPP;i++){
-      M = ppEvent[i].numTraces;
-      std::cout << "RUN "     << ppEvent[i].run << std::endl;
-      std::cout << "DRIFT = " << Form("%.3lf Hz/sec",drift[i].slope) << std::endl;
-      for(int j=0;j<M;j++){
-         if(j==0) t0 = ppEvent[i].time[0];
-         freq_cor = ppEvent[i].freq[j] - drift[i].slope*(ppEvent[i].time[j]-t0)/1E+9;
-         std::cout << "time = "      << Form("%s",gm2fieldUtil::GetStringTimeStampFromUTC(ppEvent[i].time[j]/1E+9 ).c_str() )  << " "
-                   << "temp = "      << Form("%.3lf deg C",ppEvent[i].temp[j])  << " "
-                   << "pos (mm) = "  << Form("(%.3lf,%.3lf,%.3lf)",ppEvent[i].r[j],ppEvent[i].y[j],ppEvent[i].phi[j]) << " "
-                   << "pp freq = "   << Form("%.3lf Hz",ppEvent[i].freq[j]) << " " 
-                   << "pp freq cor = " << Form("%.3lf Hz",freq_cor)         << std::endl;
-         fb.push_back(ppEvent[i].freq[j]);
-         fa.push_back(freq_cor); 
-         // update the corrected event 
-         ppEventCor[i].freq[j] = freq_cor;
-      }  
-      mean_before  = gm2fieldUtil::Math::GetMean<double>(fb);
-      stdev_before = gm2fieldUtil::Math::GetStandardDeviation<double>(fb);
-      mean_after   = gm2fieldUtil::Math::GetMean<double>(fa);
-      stdev_after  = gm2fieldUtil::Math::GetStandardDeviation<double>(fa);
-      std::cout << "mean before = " << Form("%.3lf +/- %.3lf Hz",mean_before,stdev_before) << " "
-                << "mean after = " << Form("%.3lf +/- %.3lf Hz",mean_after,stdev_after) << std::endl;
-      fb.clear();
-      fa.clear();
-      std::cout << "--------------------" << std::endl;
-   }  
-   return 0;
-}
+// //______________________________________________________________________________
+// int CorrectPPForDriftDuringMeasurementAlt(int method,std::vector<int> fxprList,std::vector<gm2field::fixedProbeFrequency_t> fxprData,
+//                                           std::vector<plungingProbeAnaEvent_t> ppEvent,std::vector<plungingProbeAnaEvent_t> &ppEventCor,
+//                                           std::vector<drift_t> &drift){
+//    // correct the PP data for drift as monitored by the fixed probes 
+//    double intercept=0,slope=0,r=0;
+//    double mean_fxpr=0,stdev_fxpr=0;
+//    std::vector<double> TIME,FREQ; // for fixed probe drift calc 
+// 
+//    drift_t drift_calc;
+// 
+//    double fxpr0=0;
+// 
+//    int M=0;
+//    const int NPP = ppEvent.size();
+//    for(int i=0;i<NPP;i++){
+//       std::cout << "RUN " << Form("%d",ppEvent[i].run)  << std::endl;
+//       M = ppEvent[i].numTraces;
+//       for(int j=0;j<M;j++){
+//             GetAverageFXPR(method,ppEvent[i].time[j],fxprList,fxprData,mean_fxpr,stdev_fxpr);
+//             TIME.push_back(ppEvent[i].time[j]/1E+9);
+//             FREQ.push_back(mean_fxpr);
+//             gm2fieldUtil::Math::LeastSquaresFitting(TIME,FREQ,intercept,slope,r);
+//             // std::cout << "time = "      << Form("%s",gm2fieldUtil::GetStringTimeStampFromUTC(ppEvent[i].time[j]/1E+9 ).c_str() )  << " "
+//             //           << "temp = "      << Form("%.3lf deg C",ppEvent[i].temp[j])  << " "
+//             //           << "pos (mm) = "  << Form("(%.3lf,%.3lf,%.3lf)",ppEvent[i].r[j],ppEvent[i].y[j],ppEvent[i].phi[j]) << " "
+//             //           << "pp freq = "   << Form("%.3lf Hz",ppEvent[i].freq[j]) << " "
+//             //           << "fxpr freq = " << Form("%.3lf Hz",mean_fxpr)          << std::endl;
+//       }
+//       drift_calc.intercept = intercept;
+//       drift_calc.slope     = slope;
+//       drift.push_back(drift_calc);
+//       // std::cout << "--------------------" << std::endl;
+//       // clean up 
+//       TIME.clear();
+//       FREQ.clear();
+//    }
+// 
+//    // copy over all data into the new vector 
+//    CopyPlungingProbe(ppEvent,ppEventCor);
+//    double t0=0;
+//    double freq_cor=0,mean_before=0,mean_after=0,stdev_before=0,stdev_after=0;
+//    std::vector<double> fb,fa;
+//    // apply correction for drift 
+//    for(int i=0;i<NPP;i++){
+//       M = ppEvent[i].numTraces;
+//       std::cout << "RUN "     << ppEvent[i].run << std::endl;
+//       std::cout << "DRIFT = " << Form("%.3lf Hz/sec",drift[i].slope) << std::endl;
+//       for(int j=0;j<M;j++){
+//          if(j==0) t0 = ppEvent[i].time[0];
+//          freq_cor = ppEvent[i].freq[j] - drift[i].slope*(ppEvent[i].time[j]-t0)/1E+9;
+//          std::cout << "time = "      << Form("%s",gm2fieldUtil::GetStringTimeStampFromUTC(ppEvent[i].time[j]/1E+9 ).c_str() )  << " "
+//                    << "temp = "      << Form("%.3lf deg C",ppEvent[i].temp[j])  << " "
+//                    << "pos (mm) = "  << Form("(%.3lf,%.3lf,%.3lf)",ppEvent[i].r[j],ppEvent[i].y[j],ppEvent[i].phi[j]) << " "
+//                    << "pp freq = "   << Form("%.3lf Hz",ppEvent[i].freq[j]) << " " 
+//                    << "pp freq cor = " << Form("%.3lf Hz",freq_cor)         << std::endl;
+//          fb.push_back(ppEvent[i].freq[j]);
+//          fa.push_back(freq_cor); 
+//          // update the corrected event 
+//          ppEventCor[i].freq[j] = freq_cor;
+//       }  
+//       mean_before  = gm2fieldUtil::Math::GetMean<double>(fb);
+//       stdev_before = gm2fieldUtil::Math::GetStandardDeviation<double>(fb);
+//       mean_after   = gm2fieldUtil::Math::GetMean<double>(fa);
+//       stdev_after  = gm2fieldUtil::Math::GetStandardDeviation<double>(fa);
+//       std::cout << "mean before = " << Form("%.3lf +/- %.3lf Hz",mean_before,stdev_before) << " "
+//                 << "mean after = " << Form("%.3lf +/- %.3lf Hz",mean_after,stdev_after) << std::endl;
+//       fb.clear();
+//       fa.clear();
+//       std::cout << "--------------------" << std::endl;
+//    }  
+//    return 0;
+// }
 //______________________________________________________________________________
 int CorrectTRLYForDriftDuringMeasurement(int method,TF1 *fxprFit,
                                          std::vector<trolleyAnaEvent_t> Event,std::vector<trolleyAnaEvent_t> &EventCor){
@@ -1038,78 +1131,78 @@ int CorrectTRLYForDriftDuringMeasurement(int method,TF1 *fxprFit,
 
    return 0;
 }
-//______________________________________________________________________________
-int CorrectTRLYForDriftDuringMeasurement(std::vector<fixedProbeEvent_t> fxprData,
-                                         std::vector<trolleyAnaEvent_t> Event,std::vector<trolleyAnaEvent_t> &EventCor){
-   // correct the trolley data for drift as monitored by the fixed probes
-
-   // copy over all data into the new vector 
-   CopyTrolleyProbe(Event,EventCor);
-
-   double drift=0,fxpr0=0,mean_fxpr=0,stdev_fxpr=0,freq_cor=0;
-   
-   std::cout << "Using fixed probe data" << std::endl;
-
-   // for drift correction, reference the first event on probe 0 -- that's the start of the run 
-   GetAverageFXPR(Event[0].time[0]/1E+9,fxprData,fxpr0,stdev_fxpr);
-  
-   const int NTR = Event.size();
-   std::cout << "Processing " << NTR << " events" << std::endl;
-   for(int i=0;i<NUM_TRLY;i++){  // trolley probe
-      for(int j=0;j<NTR;j++){    // event number
-            GetAverageFXPR(Event[j].time[i]/1E+9,fxprData,mean_fxpr,stdev_fxpr);
-            // compute drift: take difference in current fxpr freq and subtract starting fxpr freq  
-            drift    = mean_fxpr - fxpr0;
-            freq_cor = Event[j].freq[i] - drift;
-            EventCor[j].freq[i] = freq_cor;      // update TRLY frequency 
-            // std::cout << "time = "            << Form("%s",gm2fieldUtil::GetStringTimeStampFromUTC(Event[j].time[i]/1E+9 ).c_str() )  << " "
-            //           << "temp = "            << Form("%.3lf deg C",Event[j].temp[i]) << " "
-            //           // << "pos (mm,mm,deg) = " << Form("(%.3lf,%.3lf,%.3lf)",Event[j].r[i],Event[j].y[i],Event[j].phi[i]) << " "
-            //           << "trly freq = "       << Form("%.3lf Hz",Event[j].freq[i])    << " "
-            //           << "drift = "           << Form("%.3lf Hz",drift)               << " "
-            //           << "trly freq (cor) = " << Form("%.3lf Hz",freq_cor)            << std::endl;
-      }
-      std::cout << "Finished probe " << i+1 <<" --------------------" << std::endl;
-   }
-
-   return 0;
-} 
-//______________________________________________________________________________
-int CorrectTRLYForDriftDuringMeasurement(int method,std::vector<int> fxprList,std::vector<gm2field::fixedProbeFrequency_t> fxprData,
-                                         std::vector<trolleyAnaEvent_t> Event,std::vector<trolleyAnaEvent_t> &EventCor){
-   // correct the trolley data for drift as monitored by the fixed probes
-
-   // copy over all data into the new vector 
-   CopyTrolleyProbe(Event,EventCor);
-
-   double drift=0,fxpr0=0,mean_fxpr=0,stdev_fxpr=0,freq_cor=0;
-   
-   std::cout << "Using fixed probe data" << std::endl;
-
-   // for drift correction, reference the first event on probe 0 -- that's the start of the run 
-   GetAverageFXPR(method,Event[0].time[0],fxprList,fxprData,fxpr0,stdev_fxpr);
-  
-   const int NTR = Event.size();
-   std::cout << "Processing " << NTR << " events" << std::endl;
-   for(int i=0;i<NUM_TRLY;i++){  // trolley probe
-      for(int j=0;j<NTR;j++){    // event number
-            GetAverageFXPR(method,Event[j].time[i],fxprList,fxprData,mean_fxpr,stdev_fxpr);
-            // compute drift: take difference in current fxpr freq and subtract starting fxpr freq  
-            drift    = mean_fxpr - fxpr0;
-            freq_cor = Event[j].freq[i] - drift;
-            EventCor[j].freq[i] = freq_cor;      // update TRLY frequency 
-            // std::cout << "time = "            << Form("%s",gm2fieldUtil::GetStringTimeStampFromUTC(Event[j].time[i]/1E+9 ).c_str() )  << " "
-            //           << "temp = "            << Form("%.3lf deg C",Event[j].temp[i]) << " "
-            //           // << "pos (mm,mm,deg) = " << Form("(%.3lf,%.3lf,%.3lf)",Event[j].r[i],Event[j].y[i],Event[j].phi[i]) << " "
-            //           << "trly freq = "       << Form("%.3lf Hz",Event[j].freq[i])    << " "
-            //           << "drift = "           << Form("%.3lf Hz",drift)               << " "
-            //           << "trly freq (cor) = " << Form("%.3lf Hz",freq_cor)            << std::endl;
-      }
-      std::cout << "Finished probe " << i+1 <<" --------------------" << std::endl;
-   }
-
-   return 0;
-}
+// //______________________________________________________________________________
+// int CorrectTRLYForDriftDuringMeasurement(std::vector<fixedProbeEvent_t> fxprData,
+//                                          std::vector<trolleyAnaEvent_t> Event,std::vector<trolleyAnaEvent_t> &EventCor){
+//    // correct the trolley data for drift as monitored by the fixed probes
+// 
+//    // copy over all data into the new vector 
+//    CopyTrolleyProbe(Event,EventCor);
+// 
+//    double drift=0,fxpr0=0,mean_fxpr=0,stdev_fxpr=0,freq_cor=0;
+//    
+//    std::cout << "Using fixed probe data" << std::endl;
+// 
+//    // for drift correction, reference the first event on probe 0 -- that's the start of the run 
+//    GetAverageFXPR(Event[0].time[0]/1E+9,fxprData,fxpr0,stdev_fxpr);
+//   
+//    const int NTR = Event.size();
+//    std::cout << "Processing " << NTR << " events" << std::endl;
+//    for(int i=0;i<NUM_TRLY;i++){  // trolley probe
+//       for(int j=0;j<NTR;j++){    // event number
+//             GetAverageFXPR(Event[j].time[i]/1E+9,fxprData,mean_fxpr,stdev_fxpr);
+//             // compute drift: take difference in current fxpr freq and subtract starting fxpr freq  
+//             drift    = mean_fxpr - fxpr0;
+//             freq_cor = Event[j].freq[i] - drift;
+//             EventCor[j].freq[i] = freq_cor;      // update TRLY frequency 
+//             // std::cout << "time = "            << Form("%s",gm2fieldUtil::GetStringTimeStampFromUTC(Event[j].time[i]/1E+9 ).c_str() )  << " "
+//             //           << "temp = "            << Form("%.3lf deg C",Event[j].temp[i]) << " "
+//             //           // << "pos (mm,mm,deg) = " << Form("(%.3lf,%.3lf,%.3lf)",Event[j].r[i],Event[j].y[i],Event[j].phi[i]) << " "
+//             //           << "trly freq = "       << Form("%.3lf Hz",Event[j].freq[i])    << " "
+//             //           << "drift = "           << Form("%.3lf Hz",drift)               << " "
+//             //           << "trly freq (cor) = " << Form("%.3lf Hz",freq_cor)            << std::endl;
+//       }
+//       std::cout << "Finished probe " << i+1 <<" --------------------" << std::endl;
+//    }
+// 
+//    return 0;
+// } 
+// //______________________________________________________________________________
+// int CorrectTRLYForDriftDuringMeasurement(int method,std::vector<int> fxprList,std::vector<gm2field::fixedProbeFrequency_t> fxprData,
+//                                          std::vector<trolleyAnaEvent_t> Event,std::vector<trolleyAnaEvent_t> &EventCor){
+//    // correct the trolley data for drift as monitored by the fixed probes
+// 
+//    // copy over all data into the new vector 
+//    CopyTrolleyProbe(Event,EventCor);
+// 
+//    double drift=0,fxpr0=0,mean_fxpr=0,stdev_fxpr=0,freq_cor=0;
+//    
+//    std::cout << "Using fixed probe data" << std::endl;
+// 
+//    // for drift correction, reference the first event on probe 0 -- that's the start of the run 
+//    GetAverageFXPR(method,Event[0].time[0],fxprList,fxprData,fxpr0,stdev_fxpr);
+//   
+//    const int NTR = Event.size();
+//    std::cout << "Processing " << NTR << " events" << std::endl;
+//    for(int i=0;i<NUM_TRLY;i++){  // trolley probe
+//       for(int j=0;j<NTR;j++){    // event number
+//             GetAverageFXPR(method,Event[j].time[i],fxprList,fxprData,mean_fxpr,stdev_fxpr);
+//             // compute drift: take difference in current fxpr freq and subtract starting fxpr freq  
+//             drift    = mean_fxpr - fxpr0;
+//             freq_cor = Event[j].freq[i] - drift;
+//             EventCor[j].freq[i] = freq_cor;      // update TRLY frequency 
+//             // std::cout << "time = "            << Form("%s",gm2fieldUtil::GetStringTimeStampFromUTC(Event[j].time[i]/1E+9 ).c_str() )  << " "
+//             //           << "temp = "            << Form("%.3lf deg C",Event[j].temp[i]) << " "
+//             //           // << "pos (mm,mm,deg) = " << Form("(%.3lf,%.3lf,%.3lf)",Event[j].r[i],Event[j].y[i],Event[j].phi[i]) << " "
+//             //           << "trly freq = "       << Form("%.3lf Hz",Event[j].freq[i])    << " "
+//             //           << "drift = "           << Form("%.3lf Hz",drift)               << " "
+//             //           << "trly freq (cor) = " << Form("%.3lf Hz",freq_cor)            << std::endl;
+//       }
+//       std::cout << "Finished probe " << i+1 <<" --------------------" << std::endl;
+//    }
+// 
+//    return 0;
+// }
 //______________________________________________________________________________
 int CorrectTRLYForDriftDuringMeasurement(int method,std::vector<int> trlyList,std::vector<trolleyAnaEvent_t> trlyData,
                                          std::vector<trolleyAnaEvent_t> Event,std::vector<trolleyAnaEvent_t> &EventCor){
@@ -1203,29 +1296,29 @@ int CalculateAveragePP(std::vector<plungingProbeAnaEvent_t> ppData,double &B,dou
 
    return 0;
 }
-//______________________________________________________________________________
-int CalculateAveragePP(int method,std::vector<int> fxprList,std::vector<gm2field::fixedProbeFrequency_t> fxprData,
-                       std::vector<plungingProbeAnaEvent_t> ppData,double &B,double &B_err){
-   // compute the average PP data
-   // sum over all events  
-   int M=0;
-   const int N = ppData.size();  // number of runs 
-   double arg=0;
-   std::vector<double> x; 
-   for(int i=0;i<N;i++){
-      M = ppData[i].numTraces;
-      for(int j=0;j<M;j++){
-         arg = ppData[i].freq_LO[i] + ppData[i].freq[j];
-	 x.push_back(arg); 
-      }
-   }
-
-   // assign to output container 
-   B     = gm2fieldUtil::Math::GetMean<double>(x);
-   B_err = gm2fieldUtil::Math::GetStandardDeviation<double>(x);  // FIXME: does this make sense?   
-
-   return 0;
-}
+// //______________________________________________________________________________
+// int CalculateAveragePP(int method,std::vector<int> fxprList,std::vector<gm2field::fixedProbeFrequency_t> fxprData,
+//                        std::vector<plungingProbeAnaEvent_t> ppData,double &B,double &B_err){
+//    // compute the average PP data
+//    // sum over all events  
+//    int M=0;
+//    const int N = ppData.size();  // number of runs 
+//    double arg=0;
+//    std::vector<double> x; 
+//    for(int i=0;i<N;i++){
+//       M = ppData[i].numTraces;
+//       for(int j=0;j<M;j++){
+//          arg = ppData[i].freq_LO[i] + ppData[i].freq[j];
+// 	 x.push_back(arg); 
+//       }
+//    }
+// 
+//    // assign to output container 
+//    B     = gm2fieldUtil::Math::GetMean<double>(x);
+//    B_err = gm2fieldUtil::Math::GetStandardDeviation<double>(x);  // FIXME: does this make sense?   
+// 
+//    return 0;
+// }
 //______________________________________________________________________________
 int CalculateAveragePP(bool isDriftCor,int method,std::vector<int> trlyList,std::vector<trolleyAnaEvent_t> trlyData,
                        std::vector<plungingProbeAnaEvent_t> ppData,double &B,double &B_err){
@@ -1335,117 +1428,117 @@ int FindTrolleyEvent(unsigned long long time, std::vector<trolleyAnaEvent_t> trl
 
    return Tevent;
 }
-//______________________________________________________________________________
-TGraph *GetDriftTGraph(int method,std::vector<int> driftRun,std::vector<int> fxprList,
-                       std::vector<double> &stats){
-
-   const int ND = driftRun.size(); 
-   int rc=0,M=0,startIndex=0,stopIndex=0;
-   unsigned long long aTime;
-   std::vector<unsigned long long> runStart,runStop;
-   std::vector<gm2field::fixedProbeFrequency_t> fxprData;
-
-   for(int i=0;i<ND;i++){
-      std::cout << "Getting drift run " << driftRun[i] << std::endl;
-      rc = gm2fieldUtil::RootHelper::GetFPFrequencies(driftRun[i],fxprData);
-      if(rc!=0){
-         std::cout << "No data!" << std::endl;
-         return NULL;
-      }
-      // finished getting a run, find its time 
-      M = fxprData.size();  // number of events 
-      stopIndex = M - 1;
-      aTime = fxprData[startIndex].GpsTimeStamp[fxprList[0]]; // take zeroth probe as the start point  
-      runStart.push_back(aTime);
-      aTime = fxprData[stopIndex].GpsTimeStamp[fxprList[0]];  // take zeroth probe as the start point  
-      runStop.push_back(aTime);
-      // set up for next run 
-      startIndex = stopIndex + 1;
-   }
-   std::cout << "--> Done." << std::endl;
-
-   // store the data start and stop times of the interpolation  
-   // timeBound.push_back(runStop[0] ); 
-   // timeBound.push_back(runStart[1]);
-
-   // now get a TGraph we can use in interpolating across these runs
-   // std::vector<double> stats;
-   TGraph *gDrift = GetInterpolatedTGraph(method,fxprList,runStop[0],runStart[1],1E+9,fxprData,stats);
-   return gDrift;
-}
-//______________________________________________________________________________
-TGraph *GetDriftTGraphR2R(int method,std::vector<int> driftRun,std::vector<int> fxprList,std::vector<double> &stats){
-
-   int rc=0;
-   std::vector<gm2field::fixedProbeFrequency_t> fxprBare,fxprGrad;
-
-   const int NFP  = fxprList.size(); 
-   int startIndex = fxprList[0]; 
-   int stopIndex  = fxprList[NFP-1];
-
-   // get the fxpr data       
-   rc = gm2fieldUtil::RootHelper::GetFPFrequencies(driftRun[0],fxprBare);
-   rc = gm2fieldUtil::RootHelper::GetFPFrequencies(driftRun[1],fxprGrad);
-
-   std::vector<fixedProbeEvent_t> fxprBareAvg;
-   rc = GetAverageFXPRVectorsNew(method,0,0,0,0,fxprList,fxprBare,fxprBareAvg);
-
-   std::vector<fixedProbeEvent_t> fxprGradAvg;
-   rc = GetAverageFXPRVectorsNew(method,0,0,0,0,fxprList,fxprGrad,fxprGradAvg);
-
-   const int NB = fxprBareAvg.size(); 
-   const int NG = fxprGradAvg.size(); 
-
-   // get effect of turning on SCC
-   double bareField = fxprBareAvg[NB-1].freq; 
-   double gradField = fxprGradAvg[NG-1].freq; 
-   double Fs        = gradField-bareField;
-   stats.push_back(Fs); 
-   stats.push_back(0); 
-
-   const int NEV = 30; 
-   
-   // now get slopes of both data sets 
-   double parBare[2]; 
-   rc = FitFXPR(NB-NEV,NB,fxprBareAvg,parBare);   
-
-   double parGrad[2]; 
-   rc = FitFXPR(0,NEV,fxprGradAvg,parGrad);  
-
-   // store the slopes in a vector 
-   std::vector<double> dFdt; 
-   dFdt.push_back(parBare[1]); 
-   dFdt.push_back(parGrad[1]); 
-
-   // now compute estimated field drift 
-   double dt         = fxprGradAvg[0].time - fxprBareAvg[NB-1].time;  
-   double dFdt_mean  = gm2fieldUtil::Math::GetMean<double>(dFdt);
-   double dFdt_stdev = gm2fieldUtil::Math::GetStandardDeviation<double>(dFdt);   
-   double Fd         = dFdt_mean*dt; 
-   double Fd_err     = dFdt_stdev; 
- 
-   std::cout << "df/dt: " << std::endl;
-   for(int i=0;i<2;i++) std::cout << Form("%.3lf Hz/sec",dFdt[i]) << std::endl;
-   std::cout << Form("dt = %.3lf sec",dt) << std::endl;
-
-   stats.push_back(Fd);     // estimated drift 
-   stats.push_back(Fd_err); // error 
-
-   // store the data from the bare field; no corrections here 
-   std::vector<double> TIME,FREQ; 
-   for(int i=0;i<NB;i++){
-      TIME.push_back( fxprBareAvg[i].time );
-      FREQ.push_back( fxprBareAvg[i].freq );
-   } 
-
-   // now grad field   
-   double arg=0;
-   for(int i=0;i<NG;i++){
-      arg = fxprGradAvg[i].freq - Fs + Fd; 
-      TIME.push_back( fxprGradAvg[i].time ); 
-      FREQ.push_back(arg); 
-   } 
-
-   TGraph *gDrift = gm2fieldUtil::Graph::GetTGraph(TIME,FREQ);
-   return gDrift;
-}
+// //______________________________________________________________________________
+// TGraph *GetDriftTGraph(int method,std::vector<int> driftRun,std::vector<int> fxprList,
+//                        std::vector<double> &stats){
+// 
+//    const int ND = driftRun.size(); 
+//    int rc=0,M=0,startIndex=0,stopIndex=0;
+//    unsigned long long aTime;
+//    std::vector<unsigned long long> runStart,runStop;
+//    std::vector<gm2field::fixedProbeFrequency_t> fxprData;
+// 
+//    for(int i=0;i<ND;i++){
+//       std::cout << "Getting drift run " << driftRun[i] << std::endl;
+//       rc = gm2fieldUtil::RootHelper::GetFPFrequencies(driftRun[i],fxprData);
+//       if(rc!=0){
+//          std::cout << "No data!" << std::endl;
+//          return NULL;
+//       }
+//       // finished getting a run, find its time 
+//       M = fxprData.size();  // number of events 
+//       stopIndex = M - 1;
+//       aTime = fxprData[startIndex].GpsTimeStamp[fxprList[0]]; // take zeroth probe as the start point  
+//       runStart.push_back(aTime);
+//       aTime = fxprData[stopIndex].GpsTimeStamp[fxprList[0]];  // take zeroth probe as the start point  
+//       runStop.push_back(aTime);
+//       // set up for next run 
+//       startIndex = stopIndex + 1;
+//    }
+//    std::cout << "--> Done." << std::endl;
+// 
+//    // store the data start and stop times of the interpolation  
+//    // timeBound.push_back(runStop[0] ); 
+//    // timeBound.push_back(runStart[1]);
+// 
+//    // now get a TGraph we can use in interpolating across these runs
+//    // std::vector<double> stats;
+//    TGraph *gDrift = GetInterpolatedTGraph(method,fxprList,runStop[0],runStart[1],1E+9,fxprData,stats);
+//    return gDrift;
+// }
+// //______________________________________________________________________________
+// TGraph *GetDriftTGraphR2R(int method,std::vector<int> driftRun,std::vector<int> fxprList,std::vector<double> &stats){
+// 
+//    int rc=0;
+//    std::vector<gm2field::fixedProbeFrequency_t> fxprBare,fxprGrad;
+// 
+//    const int NFP  = fxprList.size(); 
+//    int startIndex = fxprList[0]; 
+//    int stopIndex  = fxprList[NFP-1];
+// 
+//    // get the fxpr data       
+//    rc = gm2fieldUtil::RootHelper::GetFPFrequencies(driftRun[0],fxprBare);
+//    rc = gm2fieldUtil::RootHelper::GetFPFrequencies(driftRun[1],fxprGrad);
+// 
+//    std::vector<fixedProbeEvent_t> fxprBareAvg;
+//    rc = GetAverageFXPRVectorsNew(method,0,0,0,0,fxprList,fxprBare,fxprBareAvg);
+// 
+//    std::vector<fixedProbeEvent_t> fxprGradAvg;
+//    rc = GetAverageFXPRVectorsNew(method,0,0,0,0,fxprList,fxprGrad,fxprGradAvg);
+// 
+//    const int NB = fxprBareAvg.size(); 
+//    const int NG = fxprGradAvg.size(); 
+// 
+//    // get effect of turning on SCC
+//    double bareField = fxprBareAvg[NB-1].freq; 
+//    double gradField = fxprGradAvg[NG-1].freq; 
+//    double Fs        = gradField-bareField;
+//    stats.push_back(Fs); 
+//    stats.push_back(0); 
+// 
+//    const int NEV = 30; 
+//    
+//    // now get slopes of both data sets 
+//    double parBare[2]; 
+//    rc = FitFXPR(NB-NEV,NB,fxprBareAvg,parBare);   
+// 
+//    double parGrad[2]; 
+//    rc = FitFXPR(0,NEV,fxprGradAvg,parGrad);  
+// 
+//    // store the slopes in a vector 
+//    std::vector<double> dFdt; 
+//    dFdt.push_back(parBare[1]); 
+//    dFdt.push_back(parGrad[1]); 
+// 
+//    // now compute estimated field drift 
+//    double dt         = fxprGradAvg[0].time - fxprBareAvg[NB-1].time;  
+//    double dFdt_mean  = gm2fieldUtil::Math::GetMean<double>(dFdt);
+//    double dFdt_stdev = gm2fieldUtil::Math::GetStandardDeviation<double>(dFdt);   
+//    double Fd         = dFdt_mean*dt; 
+//    double Fd_err     = dFdt_stdev; 
+//  
+//    std::cout << "df/dt: " << std::endl;
+//    for(int i=0;i<2;i++) std::cout << Form("%.3lf Hz/sec",dFdt[i]) << std::endl;
+//    std::cout << Form("dt = %.3lf sec",dt) << std::endl;
+// 
+//    stats.push_back(Fd);     // estimated drift 
+//    stats.push_back(Fd_err); // error 
+// 
+//    // store the data from the bare field; no corrections here 
+//    std::vector<double> TIME,FREQ; 
+//    for(int i=0;i<NB;i++){
+//       TIME.push_back( fxprBareAvg[i].time );
+//       FREQ.push_back( fxprBareAvg[i].freq );
+//    } 
+// 
+//    // now grad field   
+//    double arg=0;
+//    for(int i=0;i<NG;i++){
+//       arg = fxprGradAvg[i].freq - Fs + Fd; 
+//       TIME.push_back( fxprGradAvg[i].time ); 
+//       FREQ.push_back(arg); 
+//    } 
+// 
+//    TGraph *gDrift = gm2fieldUtil::Graph::GetTGraph(TIME,FREQ);
+//    return gDrift;
+// }

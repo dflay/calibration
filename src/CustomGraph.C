@@ -106,6 +106,7 @@ int FillPPVector1(TString axis,std::vector<plungingProbeAnaEvent_t> data,std::ve
    const int N = data.size();
    for(int i=0;i<N;i++){
       M = data[i].numTraces;
+      if(axis=="event")      for(int j=0;j<M;j++) x.push_back( (double)(i+1)       ); 
       if(axis=="run")        for(int j=0;j<M;j++) x.push_back( (double)data[i].run );   
       if(axis=="TimeStamp")  for(int j=0;j<M;j++) x.push_back(data[i].time[j]/1E+9 );   
       if(axis=="x")          for(int j=0;j<M;j++) x.push_back(data[i].r[j]         ); 
@@ -184,151 +185,151 @@ int FillPPVector3(TString axis,plungingProbeAnaEvent_t data,std::vector<double> 
    return 0; 
 }
 //______________________________________________________________________________
-TGraphErrors *GetTGraphErrors(int method,unsigned long long timeStart,unsigned long long timeStop,unsigned long long timeStep,
-                              std::vector<int> fxprList,std::vector<gm2field::fixedProbeFrequency_t> fxprData){
-   // a plot between timeStart and timeStop of the average field from probes in the list fxprList
-   // the user specifies the step size in time 
-   double err=30.*0.06179;  // assume a 30 ppb error 
-   unsigned long long t0 = 0; 
-   std::vector<unsigned long long> time;
-   std::vector<double> TIME,FREQ,ERR; 
-   GetAverageFXPRVectors(method,t0,timeStart,timeStop,timeStep,fxprList,fxprData,time,FREQ); 
-   int NPTS = time.size();
-   for(int i=0;i<NPTS;i++){
-      TIME.push_back(time[i]/1E+9);
-      ERR.push_back(err);
-   }
-   TGraphErrors *g = gm2fieldUtil::Graph::GetTGraphErrors(TIME,FREQ,ERR);
-   return g; 
-}
-//______________________________________________________________________________
-TGraph *GetTGraphNew(std::vector<fixedProbeEvent_t> fxprData){
-   std::vector<double> TIME,FREQ; 
-   int NPTS = fxprData.size();
-   for(int i=0;i<NPTS;i++){
-      TIME.push_back(fxprData[i].time);
-      FREQ.push_back(fxprData[i].freq);
-   }
-   TGraph *g = gm2fieldUtil::Graph::GetTGraph(TIME,FREQ);
-   return g; 
-}
-//______________________________________________________________________________
-TGraph *GetTGraph(int method,unsigned long long timeStart,unsigned long long timeStop,unsigned long long timeStep,
-                  std::vector<int> fxprList,std::vector<gm2field::fixedProbeFrequency_t> fxprData){
-   // a plot between timeStart and timeStop of the average field from probes in the list fxprList
-   // the user specifies the step size in time
-   unsigned long long t0 = 0; 
-   std::vector<unsigned long long> time;
-   std::vector<double> TIME,FREQ; 
-   std::cout << "Getting vectors..." << std::endl; 
-   GetAverageFXPRVectors(method,t0,timeStart,timeStop,timeStep,fxprList,fxprData,time,FREQ);
-   std::cout << "--> Done." << std::endl; 
-   int NPTS = time.size();
-   std::cout << "Processing " << NPTS << " events..." << std::endl;
-   for(int i=0;i<NPTS;i++) TIME.push_back(time[i]/1E+9);
-   std::cout << "--> Done." << std::endl; 
-   std::cout << "Getting graph..." << std::endl;
-   TGraph *g = gm2fieldUtil::Graph::GetTGraph(TIME,FREQ);
-   std::cout << "--> Done." << std::endl; 
-   return g; 
-}
-//______________________________________________________________________________
-TGraph *GetTGraph(int method,unsigned long long t0,unsigned long long timeStart,unsigned long long timeStop,unsigned long long timeStep,
-                  std::vector<int> fxprList,std::vector<gm2field::fixedProbeFrequency_t> fxprData){
-   // a plot between timeStart and timeStop of the average field from probes in the list fxprList
-   // the user specifies the step size in time 
-   std::vector<unsigned long long> time;
-   std::vector<double> TIME,FREQ; 
-   GetAverageFXPRVectors(method,t0,timeStart,timeStop,timeStep,fxprList,fxprData,time,FREQ); 
-   int NPTS = time.size();
-   for(int i=0;i<NPTS;i++) TIME.push_back(time[i]/1E+9);
-   TGraph *g = gm2fieldUtil::Graph::GetTGraph(TIME,FREQ);
-   return g; 
-}
-//______________________________________________________________________________
-TGraph *GetTGraph2Runs(int method,std::vector<int> probe,
-                       unsigned long long tStart,unsigned long long tStop,unsigned long long tStep,
-                       std::vector<gm2field::fixedProbeFrequency_t> fxprData){
-
-   // determine average FXPR frequency across a list of probes,  
-   // using a range defined by tStart < t < tStop with a step size tStep 
-   // the times tStart, tStop are necessarily end/start points of runs that 
-   // are far in time (more than a second or two)   
-
-   // populate all the data we have in fxprData into vectors 
-   std::vector<unsigned long long> time;
-   std::vector<double> TIME,FREQ; 
-   GetAverageFXPRVectorsAlt(method,tStart,tStop,tStep,probe,fxprData,time,FREQ); 
-   int NPTS = time.size();
-   for(int i=0;i<NPTS;i++) TIME.push_back(time[i]/1E+9);
-
-   // now get a graph 
-   TGraph *g = gm2fieldUtil::Graph::GetTGraph(TIME,FREQ);
-   return g;
-}
-//______________________________________________________________________________
-TGraph *GetInterpolatedTGraph(int method,std::vector<int> probe,
-                              unsigned long long tStart,unsigned long long tStop,unsigned long long tStep,
-                              std::vector<gm2field::fixedProbeFrequency_t> fxprData,
-                              std::vector<double> &stats){
-
-   // determine average FXPR frequency across a list of probes,  
-   // using a range defined by tStart < t < tStop with a step size tStep 
-   // the times tStart, tStop are necessarily end/start points of runs that 
-   // are far in time (more than a second or two)   
-
-   // populate all the data we have in fxprData into vectors 
-   std::vector<unsigned long long> time;
-   std::vector<double> TIME,FREQ; 
-   GetAverageFXPRVectorsAlt(method,tStart,tStop,tStep,probe,fxprData,time,FREQ); 
-   int NPTS = time.size();
-   for(int i=0;i<NPTS;i++) TIME.push_back(time[i]/1E+9);
-
-   // do a very crude linear fit
-   // take average over previous ten seconds to get the starting field value 
-   std::vector<double> tt,ff; 
-   double aFreq,stdev;
-   unsigned long long aTime = 0;
-   for(int i=10;i>=1;i--){
-      aTime = tStart - ( (double)i )*1E+9;  
-      GetAverageFXPR(method,aTime,probe,fxprData,aFreq,stdev);
-      ff.push_back(aFreq); 
-   }
-   double fStart     = gm2fieldUtil::Math::GetMean<double>(ff); 
-   double fStart_err = gm2fieldUtil::Math::GetStandardDeviation<double>(ff);  
-   ff.clear(); 
-   // take average over first ten seconds of last run to get the stop field value 
-   for(int i=1;i<=10;i++){
-      aTime = tStop + ( (double)i )*1E+9;  
-      GetAverageFXPR(method,aTime,probe,fxprData,aFreq,stdev);
-      ff.push_back(aFreq); 
-   }
-   double fStop     = gm2fieldUtil::Math::GetMean<double>(ff); 
-   double fStop_err = gm2fieldUtil::Math::GetStandardDeviation<double>(ff); 
-   // store these data 
-   stats.push_back(fStart); 
-   stats.push_back(fStart_err); 
-   stats.push_back(fStop); 
-   stats.push_back(fStop_err); 
-   // now fill in the points
-   double t0 = tStart/1E+9;
-   double t1 = tStop/1E+9;
-   double f0 = fStart;
-   double f1 = fStop;
-   NPTS = (tStop-tStart)/(tStep);
-   double theTime=0,theFreq=0;
-   double dt = tStep/1E+9;
-   for(int i=0;i<NPTS;i++){
-      theTime = t0 + ( (double)i )*dt;
-      theFreq = gm2fieldUtil::Math::LinearInterpolation(theTime,t0,f0,t1,f1);
-      // std::cout << gm2fieldUtil::GetStringTimeStampFromUTC(theTime) << " " << Form("%.3lf",theFreq) << std::endl;
-      TIME.push_back(theTime);
-      FREQ.push_back(theFreq);
-   }
-   // now get a graph 
-   TGraph *g = gm2fieldUtil::Graph::GetTGraph(TIME,FREQ);
-   return g;
-}
+// TGraphErrors *GetTGraphErrors(int method,unsigned long long timeStart,unsigned long long timeStop,unsigned long long timeStep,
+//                               std::vector<int> fxprList,std::vector<gm2field::fixedProbeFrequency_t> fxprData){
+//    // a plot between timeStart and timeStop of the average field from probes in the list fxprList
+//    // the user specifies the step size in time 
+//    double err=30.*0.06179;  // assume a 30 ppb error 
+//    unsigned long long t0 = 0; 
+//    std::vector<unsigned long long> time;
+//    std::vector<double> TIME,FREQ,ERR; 
+//    GetAverageFXPRVectors(method,t0,timeStart,timeStop,timeStep,fxprList,fxprData,time,FREQ); 
+//    int NPTS = time.size();
+//    for(int i=0;i<NPTS;i++){
+//       TIME.push_back(time[i]/1E+9);
+//       ERR.push_back(err);
+//    }
+//    TGraphErrors *g = gm2fieldUtil::Graph::GetTGraphErrors(TIME,FREQ,ERR);
+//    return g; 
+// }
+// //______________________________________________________________________________
+// TGraph *GetTGraphNew(std::vector<fixedProbeEvent_t> fxprData){
+//    std::vector<double> TIME,FREQ; 
+//    int NPTS = fxprData.size();
+//    for(int i=0;i<NPTS;i++){
+//       TIME.push_back(fxprData[i].time);
+//       FREQ.push_back(fxprData[i].freq);
+//    }
+//    TGraph *g = gm2fieldUtil::Graph::GetTGraph(TIME,FREQ);
+//    return g; 
+// }
+// //______________________________________________________________________________
+// TGraph *GetTGraph(int method,unsigned long long timeStart,unsigned long long timeStop,unsigned long long timeStep,
+//                   std::vector<int> fxprList,std::vector<gm2field::fixedProbeFrequency_t> fxprData){
+//    // a plot between timeStart and timeStop of the average field from probes in the list fxprList
+//    // the user specifies the step size in time
+//    unsigned long long t0 = 0; 
+//    std::vector<unsigned long long> time;
+//    std::vector<double> TIME,FREQ; 
+//    std::cout << "Getting vectors..." << std::endl; 
+//    GetAverageFXPRVectors(method,t0,timeStart,timeStop,timeStep,fxprList,fxprData,time,FREQ);
+//    std::cout << "--> Done." << std::endl; 
+//    int NPTS = time.size();
+//    std::cout << "Processing " << NPTS << " events..." << std::endl;
+//    for(int i=0;i<NPTS;i++) TIME.push_back(time[i]/1E+9);
+//    std::cout << "--> Done." << std::endl; 
+//    std::cout << "Getting graph..." << std::endl;
+//    TGraph *g = gm2fieldUtil::Graph::GetTGraph(TIME,FREQ);
+//    std::cout << "--> Done." << std::endl; 
+//    return g; 
+// }
+// //______________________________________________________________________________
+// TGraph *GetTGraph(int method,unsigned long long t0,unsigned long long timeStart,unsigned long long timeStop,unsigned long long timeStep,
+//                   std::vector<int> fxprList,std::vector<gm2field::fixedProbeFrequency_t> fxprData){
+//    // a plot between timeStart and timeStop of the average field from probes in the list fxprList
+//    // the user specifies the step size in time 
+//    std::vector<unsigned long long> time;
+//    std::vector<double> TIME,FREQ; 
+//    GetAverageFXPRVectors(method,t0,timeStart,timeStop,timeStep,fxprList,fxprData,time,FREQ); 
+//    int NPTS = time.size();
+//    for(int i=0;i<NPTS;i++) TIME.push_back(time[i]/1E+9);
+//    TGraph *g = gm2fieldUtil::Graph::GetTGraph(TIME,FREQ);
+//    return g; 
+// }
+// //______________________________________________________________________________
+// TGraph *GetTGraph2Runs(int method,std::vector<int> probe,
+//                        unsigned long long tStart,unsigned long long tStop,unsigned long long tStep,
+//                        std::vector<gm2field::fixedProbeFrequency_t> fxprData){
+// 
+//    // determine average FXPR frequency across a list of probes,  
+//    // using a range defined by tStart < t < tStop with a step size tStep 
+//    // the times tStart, tStop are necessarily end/start points of runs that 
+//    // are far in time (more than a second or two)   
+// 
+//    // populate all the data we have in fxprData into vectors 
+//    std::vector<unsigned long long> time;
+//    std::vector<double> TIME,FREQ; 
+//    GetAverageFXPRVectorsAlt(method,tStart,tStop,tStep,probe,fxprData,time,FREQ); 
+//    int NPTS = time.size();
+//    for(int i=0;i<NPTS;i++) TIME.push_back(time[i]/1E+9);
+// 
+//    // now get a graph 
+//    TGraph *g = gm2fieldUtil::Graph::GetTGraph(TIME,FREQ);
+//    return g;
+// }
+// //______________________________________________________________________________
+// TGraph *GetInterpolatedTGraph(int method,std::vector<int> probe,
+//                               unsigned long long tStart,unsigned long long tStop,unsigned long long tStep,
+//                               std::vector<gm2field::fixedProbeFrequency_t> fxprData,
+//                               std::vector<double> &stats){
+// 
+//    // determine average FXPR frequency across a list of probes,  
+//    // using a range defined by tStart < t < tStop with a step size tStep 
+//    // the times tStart, tStop are necessarily end/start points of runs that 
+//    // are far in time (more than a second or two)   
+// 
+//    // populate all the data we have in fxprData into vectors 
+//    std::vector<unsigned long long> time;
+//    std::vector<double> TIME,FREQ; 
+//    GetAverageFXPRVectorsAlt(method,tStart,tStop,tStep,probe,fxprData,time,FREQ); 
+//    int NPTS = time.size();
+//    for(int i=0;i<NPTS;i++) TIME.push_back(time[i]/1E+9);
+// 
+//    // do a very crude linear fit
+//    // take average over previous ten seconds to get the starting field value 
+//    std::vector<double> tt,ff; 
+//    double aFreq,stdev;
+//    unsigned long long aTime = 0;
+//    for(int i=10;i>=1;i--){
+//       aTime = tStart - ( (double)i )*1E+9;  
+//       GetAverageFXPR(method,aTime,probe,fxprData,aFreq,stdev);
+//       ff.push_back(aFreq); 
+//    }
+//    double fStart     = gm2fieldUtil::Math::GetMean<double>(ff); 
+//    double fStart_err = gm2fieldUtil::Math::GetStandardDeviation<double>(ff);  
+//    ff.clear(); 
+//    // take average over first ten seconds of last run to get the stop field value 
+//    for(int i=1;i<=10;i++){
+//       aTime = tStop + ( (double)i )*1E+9;  
+//       GetAverageFXPR(method,aTime,probe,fxprData,aFreq,stdev);
+//       ff.push_back(aFreq); 
+//    }
+//    double fStop     = gm2fieldUtil::Math::GetMean<double>(ff); 
+//    double fStop_err = gm2fieldUtil::Math::GetStandardDeviation<double>(ff); 
+//    // store these data 
+//    stats.push_back(fStart); 
+//    stats.push_back(fStart_err); 
+//    stats.push_back(fStop); 
+//    stats.push_back(fStop_err); 
+//    // now fill in the points
+//    double t0 = tStart/1E+9;
+//    double t1 = tStop/1E+9;
+//    double f0 = fStart;
+//    double f1 = fStop;
+//    NPTS = (tStop-tStart)/(tStep);
+//    double theTime=0,theFreq=0;
+//    double dt = tStep/1E+9;
+//    for(int i=0;i<NPTS;i++){
+//       theTime = t0 + ( (double)i )*dt;
+//       theFreq = gm2fieldUtil::Math::LinearInterpolation(theTime,t0,f0,t1,f1);
+//       // std::cout << gm2fieldUtil::GetStringTimeStampFromUTC(theTime) << " " << Form("%.3lf",theFreq) << std::endl;
+//       TIME.push_back(theTime);
+//       FREQ.push_back(theFreq);
+//    }
+//    // now get a graph 
+//    TGraph *g = gm2fieldUtil::Graph::GetTGraph(TIME,FREQ);
+//    return g;
+// }
 //______________________________________________________________________________
 TGraph *GetTRLYTGraph(int probe,TString xAxis,TString yAxis,std::vector<trolleyAnaEvent_t> data,double sf){
    // a custom plotter for the trolley analysis event 
@@ -467,7 +468,7 @@ TGraph *GetTRLYPositionsGraph(){
    return g;
 }
 //______________________________________________________________________________
-TGraph *GetSCCPlot(int type,std::vector<gm2field::surfaceCoils_t> data){
+TGraph *GetSCCPlot(int type,std::vector<surfaceCoilEvent_t> data){
    // construct the sum of the top (type=1), bottom (type=0) or azi (type=-1) coil currents 
    // to see what the SCC config is
    double sum=0;

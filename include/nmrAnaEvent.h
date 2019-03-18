@@ -4,14 +4,16 @@
 // a data structure for NMR-ANA results
 #define NUM_ANA_METHODS 6  
 
-enum nmrAnaType{
-   kMidpoint          = 0,
-   kLinearInterp      = 1,
-   kLeastSquares      = 2,
-   kMidpointPhase     = 3,
-   kLinearInterpPhase = 4,
-   kLeastSquaresPhase = 5
-};
+namespace plungingProbeAnalysis { 
+   enum nmrAnaType{
+      kMidpoint          = 0,
+      kLinearInterp      = 1,
+      kLeastSquares      = 2,
+      kMidpointPhase     = 3,
+      kLinearInterpPhase = 4,
+      kLeastSquaresPhase = 5
+   };
+}
 
 typedef struct nmrAnaEvent{
    double ampl;                  // Maximum amplitude (V) 

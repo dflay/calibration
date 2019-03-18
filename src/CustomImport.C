@@ -1,37 +1,163 @@
 #include "../include/CustomImport.h"
+#include "TRLYCoordinates.C"
+//______________________________________________________________________________
+int SetDataFileParameters(std::string version,std::string &fileName,std::string &dataPath){
+   // determine file name prefix and data path based upon version tag 
+   if( version.compare("run-1")==0 ){
+      fileName = "default";
+      dataPath = "default";
+   }else if( version.compare("run-2")==0 ){
+      fileName = "default";
+      dataPath = "/mnt/nfs/g2field-server-2/newg2/DataProduction/Nearline/ArtTFSDir";  // use this for now... 
+   }else if( version.compare("v09_04")==0 ){
+      // grid production 
+      fileName = "FieldPlainRootOutput_";
+      dataPath = "/home/newg2/DataProduction/Offline/ArtTFSDir/v09_04";
+   }else if( version.compare("calib")==0 ){
+      // calibration (new production on g2field-server-2) 
+      fileName = "default";
+      dataPath = "/data2/newg2/DataProduction/Nearline/ArtTFSDir"; 
+   }
+   return 0;
+}
+//______________________________________________________________________________
+int GetFixedProbeData(int run,int method,std::vector<int> probe,std::vector<averageFixedProbeEvent_t> &data,std::string version){
+   // gather AVERAGED fixed probe data according to the probe list input
 
+   std::vector<gm2field::fixedProbeFrequency_v1_t> fxpr; 
+   std::vector<gm2field::fixedProbeFrequency_t> fxpr_new; 
+
+   int rc=0,N=0;
+   if( version.compare("run-1")!=0 ){
+      rc = GetFixedProbeFrequencies<gm2field::fixedProbeFrequency_t>(run,fxpr_new,version);
+      N = fxpr_new.size(); 
+   }else{
+      rc = GetFixedProbeFrequencies<gm2field::fixedProbeFrequency_v1_t>(run,fxpr,version); 
+      N = fxpr.size(); 
+   }
+
+   averageFixedProbeEvent_t dataPt; 
+   const int NPR = probe.size(); 
+
+   unsigned long long arg_t=0,mean_t=0;
+   double arg_f=0,mean_f=0,stdev_f=0;
+   std::vector<unsigned long long> T; 
+   std::vector<double> F; 
+
+   int k=0;
+   for(int i=0;i<N;i++){
+      for(int j=0;j<NPR;j++){
+         k = probe[j];
+	 if( version.compare("run-1")!=0 ){
+	    arg_t = fxpr_new[i].GpsTimeStamp[k];
+	    arg_f = fxpr_new[i].Frequency[k][method];
+	 }else{
+	    arg_t = fxpr[i].GpsTimeStamp[k];
+	    arg_f = fxpr[i].Frequency[k][method];
+	 }
+         T.push_back(arg_t);
+         F.push_back(arg_f);
+      }
+      // compute averages 
+      mean_t  = gm2fieldUtil::Math::GetMean<unsigned long long>(T);
+      mean_f  = gm2fieldUtil::Math::GetMean<double>(F);
+      stdev_f = gm2fieldUtil::Math::GetStandardDeviation<double>(F);
+      // store results and clear vectors 
+      dataPt.time    = mean_t; 
+      dataPt.freq    = mean_f; 
+      dataPt.freqErr = stdev_f;
+      data.push_back(dataPt);  
+      T.clear();
+      F.clear();
+   }
+
+   return 0;
+} 
+//______________________________________________________________________________
+int GetSurfaceCoilData(int run,std::vector<surfaceCoilEvent_t> &data,std::string version){
+
+   std::vector<gm2field::surfaceCoils_v1_t> scc; 
+   std::vector<gm2field::surfaceCoils_t> scc_new; 
+
+   int rc=0,N=0;
+
+   if( version.compare("run-1")!=0 ){
+      rc = GetSurfaceCoil<gm2field::surfaceCoils_t>(run,scc_new,version);
+      N  = scc_new.size(); 
+   }else{
+      rc = GetSurfaceCoil<gm2field::surfaceCoils_v1_t>(run,scc,version); 
+      N  = scc.size(); 
+   }
+
+   if(rc!=0){
+      std::cout << "[GetSurfaceCoilData]: Cannot read in data!" << std::endl;
+      return 1; 
+   }
+ 
+   surfaceCoilEvent_t dataPt;
+   for(int i=0;i<N;i++){
+      for(int j=0;j<NUM_SCC;j++){
+	 if( version.compare("run-1")!=0 ){
+	    dataPt.BotTime[j]     = scc_new[i].BotTime[j]; 
+	    dataPt.TopTime[j]     = scc_new[i].TopTime[j]; 
+	    dataPt.BotCurrents[j] = scc_new[i].BotCurrents[j]; 
+	    dataPt.TopCurrents[j] = scc_new[i].TopCurrents[j]; 
+	    dataPt.BotTemps[j]    = scc_new[i].BotTemps[j]; 
+	    dataPt.TopTemps[j]    = scc_new[i].TopTemps[j]; 
+	 }else{
+	    dataPt.BotTime[j]     = scc[i].BotTime[j]; 
+	    dataPt.TopTime[j]     = scc[i].TopTime[j]; 
+	    dataPt.BotCurrents[j] = scc[i].BotCurrents[j]; 
+	    dataPt.TopCurrents[j] = scc[i].TopCurrents[j]; 
+	    dataPt.BotTemps[j]    = scc[i].BotTemps[j]; 
+	    dataPt.TopTemps[j]    = scc[i].TopTemps[j]; 
+	 }
+      }
+      // azi coils
+      for(int j=0;j<4;j++){
+	 if( version.compare("run-1")!=0 ){
+	    dataPt.AzCurrents[j]  = scc_new[i].AzCurrents[j]; 
+	    dataPt.AzTemps[j]     = scc_new[i].AzTemps[j]; 
+	 }else{
+	    dataPt.AzCurrents[j]  = scc[i].AzCurrents[j]; 
+	    dataPt.AzTemps[j]     = scc[i].AzTemps[j]; 
+	 }
+      }
+      data.push_back(dataPt); 
+   }
+
+   return 0;
+}
 //______________________________________________________________________________
 int GetTrolleyData(int run,int method,std::vector<trolleyAnaEvent_t> &trlyEvent,std::string version){
 
    int rc=0;
 
-   std::vector<gm2field::trolleyProbeFrequency_t> trlyFreq;
-   std::vector<gm2field::newtrolleyProbeFrequency_t> trlyFreq_new;
+   std::vector<gm2field::trolleyProbeFrequency_v1_t> trlyFreq;
+   std::vector<gm2field::trolleyProbeFrequency_t> trlyFreq_new;
 
-   std::vector<gm2field::trolleyPosition_t> trlyPos;
-   std::vector<gm2field::newtrolleyPosition_t> trlyPos_new;
+   std::vector<gm2field::trolleyPosition_v1_t> trlyPos;
+   std::vector<gm2field::trolleyPosition_t> trlyPos_new;
 
-   std::vector<gm2field::trolleyTimeStamp_t> trlyTime; // only one version of trolley monitor 
-   std::vector<gm2field::trolleyMonitor_t> trlyMon;  // only one version of the trolley monitor 
+   std::vector<gm2field::trolleyTimeStamp_t> trlyTime; // only one version of trolley time 
+   std::vector<gm2field::trolleyMonitor_t> trlyMon;    // only one version of trolley monitor 
 
    int NT=0,NP=0,NM=0,NF=0;
 
    // these items don't change based upon data production    
-   rc = GetTrolleyTimeStamps(run,trlyTime,version);
-   rc = GetTrolleyMonitor(run,trlyMon,version);
+   rc = GetTrolleyTimeStamps<gm2field::trolleyTimeStamp_t>(run,trlyTime,version);
+   rc = GetTrolleyMonitor<gm2field::trolleyMonitor_t>(run,trlyMon,version);
    NT = trlyTime.size();
    NM = trlyMon.size();
 
    if(version.compare("run-1")==0){
-      rc = GetTrolleyFrequencies(run,trlyFreq,version);
-      rc = GetTrolleyPosition(run,trlyPos,version);
+      rc = GetTrolleyFrequencies<gm2field::trolleyProbeFrequency_v1_t>(run,trlyFreq,version);
+      rc = GetTrolleyPosition<gm2field::trolleyPosition_v1_t>(run,trlyPos,version);
       NP = trlyPos.size();
       NF = trlyFreq.size();
    }else{
-      rc = GetTrolleyFrequencies_new(run,trlyFreq_new,version);
-      rc = GetTrolleyTimeStamps(run,trlyTime,version);
-      rc = GetTrolleyPosition_new(run,trlyPos_new,version);
-      rc = GetTrolleyMonitor(run,trlyMon,version);
+      rc = GetTrolleyFrequencies<gm2field::trolleyProbeFrequency_t>(run,trlyFreq_new,version);
+      rc = GetTrolleyPosition<gm2field::trolleyPosition_t>(run,trlyPos_new,version);
       NP = trlyPos_new.size();
       NF = trlyFreq_new.size();
    }
@@ -40,8 +166,13 @@ int GetTrolleyData(int run,int method,std::vector<trolleyAnaEvent_t> &trlyEvent,
 
    trolleyAnaEvent_t data;
 
-   int startIndex=10;
-   // FIXME: special case...
+   int startIndex=22;  // for continuous mode 
+   // if( date.compare("")!=0 ){
+   //    // only if we have a valid date do we go look for a start index 
+   //    startIndex = FindStartIndexTRLY(date,runNumber);
+   // }
+
+   // special case...
    if(run==3030) startIndex = 10;
    if(run==4911) startIndex = 35;
 
@@ -63,8 +194,8 @@ int GetTrolleyData(int run,int method,std::vector<trolleyAnaEvent_t> &trlyEvent,
             validEvent   = true;
             data.time[j] = arg_time;
             data.freq[j] = arg_freq;
-            data.r[j]    = 0; // trlyPos[i].X[j];
-            data.y[j]    = 0; // trlyPos[i].Y[j];
+            data.r[j]    = GetTrolleyProbeTransverseCoordinate(j,"r"); 
+            data.y[j]    = GetTrolleyProbeTransverseCoordinate(j,"y"); 
             data.phi[j]  = arg_phi;
             data.temp[j] = arg_temp;
          }
@@ -79,99 +210,166 @@ int GetTrolleyData(int run,int method,std::vector<trolleyAnaEvent_t> &trlyEvent,
    return 0;
 }
 //______________________________________________________________________________
-int SetDataFileParameters(std::string version,std::string &fileName,std::string &dataPath){
-   // determine file name prefix and data path based upon version tag 
-   if( version.compare("run-1")==0 ){
-      fileName = "default";
-      dataPath = "default";
-   }else if( version.compare("run-2")==0 ){
-      fileName = "default";
-      dataPath = "/mnt/nfs/g2field-server-2/newg2/DataProduction/Nearline/ArtTFSDir";  // use this for now... 
-   }else if( version.compare("v09_04")==0 ){
-      fileName = "FieldPlainRootOutput_";
-      dataPath = "/home/newg2/DataProduction/Offline/ArtTFSDir/v09_04";
+int GetPlungingProbeData(int run,int prMethod,int ppMethod,std::vector<plungingProbeAnaEvent_t> &data,std::string version){
+
+   // prMethod = production method (from art analysis) 
+   // ppMethod = UMass analysis method 
+
+   int rc=0;
+
+   std::vector<gm2field::plungingProbeFrequency_v1_t> ppData;
+   std::vector<gm2field::plungingProbeFrequency_t> ppData_new;
+   std::vector<gm2field::plungingProbeInfo_v1_t> ppInfo;
+   std::vector<gm2field::plungingProbeInfo_t> ppInfo_new;
+
+   int N=0;
+   int lastRun=0;
+   if( version.compare("run-1")!=0 ){
+      rc      = GetPlungingProbeFrequencies<gm2field::plungingProbeFrequency_t>(run,ppData_new,version);
+      rc      = GetPlungingProbeInfo<gm2field::plungingProbeInfo_t>(run,ppInfo_new,version);
+      lastRun = ppInfo[0].FlayRunNumber;
+      N       = ppInfo.size();
+   }else{
+      rc      = GetPlungingProbeFrequencies<gm2field::plungingProbeFrequency_v1_t>(run,ppData,version);
+      rc      = GetPlungingProbeInfo<gm2field::plungingProbeInfo_v1_t>(run,ppInfo,version);
+      lastRun = ppInfo[0].FlayRunNumber;
+      N       = ppInfo.size();
    }
+   if(rc!=0) return 1;
+
+   if( TMath::Abs(lastRun) > 99999 || lastRun<=0 ){
+      std::cout << "[GetPlungingProbeData]: Invalid starting run " << lastRun << std::endl;
+      return 1;
+   }
+
+   // collect the PP data into a single struct
+   // includes a variable "drift" that is a measure of field drift during the PP run 
+
+   gm2fieldUtil::Temperature::Sensor *tempSensor = new gm2fieldUtil::Temperature::Sensor("PT1000");
+   tempSensor->SetDataPath(TEMP_DIR);
+
+   plungingProbeAnaEvent_t subRun;
+
+   std::string timeStamp;
+
+   int theRun=0;
+   double theTemp=0,theR=0,theY=0,thePhi=0,theFreq=0,theLO=0,theRF=0;
+   unsigned long long theTime=0;
+
+   int cntr=0,M=0;
+
+   for(int i=0;i<N;i++){
+      if( version.compare("run-1")!=0 ){
+         theTemp = tempSensor->GetTemperature( ppInfo_new[i].Temperature );
+         theFreq = ppData_new[i].Frequency[prMethod]; 
+         theLO   = ppData_new[i].FLO; 
+         theRF   = ppData_new[i].F0; 
+         theTime = ppInfo_new[i].TimeStamp;
+         theRun  = ppInfo_new[i].FlayRunNumber;
+         theR    = ppInfo_new[i].R;
+         theY    = ppInfo_new[i].Y;
+         thePhi  = ppInfo_new[i].Phi;
+      }else{
+         theTemp = tempSensor->GetTemperature( ppInfo[i].Temperature );
+         theFreq = ppData[i].Frequency[prMethod]; 
+         theLO   = ppData[i].FLO; 
+         theRF   = ppData[i].F0; 
+         theTime = ppInfo[i].TimeStamp;
+         theRun  = ppInfo[i].FlayRunNumber;
+         theR    = ppInfo[i].R;
+         theY    = ppInfo[i].Y;
+         thePhi  = ppInfo[i].Phi;
+      }
+      timeStamp = gm2fieldUtil::GetStringTimeStampFromUTC(theTime/1E+9);
+      // std::cout << "******* " << timeStamp << " " << theRun << std::endl;
+      if(theRun==lastRun){
+         // gather frequencies and temperatures for each NMR-DAQ run to average over 
+         subRun.run           = theRun;
+         subRun.time[cntr]    = theTime;
+         subRun.r[cntr]       = theR;
+         subRun.y[cntr]       = theY;
+         subRun.phi[cntr]     = thePhi;
+         subRun.temp[cntr]    = theTemp;
+         subRun.freq[cntr]    = theFreq;
+         subRun.freq_LO[cntr] = theLO;
+         subRun.freq_RF[cntr] = theRF;
+         cntr++;
+      }else{
+         // done gathering, push back on the vector  
+         subRun.numTraces = cntr;
+         data.push_back(subRun);
+         // print to screen 
+         // for(int j=0;j<cntr;j++){  
+         //    std::cout << "run = "  << Form("%d",subRun.run)  << " " 
+         //              << "time = " << Form("%s",gm2fieldUtil::GetStringTimeStampFromUTC(subRun.time[j]/1E+9 ).c_str() )  << " "
+         //              << "temp = " << Form("%.3lf deg C",subRun.temp[j])  << " "
+         //              << "r = "    << Form("%.3lf mm",subRun.r[j]  )      << " "
+         //              << "y = "    << Form("%.3lf mm",subRun.y[j]  )      << " "
+         //              << "phi = "  << Form("%.3lf mm",subRun.phi[j])      << " "
+         //              << "freq = " << Form("%.3lf Hz",subRun.freq[j])     << std::endl;
+         // }
+         // std::cout << "----------------" << std::endl;
+         // reset the counter 
+         cntr = 0;
+         // fill the data struct for this "event" since it's good for the next run 
+         subRun.run           = theRun; 
+         subRun.time[cntr]    = theTime;
+         subRun.r[cntr]       = theR;
+         subRun.y[cntr]       = theY;  
+         subRun.phi[cntr]     = thePhi; 
+         subRun.temp[cntr]    = theTemp;
+         subRun.freq[cntr]    = ppData[i].Frequency[prMethod];
+         subRun.freq_LO[cntr] = ppData[i].FLO;
+         subRun.freq_RF[cntr] = ppData[i].F0;
+         cntr++;
+      }
+      lastRun = theRun;
+   }
+
+   // catch the last run if we end on the same run as the last 
+   subRun.numTraces = cntr;
+   data.push_back(subRun);
+
+   const int NN = data.size();
+   std::cout << "NMR-DAQ runs: " << endl;
+   for(int i=0;i<NN;i++){
+      rc = ModifyPlungingProbeData(ppMethod,data[i]);
+      // std::cout << Form("%d, x = %.3lf mm, y = %.3lf mm, z = %.3lf mm",
+      //                   data[i].run,data[i].r[0],data[i].y[0],data[i].phi[0]) << endl;
+   }
+
+   delete tempSensor;
+
    return 0;
 }
 //______________________________________________________________________________
-int GetTrolleyFrequencies_new(int run,std::vector<gm2field::newtrolleyProbeFrequency_t> &data,std::string version){
-   int rc=0;
-   std::string dirName    = "TreeGenTrolley";
-   std::string treeName   = "trolley";
-   std::string branchName = "ProbeFrequency";
-   std::string fileName,dataPath;
-   rc = SetDataFileParameters(version,fileName,dataPath);
-   rc = gm2fieldUtil::RootHelper::GetDataFromTree<gm2field::newtrolleyProbeFrequency_t>(run,dirName,treeName,branchName,data,-1,-1,fileName,dataPath);
-   return rc;
-}
-//______________________________________________________________________________
-int GetTrolleyFrequencies(int run,std::vector<gm2field::trolleyProbeFrequency_t> &data,std::string version){
-   int rc=0;
-   std::string dirName    = "TreeGenTrolley";
-   std::string treeName   = "trolley";
-   std::string branchName = "ProbeFrequency";
-   std::string fileName,dataPath;
-   rc = SetDataFileParameters(version,fileName,dataPath);
-   rc = gm2fieldUtil::RootHelper::GetDataFromTree<gm2field::trolleyProbeFrequency_t>(run,dirName,treeName,branchName,data,-1,-1,fileName,dataPath);
-   return rc;
-}
-//______________________________________________________________________________
-int GetTrolleyTimeStamps(int run,std::vector<gm2field::trolleyTimeStamp_t> &data,std::string version){
-   int rc=0;
-   std::string dirName    = "TreeGenTrolley";
-   std::string treeName   = "trolley";
-   std::string branchName = "TimeStamp";
-   std::string fileName,dataPath;
-   rc = SetDataFileParameters(version,fileName,dataPath);
-   rc = gm2fieldUtil::RootHelper::GetDataFromTree<gm2field::trolleyTimeStamp_t>(run,dirName,treeName,branchName,data,-1,-1,fileName,dataPath);
-   return rc;
-}
-//______________________________________________________________________________
-int GetTrolleyPosition_new(int run,std::vector<gm2field::newtrolleyPosition_t> &data,std::string version){
-   int rc=0;
-   std::string dirName    = "TreeGenTrolley";
-   std::string treeName   = "trolley";
-   std::string branchName = "Position";
-   std::string fileName,dataPath;
-   rc = SetDataFileParameters(version,fileName,dataPath);
-   rc = gm2fieldUtil::RootHelper::GetDataFromTree<gm2field::newtrolleyPosition_t>(run,dirName,treeName,branchName,data,-1,-1,fileName,dataPath);
-   return rc;
-}
-//______________________________________________________________________________
-int GetTrolleyPosition(int run,std::vector<gm2field::trolleyPosition_t> &data,std::string version){
-   int rc=0;
-   std::string dirName    = "TreeGenTrolley";
-   std::string treeName   = "trolley";
-   std::string branchName = "Position";
-   std::string fileName,dataPath;
-   rc = SetDataFileParameters(version,fileName,dataPath);
-   rc = gm2fieldUtil::RootHelper::GetDataFromTree<gm2field::trolleyPosition_t>(run,dirName,treeName,branchName,data,-1,-1,fileName,dataPath);
-   return rc;
-}
-//______________________________________________________________________________
-int GetTrolleyMonitor(int run,std::vector<gm2field::trolleyMonitor_t> &data,std::string version){
-   int rc=0;
-   std::string dirName    = "TreeGenTrolley";
-   std::string treeName   = "trolley";
-   std::string branchName = "Monitor";
-   std::string fileName,dataPath;
-   rc = SetDataFileParameters(version,fileName,dataPath);
-   rc = gm2fieldUtil::RootHelper::GetDataFromTree<gm2field::trolleyMonitor_t>(run,dirName,treeName,branchName,data,-1,-1,fileName,dataPath);
-   return rc;
-}
-//______________________________________________________________________________
-int GetTrolleyGalil(int run,std::vector<gm2field::galilTrolley_t> &data,std::string version){
-   int rc=0;
-   std::string dirName    = "TreeGenGalilTrolley";
-   std::string treeName   = "tGalil";
-   std::string branchName = "Trolley";
-   std::string fileName,dataPath;
-   rc = SetDataFileParameters(version,fileName,dataPath);
-   rc = gm2fieldUtil::RootHelper::GetDataFromTree<gm2field::galilTrolley_t>(run,dirName,treeName,branchName,data,-1,-1,fileName,dataPath);
-   return rc;
-}
+int ModifyPlungingProbeData(int method,plungingProbeAnaEvent_t &data){
+   // replace the frequency values with those calculated by the NMR-ANA framework  
+   int runNumber = data.run;
+   std::vector<nmrAnaEvent_t> inData;
+   // std::cout << "Trying NMR-DAQ run " << runNumber << std::endl; 
+   char inpath[512];
+   sprintf(inpath,"./input/NMR-ANA/run-%05d/results_pulse-stats.dat",runNumber);
+   int rc = ImportNMRANAData(inpath,inData);
+   if(rc!=0){
+      std::cout << "[ModifyPlungingProbeData]: No data for NMR-DAQ run " << runNumber << "!" << std::endl;
+      return 1;
+   }
 
+   const int N = inData.size();
+   if(N!=data.numTraces){
+      std::cout << "[ModifyPlungingProbeData]: Inconsistent number of traces for MIDAS and NMR-ANA!" << std::endl;
+      std::cout << "NMR-DAQ run: " << data.run       << std::endl;
+      std::cout << "MIDAS:       " << data.numTraces << " traces" << std::endl;
+      std::cout << "NMR-ANA:     " << N              << " traces" << std::endl;
+      return 1;
+   }
 
+   data.numTraces = N;
+   for(int i=0;i<N;i++) data.freq[i] = inData[i].freq[method];
+
+   return 0;
+}
 //______________________________________________________________________________
 int LoadImageResults(std::string inpath,std::vector<imageResult_t> &data){
 

@@ -18,17 +18,16 @@
 
 #include "RootTreeStructs.h"
 
-#include "FXPRFuncs.h"
 #include "CustomGraph.h"
 
-TF1 *GetFitToFXPR(TString fitName,double (*fitFunc)(double *,double *),
-                  int npar,int method,std::vector<int> fxprList,std::vector<gm2field::fixedProbeFrequency_t> fxprData); 
-
-TF1 *GetPolyFitToFXPR(TString fitName,int nOrder,int method,
-                      std::vector<int> fxprList,std::vector<gm2field::fixedProbeFrequency_t> fxprData,
-                      std::vector< std::vector<double> > &eps);
-
-TF1 *GetPolyFitToFXPR(TString fitName,int nOrder,TGraph *gFPAVG,std::vector< std::vector<double> > &eps);
+// TF1 *GetFitToFXPR(TString fitName,double (*fitFunc)(double *,double *),
+//                   int npar,int method,std::vector<int> fxprList,std::vector<gm2field::fixedProbeFrequency_t> fxprData); 
+// 
+// TF1 *GetPolyFitToFXPR(TString fitName,int nOrder,int method,
+//                       std::vector<int> fxprList,std::vector<gm2field::fixedProbeFrequency_t> fxprData,
+//                       std::vector< std::vector<double> > &eps);
+// 
+// TF1 *GetPolyFitToFXPR(TString fitName,int nOrder,TGraph *gFPAVG,std::vector< std::vector<double> > &eps);
 
 TGraphErrors *GetFitErrorBand(std::vector<double> x,TF1 *fit,std::vector< std::vector<double> > eps,double sf=1);
 

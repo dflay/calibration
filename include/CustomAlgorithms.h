@@ -26,15 +26,14 @@
 #include "drift.h"
 #include "plungingProbeAnaEvent.h"
 #include "trolleyAnaEvent.h"
-#include "fixedProbeEvent.h"
-#include "FXPRFuncs.h"
+// #include "fixedProbeEvent.h"
 #include "CustomGraph.h"
 
 TGraph *RemoveTrend(TGraph *g1,TF1 *func); 
 TGraph *GetDiffPlot(TGraph *g1,TGraph *g2);
 TGraph *GetDiffPlot(TGraphErrors *g1,TGraphErrors *g2);
-TGraph *GetDriftTGraph(int method,std::vector<int> driftRun,std::vector<int> fxprList,std::vector<double> &stats); 
-TGraph *GetDriftTGraphR2R(int method,std::vector<int> driftRun,std::vector<int> fxprList,std::vector<double> &stats);
+// TGraph *GetDriftTGraph(int method,std::vector<int> driftRun,std::vector<int> fxprList,std::vector<double> &stats); 
+// TGraph *GetDriftTGraphR2R(int method,std::vector<int> driftRun,std::vector<int> fxprList,std::vector<double> &stats);
 
 int GetWeightedAverageStats(std::vector<double> x,std::vector<double> dx,double &mean,double &err,double &stdev); 
 
@@ -48,10 +47,18 @@ int FindTRLYStopTimes(int probe,double angle,std::vector<trolleyAnaEvent_t> trly
                       std::vector<gm2field::galilTrolley_t> trlyGalil,
                       std::vector<double> &time); 
 
-int FindTransitionTimes(int type,int gradType,double thr,double delta,std::vector<gm2field::surfaceCoils_t> data,
+int FindTransitionTimes(int type,int gradType,double thr,double delta,std::vector<surfaceCoilEvent_t> data,
                         std::vector<double> &timeOff,std::vector<double> &timeOn); 
 
 int CalculateTRLYAvg_Stationary(int probeNumber,std::vector<trolleyAnaEvent_t> Event,double &mean,double &stdev);
+
+// copy functions
+int CopyPlungingProbe(plungingProbeAnaEvent_t x,plungingProbeAnaEvent_t &y);
+int CopyPlungingProbe(std::vector<plungingProbeAnaEvent_t> x,std::vector<plungingProbeAnaEvent_t> &y);
+int CopyTrolleyProbe(std::vector<trolleyAnaEvent_t> x,std::vector<trolleyAnaEvent_t> &y);
+int FilterPlungingProbeData(std::vector<int> subRun,
+                            std::vector<plungingProbeAnaEvent_t> x,
+                            std::vector<plungingProbeAnaEvent_t> &y);
 
 // Difference calculations 
 int GetDifference(std::vector<double> A,std::vector<double> A_err,
@@ -79,16 +86,16 @@ int CalculateAveragePP(std::vector<plungingProbeAnaEvent_t> ppData,double &B,dou
 int CalculateAveragePP(bool isDriftCor,std::vector<int> trlyList,std::vector<trolleyAnaEvent_t> trlyData,
                        std::vector<plungingProbeAnaEvent_t> ppData,double &B,double &B_err);
 
-int CalculateAveragePP(bool isDriftCor,std::vector<int> fxprList,std::vector<gm2field::fixedProbeFrequency_t> fxprData,
-                       std::vector<plungingProbeAnaEvent_t> ppData,double &B,double &B_err);  
+// int CalculateAveragePP(bool isDriftCor,std::vector<int> fxprList,std::vector<gm2field::fixedProbeFrequency_t> fxprData,
+//                        std::vector<plungingProbeAnaEvent_t> ppData,double &B,double &B_err);  
 
 
 // old approaches (depricated) 
-int CorrectPPForDriftDuringMeasurement(int method,std::vector<int> fxprList,std::vector<gm2field::fixedProbeFrequency_t> fxprData,
-                                       plungingProbeAnaEvent_t ppEvent,plungingProbeAnaEvent_t &ppEventCor);
-
-int CorrectPPForDriftDuringMeasurement(int method,std::vector<int> fxprList,std::vector<gm2field::fixedProbeFrequency_t> fxprData,
-                                       std::vector<plungingProbeAnaEvent_t> ppEvent,std::vector<plungingProbeAnaEvent_t> &ppEventCor);
+// int CorrectPPForDriftDuringMeasurement(int method,std::vector<int> fxprList,std::vector<gm2field::fixedProbeFrequency_t> fxprData,
+//                                        plungingProbeAnaEvent_t ppEvent,plungingProbeAnaEvent_t &ppEventCor);
+// 
+// int CorrectPPForDriftDuringMeasurement(int method,std::vector<int> fxprList,std::vector<gm2field::fixedProbeFrequency_t> fxprData,
+//                                        std::vector<plungingProbeAnaEvent_t> ppEvent,std::vector<plungingProbeAnaEvent_t> &ppEventCor);
 
 // fit approaches 
 int CorrectPPForDriftDuringMeasurement(int method,TF1 *fxprFit,
@@ -98,26 +105,26 @@ int CorrectPPForDriftDuringMeasurement(int method,TF1 *fxprFit,
                                        std::vector<plungingProbeAnaEvent_t> ppEvent,std::vector<plungingProbeAnaEvent_t> &ppEventCor);
  
 // new approaches
-int CorrectPPForDriftDuringMeasurement(std::vector<fixedProbeEvent_t> fxprData,
-                                       plungingProbeAnaEvent_t ppEvent,
-                                       plungingProbeAnaEvent_t &ppEventCor,
-                                       bool isScan=false);
-int CorrectPPForDriftDuringMeasurement(std::vector<fixedProbeEvent_t> fxprData,
-                                       std::vector<plungingProbeAnaEvent_t> ppEvent,
-                                       std::vector<plungingProbeAnaEvent_t> &ppEventCor,
-                                       bool isScan=false); 
+// int CorrectPPForDriftDuringMeasurement(std::vector<fixedProbeEvent_t> fxprData,
+//                                        plungingProbeAnaEvent_t ppEvent,
+//                                        plungingProbeAnaEvent_t &ppEventCor,
+//                                        bool isScan=false);
+// int CorrectPPForDriftDuringMeasurement(std::vector<fixedProbeEvent_t> fxprData,
+//                                        std::vector<plungingProbeAnaEvent_t> ppEvent,
+//                                        std::vector<plungingProbeAnaEvent_t> &ppEventCor,
+//                                        bool isScan=false); 
 
 // using the trolley 
-int CorrectPPForDriftDuringMeasurementAlt(int method,std::vector<int> fxprList,std::vector<gm2field::fixedProbeFrequency_t> fxprData,
-                                          std::vector<plungingProbeAnaEvent_t> ppEvent,std::vector<plungingProbeAnaEvent_t> &ppEventCor,
-                                          std::vector<drift_t> &drift);  
+// int CorrectPPForDriftDuringMeasurementAlt(int method,std::vector<int> fxprList,std::vector<gm2field::fixedProbeFrequency_t> fxprData,
+//                                           std::vector<plungingProbeAnaEvent_t> ppEvent,std::vector<plungingProbeAnaEvent_t> &ppEventCor,
+//                                           std::vector<drift_t> &drift);  
 
 // trolley functions
-int CorrectTRLYForDriftDuringMeasurement(std::vector<fixedProbeEvent_t> fxprData,
-                                         std::vector<trolleyAnaEvent_t> Event,std::vector<trolleyAnaEvent_t> &EventCor); 
+// int CorrectTRLYForDriftDuringMeasurement(std::vector<fixedProbeEvent_t> fxprData,
+//                                          std::vector<trolleyAnaEvent_t> Event,std::vector<trolleyAnaEvent_t> &EventCor); 
  
-int CorrectTRLYForDriftDuringMeasurement(int method,std::vector<int> fxprList,std::vector<gm2field::fixedProbeFrequency_t> fxprData,
-                                         std::vector<trolleyAnaEvent_t> Event,std::vector<trolleyAnaEvent_t> &EventCor);
+// int CorrectTRLYForDriftDuringMeasurement(int method,std::vector<int> fxprList,std::vector<gm2field::fixedProbeFrequency_t> fxprData,
+//                                          std::vector<trolleyAnaEvent_t> Event,std::vector<trolleyAnaEvent_t> &EventCor);
 
 int CorrectTRLYForDriftDuringMeasurement(int method,TF1 *fxprFit,
                                          std::vector<trolleyAnaEvent_t> Event,std::vector<trolleyAnaEvent_t> &EventCor); 

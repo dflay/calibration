@@ -29,18 +29,17 @@
 #include "./include/trolleyAnaEvent.h"
 #include "./include/fixedProbeEvent.h"
 
+#include "./src/BlindFuncs.C"
 #include "./src/MyFits.C"
 #include "./src/FitErr.C"
 #include "./src/InputManager.C"
-#include "./src/FXPRFuncs.C"
 #include "./src/TRLYFuncs.C"
-#include "./src/Consolidate.C"
-#include "./src/CustomMath.C"
-#include "./src/CustomGraph.C"
+#include "./src/CustomUtilities.C"
 #include "./src/CustomImport.C"
 #include "./src/CustomExport.C"
 #include "./src/CustomAlgorithms.C"
-#include "./src/CustomUtilities.C"
+#include "./src/CustomMath.C"
+#include "./src/CustomGraph.C"
 #include "./src/DeltaBFuncs.C"
 
 int GetAziGrad(TGraph *g,double &grad,double &gradErr);
@@ -53,20 +52,23 @@ int LocalScanGrad_pp_prod(std::string configFile){
    std::cout << "GET SHIMMED GRADIENT (USING PP SCAN)" << std::endl;
 
    int rc=0;
-   int method = gm2fieldUtil::Constants::kPhaseDerivative;
+   int prMethod = gm2fieldUtil::Constants::kPhaseDerivative;
+   int ppMethod = plungingProbeAnalysis::kLeastSquaresPhase;
 
    InputManager *inputMgr = new InputManager(); 
    inputMgr->UseAxis();         // need to grab the axis data in the JSON file 
    inputMgr->Load(configFile);
    inputMgr->Print(); 
 
-   std::string date       = inputMgr->GetAnalysisDate(); 
-   std::string fitFunc    = inputMgr->GetValue("fit");
-   std::string blindLabel = inputMgr->GetBlindLabel();
-   bool isBlind           = inputMgr->IsBlind();
-   int probeNumber        = inputMgr->GetTrolleyProbe(); 
-   int axis               = inputMgr->GetAxis();
-   int fxprSet            = inputMgr->GetFixedProbeListTag();  
+   std::string prodVersion = inputMgr->GetProductionTag();
+   std::string date        = inputMgr->GetAnalysisDate(); 
+   std::string fitFunc     = inputMgr->GetValue("fit");
+   std::string blindLabel  = inputMgr->GetBlindLabel();
+
+   bool isBlind            = inputMgr->IsBlind();
+   int probeNumber         = inputMgr->GetTrolleyProbe(); 
+   int axis                = inputMgr->GetAxis();
+   int fxprSet             = inputMgr->GetFixedProbeListTag();  
 
    date_t theDate;
    GetDate(theDate);
@@ -134,16 +136,12 @@ int LocalScanGrad_pp_prod(std::string configFile){
 
    // PP data 
    std::vector<plungingProbeAnaEvent_t> ppData,ppEvent; 
-   std::cout << "Getting run " << midasRun << std::endl; 
-   rc = GetPlungingProbeData(midasRun,method,ppData);
+   std::cout << "Getting PP data for run " << midasRun << "..." << std::endl; 
+   rc = GetPlungingProbeData(midasRun,prMethod,ppMethod,ppData,prodVersion);
    if(rc!=0){
       std::cout << "No data!" << std::endl;
       return 1;
    }
-
-   const int NEV = ppData.size(); 
-   std::cout << "PP events: " << NEV << std::endl;
-   for(int i=0;i<NEV;i++) rc = ModifyPlungingProbeData(kLeastSquaresPhase,ppData[i]);
   
    if(isBlind) ApplyBlindingPP(blindValue,ppData);
 
@@ -213,22 +211,22 @@ int LocalScanGrad_pp_prod(std::string configFile){
    std::vector<int> fxprList;
    gm2fieldUtil::Import::ImportData1<int>(fxprPath,"csv",fxprList);
 
-   std::vector<gm2field::fixedProbeFrequency_t> fxprData;
-   rc = gm2fieldUtil::RootHelper::GetFPFrequencies(midasRun,fxprData);
-   if(rc!=0){
-      std::cout << "No data!" << std::endl;
-      return 1;
-   }
+   // std::vector<gm2field::fixedProbeFrequency_t> fxprData;
+   // rc = gm2fieldUtil::RootHelper::GetFPFrequencies(midasRun,fxprData);
+   // if(rc!=0){
+   //    std::cout << "No data!" << std::endl;
+   //    return 1;
+   // }
 
-   const int NN = fxprData.size();
-   const int NFP = fxprList.size();
-   unsigned long long t0     = 0;
-   unsigned long long tStart = fxprData[0].GpsTimeStamp[fxprList[0]];
-   unsigned long long tStop  = fxprData[NN-1].GpsTimeStamp[fxprList[NFP-1]];
-   unsigned long long tStep  = 1E+9;
+   // const int NN = fxprData.size();
+   // const int NFP = fxprList.size();
+   // unsigned long long t0     = 0;
+   // unsigned long long tStart = fxprData[0].GpsTimeStamp[fxprList[0]];
+   // unsigned long long tStop  = fxprData[NN-1].GpsTimeStamp[fxprList[NFP-1]];
+   // unsigned long long tStep  = 1E+9;
 
-   std::vector<fixedProbeEvent_t> fxprDataAvg;
-   GetAverageFXPRVectorsNew(method,t0,tStart,tStop,tStep,fxprList,fxprData,fxprDataAvg);
+   // std::vector<fixedProbeEvent_t> fxprDataAvg;
+   // GetAverageFXPRVectorsNew(method,t0,tStart,tStop,tStep,fxprList,fxprData,fxprDataAvg);
 
    // Plunging probe plots 
    TGraphErrors *g = GetPPTGraphErrors2(Axis.c_str(),"freq",ppEvent);
@@ -236,8 +234,8 @@ int LocalScanGrad_pp_prod(std::string configFile){
    gm2fieldUtil::Graph::SetGraphParameters(g,20,kBlack);
 
    // Fixed probe plot 
-   TGraph *gFXPR = GetTGraphNew(fxprDataAvg);
-   gm2fieldUtil::Graph::SetGraphParameters(gFXPR,20,kBlack);  
+   // TGraph *gFXPR = GetTGraphNew(fxprDataAvg);
+   // gm2fieldUtil::Graph::SetGraphParameters(gFXPR,20,kBlack);  
 
    TString xAxisLabel;
    if(ppCoord[axis]>=0){
@@ -261,18 +259,18 @@ int LocalScanGrad_pp_prod(std::string configFile){
    c1->cd();
    c1->Print(plotPath); 
 
-   TCanvas *c2 = new TCanvas("c2","FXPR Data",1200,600);
+   // TCanvas *c2 = new TCanvas("c2","FXPR Data",1200,600);
 
-   c2->cd(); 
-   gFXPR->Draw("alp");
-   gm2fieldUtil::Graph::SetGraphLabels(gFXPR,"Fixed Probe Average","","Frequency (Hz)"); 
-   gm2fieldUtil::Graph::UseTimeDisplay(gFXPR);  
-   gFXPR->Draw("alp");
-   c2->Update(); 
+   // c2->cd(); 
+   // gFXPR->Draw("alp");
+   // gm2fieldUtil::Graph::SetGraphLabels(gFXPR,"Fixed Probe Average","","Frequency (Hz)"); 
+   // gm2fieldUtil::Graph::UseTimeDisplay(gFXPR);  
+   // gFXPR->Draw("alp");
+   // c2->Update(); 
 
-   plotPath = Form("%s/pp-shimmed-scan_fxpr-avg_pr-%02d.png",plotDir.c_str(),probeNumber); 
-   c2->cd();
-   c2->Print(plotPath);
+   // plotPath = Form("%s/pp-shimmed-scan_fxpr-avg_pr-%02d.png",plotDir.c_str(),probeNumber); 
+   // c2->cd();
+   // c2->Print(plotPath);
 
    // get fit info 
    TF1 *myFit = g->GetFunction(fitFunc.c_str()); 

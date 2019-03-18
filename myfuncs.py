@@ -121,6 +121,7 @@ def writeConfigFileProd(data,tag,keyList,axis,fitData,outpath):
    outData = {} 
    outData['type']                 = data['type'] 
    outData['date']                 = data['date']
+   outData['prod-tag']             = data['prod-tag'] 
    outData['blinding']             = data['blinding'] 
    outData['run-period']           = data['run-period'] 
    outData['trly-probe']           = data['trly-probe'] 

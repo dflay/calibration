@@ -4,11 +4,11 @@
 // a fixed probe data point that corresponds to 
 // the average field at the given time 
 
-typedef struct fixedProbeEvent{
-   double time;
+typedef struct averageFixedProbeEvent {
+   unsigned long long time;
    double freq;
    double freqErr; 
-} fixedProbeEvent_t; 
+} averageFixedProbeEvent_t; 
 
 // a data struct that contains the probe's physical location
 

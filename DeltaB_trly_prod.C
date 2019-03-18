@@ -31,17 +31,16 @@
 #include "./include/plungingProbeAnaEvent.h"
 #include "./include/trolleyAnaEvent.h"
 
+#include "./src/BlindFuncs.C"
 #include "./src/InputManager.C"
 #include "./src/FitFuncs.C"
-#include "./src/FXPRFuncs.C"
 #include "./src/TRLYFuncs.C"
-#include "./src/Consolidate.C"
+#include "./src/CustomUtilities.C"
 #include "./src/CustomMath.C"
-#include "./src/CustomGraph.C"
+#include "./src/CustomAlgorithms.C"
 #include "./src/CustomImport.C"
 #include "./src/CustomExport.C"
-#include "./src/CustomAlgorithms.C"
-#include "./src/CustomUtilities.C"
+#include "./src/CustomGraph.C"
 #include "./src/DeltaBFuncs.C"
 
 int DeltaB_trly_prod(std::string configFile){
@@ -57,8 +56,10 @@ int DeltaB_trly_prod(std::string configFile){
    inputMgr->Load(configFile);
    inputMgr->Print();
 
+   std::string prodVersion = inputMgr->GetProductionTag(); 
    std::string date       = inputMgr->GetAnalysisDate();
    std::string blindLabel = inputMgr->GetBlindLabel();
+
    bool isBlind           = inputMgr->IsBlind();
    bool useTimeWeight     = inputMgr->GetTimeWeightStatus();  
    bool loadTimes         = inputMgr->GetSCCTimeStatus(); 
@@ -66,15 +67,11 @@ int DeltaB_trly_prod(std::string configFile){
    int axis               = inputMgr->GetAxis();
    int runPeriod          = inputMgr->GetRunPeriod();
 
-   std::cout << __LINE__ << std::endl;  
-
    date_t theDate; 
    GetDate(theDate);
-   std::cout << __LINE__ << std::endl;  
 
    std::string plotDir = GetPath("plots" ,isBlind,blindLabel,theDate.getDateString());
    std::string outDir  = GetPath("output",isBlind,blindLabel,theDate.getDateString());
-   std::cout << __LINE__ << std::endl;  
  
    std::string gradName;
    if(axis==0) gradName = "rad"; 
@@ -83,19 +80,16 @@ int DeltaB_trly_prod(std::string configFile){
 
    char outpath[200];
    sprintf(outpath,"%s/dB-trly_final-location_%s-grad_pr-%02d.csv",outDir.c_str(),gradName.c_str(),probeNumber);
-   std::cout << __LINE__ << std::endl;  
 
    int blindUnits  = inputMgr->GetBlindUnits(); 
    double blindMag = inputMgr->GetBlindScale(); 
    gm2fieldUtil::Blinder *myBlind = new gm2fieldUtil::Blinder(blindLabel,blindMag,blindUnits);
    double blindValue = myBlind->GetBlinding(2); // in Hz
 
-   std::cout << __LINE__ << std::endl;  
    std::vector<int> run;
    std::vector<std::string> label;
    inputMgr->GetRunList(run);
    inputMgr->GetRunLabels(label);
-   std::cout << __LINE__ << std::endl;  
 
    const int NRUN = run.size();
    if(NRUN==0){
@@ -110,7 +104,6 @@ int DeltaB_trly_prod(std::string configFile){
          std::cout << "Will load online Delta-B value" << std::endl;
       }
    }
-   std::cout << __LINE__ << std::endl;  
 
    int coilSet  = 1;             // 0 = bottom, 1 = top, -1 = azi  
    double thr   = 100E-3;        // in A 
@@ -121,14 +114,12 @@ int DeltaB_trly_prod(std::string configFile){
       delta = 1.*60.;
    }
 
-   std::cout << "LOADING SCC " << __LINE__ << std::endl;  
    // determine the correct ordering of the SCC on/off cycles 
-   std::vector<gm2field::surfaceCoils_t> sccData;
+   std::vector<surfaceCoilEvent_t> sccData;
    if(!loadOnline){
-      for(int i=0;i<NRUN;i++) rc = gm2fieldUtil::RootHelper::GetSCCData(run[i],sccData);
+      for(int i=0;i<NRUN;i++) rc = GetSurfaceCoilData(run[i],sccData,prodVersion);
       if(rc!=0) return 1;
    } 
-   std::cout << __LINE__ << std::endl;  
    
    bool sccStartOn = false; 
    std::vector<double> sccOff,sccOn;
@@ -142,8 +133,6 @@ int DeltaB_trly_prod(std::string configFile){
    double dB_err[3]    = {0,0,0};
    double drift[3]     = {0,0,0};  
    double drift_err[3] = {0,0,0};  
-   
-   std::cout << __LINE__ << std::endl;  
 
    if(loadOnline){
       // use online results since we don't have a run to work with 
@@ -178,11 +167,9 @@ int DeltaB_trly_prod(std::string configFile){
    } 
 
    // TRLY data
-   std::cout << "LOADING " << __LINE__ << std::endl;  
    std::vector<trolleyAnaEvent_t> trlyData;
    for(int i=0;i<NRUN;i++){
-      std::cout << __LINE__ << std::endl;  
-      rc = GetTrolleyData("",run[i],method,trlyData);
+      rc = GetTrolleyData(run[i],method,trlyData,prodVersion);
       if(rc!=0){
 	 std::cout << "No data!" << std::endl;
 	 return 1;

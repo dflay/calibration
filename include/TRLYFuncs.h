@@ -11,9 +11,6 @@
 
 // useful trolley functions
 
-// int GetTrolleyProbePosition(int index,double *pos);
-int GetTrolleyProbePositions(trolleyProbePosition_t &data);
-
 int GetTRLYStatsAtTime(bool UseTempCor,int probe,int nev,double fLO,std::vector<double> time,
                        std::vector<trolleyAnaEvent_t> Data,std::vector<trolleySwapEvent_t> &Event); 
 
