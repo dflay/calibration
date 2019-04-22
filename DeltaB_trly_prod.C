@@ -57,15 +57,15 @@ int DeltaB_trly_prod(std::string configFile){
    inputMgr->Print();
 
    std::string prodVersion = inputMgr->GetProductionTag(); 
-   std::string date       = inputMgr->GetAnalysisDate();
-   std::string blindLabel = inputMgr->GetBlindLabel();
+   std::string date        = inputMgr->GetAnalysisDate();
+   std::string blindLabel  = inputMgr->GetBlindLabel();
 
-   bool isBlind           = inputMgr->IsBlind();
-   bool useTimeWeight     = inputMgr->GetTimeWeightStatus();  
-   bool loadTimes         = inputMgr->GetSCCTimeStatus(); 
-   int probeNumber        = inputMgr->GetTrolleyProbe();
-   int axis               = inputMgr->GetAxis();
-   int runPeriod          = inputMgr->GetRunPeriod();
+   bool isBlind            = inputMgr->IsBlind();
+   bool useTimeWeight      = inputMgr->GetTimeWeightStatus();  
+   bool loadTimes          = inputMgr->GetSCCTimeStatus(); 
+   int probeNumber         = inputMgr->GetTrolleyProbe();
+   int axis                = inputMgr->GetAxis();
+   int runPeriod           = inputMgr->GetRunPeriod();
 
    date_t theDate; 
    GetDate(theDate);
@@ -78,6 +78,8 @@ int DeltaB_trly_prod(std::string configFile){
    if(axis==1) gradName = "vert"; 
    if(axis==2) gradName = "azi";
 
+   PrintMessage("DeltaB_trly_prod","",__LINE__); 
+
    char outpath[200];
    sprintf(outpath,"%s/dB-trly_final-location_%s-grad_pr-%02d.csv",outDir.c_str(),gradName.c_str(),probeNumber);
 
@@ -85,6 +87,8 @@ int DeltaB_trly_prod(std::string configFile){
    double blindMag = inputMgr->GetBlindScale(); 
    gm2fieldUtil::Blinder *myBlind = new gm2fieldUtil::Blinder(blindLabel,blindMag,blindUnits);
    double blindValue = myBlind->GetBlinding(2); // in Hz
+   
+   PrintMessage("DeltaB_trly_prod","",__LINE__); 
 
    std::vector<int> run;
    std::vector<std::string> label;
@@ -96,6 +100,8 @@ int DeltaB_trly_prod(std::string configFile){
       std::cout << "No data!" << std::endl;
       return 1;
    }
+   
+   PrintMessage("DeltaB_trly_prod","",__LINE__); 
 
    bool loadOnline = false; 
    for(int i=0;i<NRUN;i++){
@@ -113,6 +119,13 @@ int DeltaB_trly_prod(std::string configFile){
       coilSet = -1;
       delta = 1.*60.;
    }
+
+   if(runPeriod==2){
+      delta = 2.*50.;
+      // if(axis==2) delta = 2.*60. + 12.; 
+   }
+   
+   PrintMessage("DeltaB_trly_prod","Loading SCC data",__LINE__); 
 
    // determine the correct ordering of the SCC on/off cycles 
    std::vector<surfaceCoilEvent_t> sccData;
@@ -136,7 +149,7 @@ int DeltaB_trly_prod(std::string configFile){
 
    if(loadOnline){
       // use online results since we don't have a run to work with 
-      rc = LoadDeltaBData_trlyXYZ(inpath_db,probeNumber,trly_dB);
+      rc    = LoadDeltaBData_trlyXYZ(inpath_db,probeNumber,trly_dB);
       dB[0] = trly_dB[axis].dB; 
       dB[1] = trly_dB[axis].dB_fxpr; 
       dB[2] = 0.; 
@@ -148,7 +161,7 @@ int DeltaB_trly_prod(std::string configFile){
    }else{
       if(loadTimes){
 	 // better to use pre-defined transition times   
-	 rc = LoadSCCTimes(probeNumber,"tr",sccOff,sccOn);
+	 rc = LoadSCCTimes(probeNumber,runPeriod,"tr",sccOff,sccOn);
 	 if(sccOn[0]<sccOff[0]) sccStartOn = true;
       }else{
 	 rc = FindTransitionTimes(coilSet,axis,thr,delta,sccData,sccOff,sccOn);
@@ -159,6 +172,8 @@ int DeltaB_trly_prod(std::string configFile){
 	 if(rc==1) sccStartOn = true;
       }
    }
+   
+   PrintMessage("DeltaB_trly_prod","",__LINE__); 
 
    if(sccStartOn){
       std::cout << "SCC was ON to start the sequence" << std::endl;

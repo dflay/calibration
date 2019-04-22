@@ -28,8 +28,10 @@ int InputManager::Init(){
    fBlindScale      = -1; 
    fType            = "NONE";
    fDevice          = "NONE";  
-   fAnaDate         = "NONE";  
+   fRunDate         = "NONE";  
    fFitFunc         = "NONE";
+   fProdTag         = "NONE"; 
+   fNMRANATag       = "NONE"; 
    ClearVectors(); 
    return 0;
 }
@@ -93,30 +95,31 @@ int InputManager::Parse(){
    int NRUNS=0; 
 
    // parse all the parameters we want
-   bool axisStatus  = DoesKeyExist("axis"); 
-   bool anaStatus   = DoesKeyExist("full-ana"); 
-   bool locStatus   = DoesKeyExist("final-loc"); 
-   bool p2pStatus   = DoesKeyExist("p2p-fit"); 
-   bool protStatus  = DoesKeyExist("free-proton-cor");
-   bool runStatus   = DoesKeyExist("nruns"); 
-   bool dateStatus  = DoesKeyExist("date"); 
-   bool blindStatus = DoesKeyExist("blinding"); 
-   bool trlyStatus  = DoesKeyExist("trly-probe");
-   bool fxprStatus  = DoesKeyExist("fxpr-set"); 
-   bool fitStatus   = DoesKeyExist("fit"); 
-   bool swapStatus  = DoesKeyExist("load-trly-swap-times");  
-   bool sccStatus   = DoesKeyExist("load-trly-scc-times");  
-   bool timeStatus  = DoesKeyExist("use-aba-time-weight");
-   bool tempStatus  = DoesKeyExist("use-trly-temp-cor");
-   bool runpStatus  = DoesKeyExist("run-period"); 
-   bool prodStatus  = DoesKeyExist("prod-tag");  
+   bool axisStatus   = DoesKeyExist("axis"); 
+   bool anaStatus    = DoesKeyExist("full-ana"); 
+   bool locStatus    = DoesKeyExist("final-loc"); 
+   bool p2pStatus    = DoesKeyExist("p2p-fit"); 
+   bool protStatus   = DoesKeyExist("free-proton-cor");
+   bool runStatus    = DoesKeyExist("nruns"); 
+   bool dateStatus   = DoesKeyExist("date"); 
+   bool blindStatus  = DoesKeyExist("blinding"); 
+   bool trlyStatus   = DoesKeyExist("trly-probe");
+   bool fxprStatus   = DoesKeyExist("fxpr-set"); 
+   bool fitStatus    = DoesKeyExist("fit"); 
+   bool swapStatus   = DoesKeyExist("load-trly-swap-times");  
+   bool sccStatus    = DoesKeyExist("load-trly-scc-times");  
+   bool timeStatus   = DoesKeyExist("use-aba-time-weight");
+   bool tempStatus   = DoesKeyExist("use-trly-temp-cor");
+   bool runpStatus   = DoesKeyExist("run-period"); 
+   bool prodStatus   = DoesKeyExist("prod-tag");  
+   bool nmrAnaStatus = DoesKeyExist("nmr-ana-tag");  
 
    // parameters common to all 
    std::string unitStr="";
-   if(dateStatus)  fAnaDate      = fParams["date"];
-   if(prodStatus)  fProdTag      = fParams["prod-tag"]; 
-   if(trlyStatus)  fTrolleyProbe = (int)fParams["trly-probe"]; 
-   if(fxprStatus)  fFXPRListTag  = (int)fParams["fxpr-set"]; 
+   if(dateStatus)   fRunDate      = fParams["date"];
+   if(prodStatus)   fProdTag      = fParams["prod-tag"]; 
+   if(nmrAnaStatus) fProdTag      = fParams["nmr-ana-tag"]; 
+   if(fxprStatus)   fFXPRListTag  = (int)fParams["fxpr-set"]; 
    if(blindStatus){
       fIsBlind    = (bool)( (int)fParams["blinding"]["enable"] );
       fBlindLabel = fParams["blinding"]["label"];
@@ -137,6 +140,7 @@ int InputManager::Parse(){
    
    // calibration: production 
    if( fType.compare("calib-prod")==0 ){
+      if(trlyStatus) fTrolleyProbe  = (int)fParams["trly-probe"]; 
       if(runpStatus) fRunPeriod     = fParams["run-period"];  
       if(axisStatus) fAxis          = (int)fParams["axis"];
       if(protStatus) fIsFreeProton  = (bool)( (int)fParams["free-proton-cor"] );  
@@ -146,15 +150,26 @@ int InputManager::Parse(){
       if(timeStatus) fUseTimeWeight = (bool)( (int)fParams["use-aba-time-weight"] ); 
       if(tempStatus) fUseTempCor    = (bool)( (int)fParams["use-trly-temp-cor"] ); 
    }
+
+   // trolley Delta-B measurements
+   if( fType.compare("trly-db")==0 ){
+      if(trlyStatus) fTrolleyProbe  = (int)fParams["trly-probe"]; 
+      if(runpStatus) fRunPeriod     = fParams["run-period"];  
+      if(axisStatus) fAxis          = (int)fParams["axis"];
+      if(sccStatus)  fLoadSCCTime   = (bool)( (int)fParams["load-trly-scc-times"] ); 
+      if(timeStatus) fUseTimeWeight = (bool)( (int)fParams["use-aba-time-weight"] ); 
+   }
  
    // simple input format (i.e., rapid swapping data from 6/1)  
    if( fType.compare("is-simple")==0 ){
       fIsSimple                      = true;
+      if(trlyStatus) fTrolleyProbe   = (int)fParams["trly-probe"]; 
       if(axisStatus) fAxis           = (int)fParams["axis"]; 
       if(anaStatus) fIsFullAnalysis  = (bool)( (int)fParams["full-ana"]  );    
       if(fitStatus) fFitFunc         = fParams["fit"]; 
    }else if( fType.compare("is-complex")==0 ){
       fIsSimple                      = false;
+      if(trlyStatus) fTrolleyProbe   = (int)fParams["trly-probe"]; 
       if(axisStatus) fAxis           = (int)fParams["axis"]; 
       if(anaStatus) fIsFullAnalysis  = (bool)( (int)fParams["full-ana"]  );    
       if(locStatus) fIsFinalLocation = (bool)( (int)fParams["final-loc"] );   
@@ -175,6 +190,7 @@ int InputManager::Print(){
    std::cout << "Is blinded:         " << fIsBlind         << std::endl;
    std::cout << "Blind label:        " << fBlindLabel      << std::endl;
    std::cout << "Production tag:     " << fProdTag         << std::endl; 
+   std::cout << "NMR-ANA tag:        " << fNMRANATag       << std::endl; 
    if(fType.compare("calib-prod")==0){
          std::cout << "Run period:         " << fRunPeriod    << std::endl;
 	 std::cout << "Axis:               " << fAxis << " (" << axis << ")" << std::endl;
@@ -183,10 +199,10 @@ int InputManager::Print(){
       if(fIsSimple){
 	 std::cout << "FXPR set:           " << fFXPRListTag     << std::endl;
       }else if(!fIsSimple){
+	 std::cout << "Run date:           " << fRunDate         << std::endl;
 	 std::cout << "Is full analysis:   " << fIsFullAnalysis  << std::endl;
 	 std::cout << "Is final location:  " << fIsFinalLocation << std::endl;
 	 std::cout << "Use P2P fit:        " << fUseP2PFit       << std::endl;
-	 std::cout << "Analysis date:      " << fAnaDate         << std::endl;
 	 std::cout << "Fit function:       " << fFitFunc         << std::endl;
 	 std::cout << "Axis:               " << fAxis            << " (" << axis << ")" << std::endl;
       }

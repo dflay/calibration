@@ -17,6 +17,8 @@
 #include "imageResult.h"
 #include "imageParameter.h"
 #include "trolleyAnaEvent.h"
+#include "plungingProbeAnaEvent.h"
+#include "fixedProbeEvent.h"
 #include "results.h"
 #include "misalignment.h"
 #include "nmrAnaEvent.h"
@@ -26,13 +28,15 @@
 #include "grad_meas.h"
 #include "deltab.h"
 #include "blind.h"
+#include "Constants.h"
 
 // Reading trolley data 
 int GetTrolleyData(std::string date,int run,int method,std::vector<trolleyAnaEvent_t> &trlyEvent,std::string version);
 
 // Reading PP data
-int GetPlungingProbeData(int run,int prMethod,int ppMethod,std::vector<plungingProbeAnaEvent_t> &data,std::string version); 
-int ModifyPlungingProbeData(int method,plungingProbeAnaEvent_t &data); 
+int GetPlungingProbeData(int run,int prMethod,int ppMethod,std::vector<plungingProbeAnaEvent_t> &data,
+                         std::string version,std::string nmrAnaVersion); 
+int ModifyPlungingProbeData(int method,plungingProbeAnaEvent_t &data,std::string nmrAnaVersion); 
 
 // Reading SCC data 
 int GetSurfaceCoilData(int run,std::vector<surfaceCoilEvent_t> &data,std::string version);  
@@ -52,8 +56,8 @@ int ImportDeltaBFileList_csv(const char *inpath,
 
 int LoadImagesData(const char *inpath,int probe,double &image,double &image_err); 
 
-int LoadTimes(int probe,std::string type,std::string dev,std::vector<double> &time); 
-int LoadSCCTimes(int probe,std::string dev,std::vector<double> &sccOff,std::vector<double> &sccOn);
+int LoadTimes(int probe,int runPeriod,std::string type,std::string dev,std::vector<double> &time); 
+int LoadSCCTimes(int probe,int runPeriod,std::string dev,std::vector<double> &sccOff,std::vector<double> &sccOn);
 
 int LoadResultsProdData(const char *inpath,result_prod_t &data); 
 int LoadResultsProdFinalData(const char *inpath,result_prod_t &data); 
@@ -92,6 +96,17 @@ int ImportResults(std::string inpath,result_t &data);
 
 // templated functions
 // trolley  
+//______________________________________________________________________________
+template <typename T> int GetTrolleyMultipoles(int run,std::vector<T> &data,std::string version){
+   int rc=0;
+   std::string dirName    = "TreeGenTrolley";
+   std::string treeName   = "trolley";
+   std::string branchName = "FieldMultipole";
+   std::string fileName,dataPath;
+   rc = SetDataFileParameters(version,fileName,dataPath);
+   rc = gm2fieldUtil::RootHelper::GetDataFromTree<T>(run,dirName,treeName,branchName,data,-1,-1,fileName,dataPath);
+   return rc;
+}
 //______________________________________________________________________________
 template <typename T> int GetTrolleyFrequencies(int run,std::vector<T> &data,std::string version){
    int rc=0;

@@ -184,7 +184,8 @@ int GetTrolleyData(int run,int method,std::vector<trolleyAnaEvent_t> &trlyEvent,
             arg_phi  = trlyPos[i].Phi[j][0]*gm2fieldUtil::Constants::DEG_PER_RAD;
             arg_freq = trlyFreq[i].Frequency[j][method];
          }else{
-            arg_phi  = trlyPos_new[i].Phi[j][0]*gm2fieldUtil::Constants::DEG_PER_RAD;
+            // arg_phi  = trlyPos_new[i].Phi[j][0]*gm2fieldUtil::Constants::DEG_PER_RAD;
+            arg_phi  = trlyPos_new[i].Phi[j][0];
             arg_freq = trlyFreq_new[i].Frequency[j][method];
          }
          arg_time = trlyTime[i].GpsCycleStart[j];
@@ -210,7 +211,8 @@ int GetTrolleyData(int run,int method,std::vector<trolleyAnaEvent_t> &trlyEvent,
    return 0;
 }
 //______________________________________________________________________________
-int GetPlungingProbeData(int run,int prMethod,int ppMethod,std::vector<plungingProbeAnaEvent_t> &data,std::string version){
+int GetPlungingProbeData(int run,int prMethod,int ppMethod,std::vector<plungingProbeAnaEvent_t> &data,
+                         std::string version,std::string nmrAnaVersion){
 
    // prMethod = production method (from art analysis) 
    // ppMethod = UMass analysis method 
@@ -333,7 +335,7 @@ int GetPlungingProbeData(int run,int prMethod,int ppMethod,std::vector<plungingP
    const int NN = data.size();
    std::cout << "NMR-DAQ runs: " << endl;
    for(int i=0;i<NN;i++){
-      rc = ModifyPlungingProbeData(ppMethod,data[i]);
+      rc = ModifyPlungingProbeData(ppMethod,data[i],nmrAnaVersion);
       // std::cout << Form("%d, x = %.3lf mm, y = %.3lf mm, z = %.3lf mm",
       //                   data[i].run,data[i].r[0],data[i].y[0],data[i].phi[0]) << endl;
    }
@@ -343,13 +345,13 @@ int GetPlungingProbeData(int run,int prMethod,int ppMethod,std::vector<plungingP
    return 0;
 }
 //______________________________________________________________________________
-int ModifyPlungingProbeData(int method,plungingProbeAnaEvent_t &data){
+int ModifyPlungingProbeData(int method,plungingProbeAnaEvent_t &data,std::string nmrAnaVersion){
    // replace the frequency values with those calculated by the NMR-ANA framework  
    int runNumber = data.run;
    std::vector<nmrAnaEvent_t> inData;
    // std::cout << "Trying NMR-DAQ run " << runNumber << std::endl; 
    char inpath[512];
-   sprintf(inpath,"./input/NMR-ANA/run-%05d/results_pulse-stats.dat",runNumber);
+   sprintf(inpath,"./input/NMR-ANA/%s/run-%05d/results_pulse-stats.dat",nmrAnaVersion.c_str(),runNumber);
    int rc = ImportNMRANAData(inpath,inData);
    if(rc!=0){
       std::cout << "[ModifyPlungingProbeData]: No data for NMR-DAQ run " << runNumber << "!" << std::endl;
@@ -427,13 +429,13 @@ int LoadImageParameters(std::string inpath,std::string type,std::vector<imagePar
    return rc;
 }
 //______________________________________________________________________________
-int LoadTimes(int probe,std::string type,std::string dev,std::vector<double> &time){
+int LoadTimes(int probe,int runPeriod,std::string type,std::string dev,std::vector<double> &time){
    // load in the by-hand determined swap times 
    std::vector<std::string> stime;
    unsigned long int aTime;
    std::string st;
    char inpath[200];
-   sprintf(inpath,"./input/%s-times/%s-%02d.txt",type.c_str(),dev.c_str(),probe);
+   sprintf(inpath,"./input/%s-times/run-%d/%s-%02d.txt",type.c_str(),runPeriod,dev.c_str(),probe);
    std::ifstream infile;
    infile.open(inpath);
    if( infile.fail() ){
@@ -456,10 +458,10 @@ int LoadTimes(int probe,std::string type,std::string dev,std::vector<double> &ti
    return 0;
 }
 //______________________________________________________________________________
-int LoadSCCTimes(int probe,std::string dev,std::vector<double> &sccOff,std::vector<double> &sccOn){
+int LoadSCCTimes(int probe,int runPeriod,std::string dev,std::vector<double> &sccOff,std::vector<double> &sccOn){
    // load in the by-hand determined SCC times 
    std::vector<double> time;
-   int rc = LoadTimes(probe,"scc",dev,time); 
+   int rc = LoadTimes(probe,runPeriod,"scc",dev,time); 
    // now fill the vectors appropriately 
    int N = time.size();
    for(int i=0;i<N;i++){

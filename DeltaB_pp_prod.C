@@ -60,14 +60,15 @@ int DeltaB_pp_prod(std::string configFile){
    inputMgr->Load(configFile);
    inputMgr->Print();
 
-   std::string prodVersion = inputMgr->GetProductionTag();
-   std::string date        = inputMgr->GetAnalysisDate();
-   std::string blindLabel  = inputMgr->GetBlindLabel();
+   std::string prodVersion   = inputMgr->GetProductionTag();
+   std::string nmrAnaVersion = inputMgr->GetNMRANATag();  
+   std::string date          = inputMgr->GetAnalysisDate();
+   std::string blindLabel    = inputMgr->GetBlindLabel();
 
-   bool isBlind            = inputMgr->IsBlind();
-   bool useTimeWeight      = inputMgr->GetTimeWeightStatus();
-   int probeNumber         = inputMgr->GetTrolleyProbe();
-   int axis                = inputMgr->GetAxis();
+   bool isBlind              = inputMgr->IsBlind();
+   bool useTimeWeight        = inputMgr->GetTimeWeightStatus();
+   int probeNumber           = inputMgr->GetTrolleyProbe();
+   int axis                  = inputMgr->GetAxis();
 
    date_t theDate; 
    GetDate(theDate);
@@ -123,7 +124,7 @@ int DeltaB_pp_prod(std::string configFile){
  
    if(loadTimes){
       // better to use pre-defined transition times   
-      rc = LoadSCCTimes(probeNumber,ppLabel,sccOff,sccOn);
+      rc = LoadSCCTimes(probeNumber,runPeriod,ppLabel,sccOff,sccOn);
       if(sccOn[0]<sccOff[0]) sccStartOn = true;
    }else{
       rc = FindTransitionTimes(coilSet,axis,thr,delta,sccData,sccOff,sccOn);
@@ -157,7 +158,7 @@ int DeltaB_pp_prod(std::string configFile){
    std::vector<plungingProbeAnaEvent_t> PP,ppEvent; 
    for(int i=0;i<N3;i++){
       std::cout << "Getting PP data for run " << run[i] << "..." << std::endl; 
-      rc = GetPlungingProbeData(run[i],prMethod,ppMethod,ppEvent,prodVersion);
+      rc = GetPlungingProbeData(run[i],prMethod,ppMethod,ppEvent,prodVersion,nmrAnaVersion);
       if(rc!=0){
 	 std::cout << "No data!" << std::endl;
 	 return 1;

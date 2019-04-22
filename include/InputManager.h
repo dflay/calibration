@@ -18,7 +18,7 @@ class InputManager{
       bool fUseAxis,fIsFreeProton,fLoadSwapTime,fLoadSCCTime,fUseTimeWeight,fUseTempCor;
       int fTrolleyProbe,fAxis,fFXPRListTag,fBlindUnits,fRunPeriod; 
       double fBlindScale; 
-      std::string fType,fDevice,fAnaDate,fFitFunc,fBlindLabel,fProdTag;
+      std::string fType,fDevice,fRunDate,fFitFunc,fBlindLabel,fProdTag,fNMRANATag;
       std::vector<int> fRunList; 
       std::vector<std::string> fRunLabel; 
 
@@ -60,10 +60,11 @@ class InputManager{
 
       std::string GetType()          const { return fType;            } 
       std::string GetDevice()        const { return fDevice;          } 
-      std::string GetAnalysisDate()  const { return fAnaDate;         } 
+      std::string GetAnalysisDate()  const { return fRunDate;         } 
       std::string GetFitFunction()   const { return fFitFunc;         } 
       std::string GetBlindLabel()    const { return fBlindLabel;      } 
       std::string GetProductionTag() const { return fProdTag;         }
+      std::string GetNMRANATag()     const { return fNMRANATag;       } 
 
       std::string GetValue(std::string key)                       const { return fParams[key]; }  
       std::string GetValue(std::string key,std::string subKey)    const { return fParams[key][subKey]; } 

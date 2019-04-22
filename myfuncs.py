@@ -49,7 +49,7 @@ def writeConfigFile(data,tag,keyList,isFullAnalysis,isFinalLocation,axis,fitData
    json.dump(outData,outfile)
    outfile.close()
 #_______________________________________________________________________________
-def writeConfigFileProd_trlyDB(data,tag,keyList,axis,fitData,outpath): 
+def writeConfigFileProd_trlyDB(data,tag,keyList,axis,fitData,trlyProbe,outpath): 
    # write a JSON file for the ROOT script defined by tag 
    # get the run list 
    runList   = []
@@ -75,7 +75,9 @@ def writeConfigFileProd_trlyDB(data,tag,keyList,axis,fitData,outpath):
    outData['date']                 = data['date']
    outData['blinding']             = data['blinding'] 
    outData['run-period']           = data['run-period'] 
-   outData['trly-probe']           = data['trly-probe'] 
+   outData['prod-tag']             = data['prod-tag'] 
+   outData['nmr-ana-tag']          = data['nmr-ana-tag'] 
+   outData['trly-probe']           = int(trlyProbe) 
    outData['fxpr-set']             = data['fxpr-set']
    outData['free-proton-cor']      = data['free-proton-cor'] 
    outData['load-trly-swap-times'] = data['load-trly-swap-times'] 
@@ -121,9 +123,10 @@ def writeConfigFileProd(data,tag,keyList,axis,fitData,outpath):
    outData = {} 
    outData['type']                 = data['type'] 
    outData['date']                 = data['date']
-   outData['prod-tag']             = data['prod-tag'] 
    outData['blinding']             = data['blinding'] 
    outData['run-period']           = data['run-period'] 
+   outData['prod-tag']             = data['prod-tag'] 
+   outData['nmr-ana-tag']          = data['nmr-ana-tag'] 
    outData['trly-probe']           = data['trly-probe'] 
    outData['fxpr-set']             = data['fxpr-set']
    outData['free-proton-cor']      = data['free-proton-cor'] 
