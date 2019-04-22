@@ -61,13 +61,14 @@ int Process_pp_prod(std::string configFile){
    inputMgr->Load(configFile);
    inputMgr->Print();
 
-   std::string prodVersion = inputMgr->GetProductionTag();
-   std::string anaDate     = inputMgr->GetAnalysisDate();
-   std::string blindLabel  = inputMgr->GetBlindLabel();
+   std::string prodVersion   = inputMgr->GetProductionTag();
+   std::string nmrAnaVersion = inputMgr->GetNMRANATag();
+   std::string anaDate       = inputMgr->GetAnalysisDate();
+   std::string blindLabel    = inputMgr->GetBlindLabel();
  
-   bool isBlind            = inputMgr->IsBlind();
-   int probeNumber         = inputMgr->GetTrolleyProbe();
-   int runPeriod           = inputMgr->GetRunPeriod();  
+   bool isBlind              = inputMgr->IsBlind();
+   int probeNumber           = inputMgr->GetTrolleyProbe();
+   int runPeriod             = inputMgr->GetRunPeriod();  
 
    date_t theDate;
    GetDate(theDate);
@@ -103,7 +104,7 @@ int Process_pp_prod(std::string configFile){
    int NPP=0; 
    for(int i=0;i<NRUNS;i++){
       std::cout << "Getting PP data for run " << run[i] << "..." << std::endl;
-      rc = GetPlungingProbeData(run[i],prMethod,ppMethod,ppData,prodVersion);
+      rc = GetPlungingProbeData(run[i],prMethod,ppMethod,ppData,prodVersion,nmrAnaVersion);
       if(rc!=0){
 	 std::cout << "No data!" << std::endl;
 	 return 1;

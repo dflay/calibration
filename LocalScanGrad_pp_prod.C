@@ -60,15 +60,16 @@ int LocalScanGrad_pp_prod(std::string configFile){
    inputMgr->Load(configFile);
    inputMgr->Print(); 
 
-   std::string prodVersion = inputMgr->GetProductionTag();
-   std::string date        = inputMgr->GetAnalysisDate(); 
-   std::string fitFunc     = inputMgr->GetValue("fit");
-   std::string blindLabel  = inputMgr->GetBlindLabel();
+   std::string prodVersion   = inputMgr->GetProductionTag();
+   std::string nmrAnaVersion = inputMgr->GetNMRANATag();
+   std::string date          = inputMgr->GetAnalysisDate(); 
+   std::string fitFunc       = inputMgr->GetValue("fit");
+   std::string blindLabel    = inputMgr->GetBlindLabel();
 
-   bool isBlind            = inputMgr->IsBlind();
-   int probeNumber         = inputMgr->GetTrolleyProbe(); 
-   int axis                = inputMgr->GetAxis();
-   int fxprSet             = inputMgr->GetFixedProbeListTag();  
+   bool isBlind              = inputMgr->IsBlind();
+   int probeNumber           = inputMgr->GetTrolleyProbe(); 
+   int axis                  = inputMgr->GetAxis();
+   int fxprSet               = inputMgr->GetFixedProbeListTag();  
 
    date_t theDate;
    GetDate(theDate);
@@ -137,7 +138,7 @@ int LocalScanGrad_pp_prod(std::string configFile){
    // PP data 
    std::vector<plungingProbeAnaEvent_t> ppData,ppEvent; 
    std::cout << "Getting PP data for run " << midasRun << "..." << std::endl; 
-   rc = GetPlungingProbeData(midasRun,prMethod,ppMethod,ppData,prodVersion);
+   rc = GetPlungingProbeData(midasRun,prMethod,ppMethod,ppData,prodVersion,nmrAnaVersion);
    if(rc!=0){
       std::cout << "No data!" << std::endl;
       return 1;
