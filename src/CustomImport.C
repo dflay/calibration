@@ -865,9 +865,14 @@ int ImportNMRANAData(const char *inpath,std::vector<nmrAnaEvent_t> &Data){
 
    nmrAnaEvent_t inData;
 
+   // allowed amplitude in volts 
+   double VMIN = 0.3; 
+   double VMAX = 1.5; 
+
+   int cntr=0;
    int N=0,k=0;
    int irun,ipulse,izc,NUM_PULSES=0;
-   double inoise,inc,ifa,ifb,ifc,ifa_ph,ifb_ph,ifc_ph,ivmax;
+   double inoise,inc,ifa,ifb,ifc,ifa_ph,ifb_ph,ifc_ph,iampl;
 
    // const int MAX = 1000;
    // char buf[MAX];
@@ -882,10 +887,10 @@ int ImportNMRANAData(const char *inpath,std::vector<nmrAnaEvent_t> &Data){
       // cout << "Opening the file: " << inpath << endl;
       // for(int i=0;i<1;i++) infile.getline(buf,MAX);
       while( !infile.eof() ){
-         infile >> irun >> ipulse >> ivmax >> inoise >> izc >> inc >> ifa >> ifb >> ifc >> ifa_ph >> ifb_ph >> ifc_ph;
-         if( izc>10&&ifc_ph>0 && (ivmax>0.5&&ivmax<1.5) ){
+         infile >> irun >> ipulse >> iampl >> inoise >> izc >> inc >> ifa >> ifb >> ifc >> ifa_ph >> ifb_ph >> ifc_ph;
+         if( izc>10&&ifc_ph>0 && (iampl>VMIN&&iampl<VMAX) ){
 	    inData.run     = irun;
-	    inData.ampl    = ivmax;
+	    inData.ampl    = iampl;
 	    inData.noise   = inoise;
 	    inData.pulse   = ipulse; 
 	    inData.zc      = izc; 
@@ -897,13 +902,14 @@ int ImportNMRANAData(const char *inpath,std::vector<nmrAnaEvent_t> &Data){
 	    inData.freq[4] = ifb_ph;
 	    inData.freq[5] = ifc_ph;
 	    Data.push_back(inData);
+	    cntr++;
          }else{
-           std::cout << "[ImportData]: Warning for run " << irun << ": rejected pulse "            << ipulse
-                     << " because number of zero crossings is less than 10" << std::endl;
+           std::cout << Form("[ImportData]: WARNING: rejected run %d pulse %d",irun,ipulse) << std::endl;
+           std::cout << Form("              ampl = %.3lf V, zc = %d, freq = %.3lf",iampl,izc,ifc_ph) << std::endl;
          }
       }
       infile.close();
-      Data.pop_back();
+      if(cntr>0) Data.pop_back();
    }
 
    return 0;

@@ -99,6 +99,93 @@ def writeConfigFileProd_trlyDB(data,tag,keyList,axis,fitData,trlyProbe,outpath):
    json.dump(outData,outfile)
    outfile.close()
 #_______________________________________________________________________________
+def writeConfigFileProd_ShimScan(data,tag,keyList,axis,fitData,outpath):
+   # special setup because sometimes we have multiple MIDAS runs for a scan...  
+   # write a JSON file for the ROOT script defined by tag 
+   # get the run list 
+   runList   = []
+   labelList = []  
+   subList   = []
+   i=0
+   for key in keyList: 
+      if(key=="ppx" or key=="ppy" or key=="ppz" or key=="midas-runs"):
+         # for a list of PP NMR-DAQ runs or MIDAS runs  
+         subList = data[tag][key] # this is a list!  
+         for subRun in subList: 
+            runList.append(subRun) 
+            if(key=="midas-runs"):
+                labelList.append("srm{0}".format(i+1))
+            else
+                labelList.append("sr{0}".format(i+1))
+            i = i + 1 
+      elif(key=="NONE"): 
+         print("No runs to use!")
+
+   # extract the MIDAS run we want
+   # first collect the midas runs into a separate list  
+   midasRunList = []
+   N = len(runList)
+   for i in xrange(0,N): 
+      theLabel = "srm{0}".format(i+1) 
+      if(labelList[i]==theLabel): 
+         midasRunList.append(runList[i])
+   # build final runlist 
+   fRunList   = []
+   fLabelList = []
+   # choose midas run that corresponds to the axis we're using
+   NM = len(midasRunList) 
+   if(NM==1): 
+      # if we have a single MIDAS run, use that 
+      fRunList.append(midasRunList[0])
+   else: 
+      # otherwise, we choose the index that corresponds to the axis we want  
+      fRunList.append(midasRunList[axis]) 
+   # add all subruns -- these are determined from the key ppx, ppy, ppz
+   # and hence should match the MIDAS run chosen  
+   for sr in subRun: 
+      fRunList.append(sr) 
+   # create labels for the final run list   
+   NRL = len(fRunList)
+   for i in xrange(0,NRL): 
+      fLabelList.append( "sr{0}".format(i+1) ) 
+ 
+   # save to output json object  
+   outData = {} 
+   outData['type']                 = data['type'] 
+   outData['date']                 = data['date']
+   outData['blinding']             = data['blinding'] 
+   outData['run-period']           = data['run-period'] 
+   outData['prod-tag']             = data['prod-tag'] 
+   outData['nmr-ana-tag']          = data['nmr-ana-tag'] 
+   outData['trly-probe']           = data['trly-probe'] 
+   outData['fxpr-set']             = data['fxpr-set']
+   outData['free-proton-cor']      = data['free-proton-cor'] 
+   outData['load-trly-swap-times'] = data['load-trly-swap-times'] 
+   outData['load-trly-scc-times']  = data['load-trly-scc-times'] 
+   outData['use-aba-time-weight']  = data['use-aba-time-weight']
+   outData['use-trly-temp-cor']    = data['use-trly-temp-cor'] 
+
+   if(axis==0): 
+      outData['load-pp-scc-times'] = data['dB-pp_x']['load-times']
+   elif(axis==1): 
+      outData['load-pp-scc-times'] = data['dB-pp_y']['load-times']
+   elif(axis==2):  
+      outData['load-pp-scc-times'] = data['dB-pp_z']['load-times']
+
+   if(fitData): 
+      outData['fit'] = data[tag]['fit']  
+   else: 
+      outData['fit'] = "NONE"
+
+   outData['nruns']      = len(fRunList) 
+   outData['run-list']   = fRunList   
+   outData['run-label']  = fLabelList  
+   outData['axis']       = axis 
+   # print("{0}".format(outData) )
+   outfile = open(outpath,'w')
+   json.dump(outData,outfile)
+   outfile.close()
+#_______________________________________________________________________________
 def writeConfigFileProd(data,tag,keyList,axis,fitData,outpath): 
    # write a JSON file for the ROOT script defined by tag 
    # get the run list 
@@ -108,7 +195,7 @@ def writeConfigFileProd(data,tag,keyList,axis,fitData,outpath):
    i=0
    for key in keyList: 
       if(key=="ppx" or key=="ppy" or key=="ppz" or key=="midas-runs"):
-         # for PP NMR-DAQ runs  
+         # for a list of PP NMR-DAQ runs or MIDAS runs  
          subList = data[tag][key] # this is a list!  
          for subRun in subList: 
             runList.append(subRun) 
