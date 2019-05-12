@@ -118,7 +118,7 @@ int InputManager::Parse(){
    std::string unitStr="";
    if(dateStatus)   fRunDate      = fParams["date"];
    if(prodStatus)   fProdTag      = fParams["prod-tag"]; 
-   if(nmrAnaStatus) fProdTag      = fParams["nmr-ana-tag"]; 
+   if(nmrAnaStatus) fNMRANATag    = fParams["nmr-ana-tag"]; 
    if(fxprStatus)   fFXPRListTag  = (int)fParams["fxpr-set"]; 
    if(blindStatus){
       fIsBlind    = (bool)( (int)fParams["blinding"]["enable"] );

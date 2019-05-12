@@ -17,6 +17,15 @@ int SetDataFileParameters(std::string version,std::string &fileName,std::string 
       // calibration (new production on g2field-server-2) 
       fileName = "default";
       dataPath = "/data2/newg2/DataProduction/Nearline/ArtTFSDir"; 
+   }else if( version.compare("v9_21_01")==0 ){
+      fileName = "FieldPlainRootOutput_";
+      dataPath = "/data1/newg2/DataProduction/Offline/ArtTFSDir/v9_21_01";  
+   }else if( version.compare("nearline")==0 ){
+      fileName = "FieldGraphOut"; 
+      dataPath = "/data1/newg2/DataProduction/Nearline/ArtTFSDir"; 
+   }else{
+      std::cout << "No match for production tag: " << version << std::endl;
+      return 1;
    }
    return 0;
 }
@@ -28,7 +37,7 @@ int GetFixedProbeData(int run,int method,std::vector<int> probe,std::vector<aver
    std::vector<gm2field::fixedProbeFrequency_t> fxpr_new; 
 
    int rc=0,N=0;
-   if( version.compare("run-1")!=0 ){
+   if( version.compare("nearline")!=0 ){
       rc = GetFixedProbeFrequencies<gm2field::fixedProbeFrequency_t>(run,fxpr_new,version);
       N = fxpr_new.size(); 
    }else{
@@ -48,7 +57,7 @@ int GetFixedProbeData(int run,int method,std::vector<int> probe,std::vector<aver
    for(int i=0;i<N;i++){
       for(int j=0;j<NPR;j++){
          k = probe[j];
-	 if( version.compare("run-1")!=0 ){
+	 if( version.compare("nearline")!=0 ){
 	    arg_t = fxpr_new[i].GpsTimeStamp[k];
 	    arg_f = fxpr_new[i].Frequency[k][method];
 	 }else{
@@ -81,7 +90,7 @@ int GetSurfaceCoilData(int run,std::vector<surfaceCoilEvent_t> &data,std::string
 
    int rc=0,N=0;
 
-   if( version.compare("run-1")!=0 ){
+   if( version.compare("nearline")!=0 ){
       rc = GetSurfaceCoil<gm2field::surfaceCoils_t>(run,scc_new,version);
       N  = scc_new.size(); 
    }else{
@@ -97,7 +106,7 @@ int GetSurfaceCoilData(int run,std::vector<surfaceCoilEvent_t> &data,std::string
    surfaceCoilEvent_t dataPt;
    for(int i=0;i<N;i++){
       for(int j=0;j<NUM_SCC;j++){
-	 if( version.compare("run-1")!=0 ){
+	 if( version.compare("nearline")!=0 ){
 	    dataPt.BotTime[j]     = scc_new[i].BotTime[j]; 
 	    dataPt.TopTime[j]     = scc_new[i].TopTime[j]; 
 	    dataPt.BotCurrents[j] = scc_new[i].BotCurrents[j]; 
@@ -115,7 +124,7 @@ int GetSurfaceCoilData(int run,std::vector<surfaceCoilEvent_t> &data,std::string
       }
       // azi coils
       for(int j=0;j<4;j++){
-	 if( version.compare("run-1")!=0 ){
+	 if( version.compare("nearline")!=0 ){
 	    dataPt.AzCurrents[j]  = scc_new[i].AzCurrents[j]; 
 	    dataPt.AzTemps[j]     = scc_new[i].AzTemps[j]; 
 	 }else{
@@ -150,7 +159,7 @@ int GetTrolleyData(int run,int method,std::vector<trolleyAnaEvent_t> &trlyEvent,
    NT = trlyTime.size();
    NM = trlyMon.size();
 
-   if(version.compare("run-1")==0){
+   if(version.compare("nearline")==0){
       rc = GetTrolleyFrequencies<gm2field::trolleyProbeFrequency_v1_t>(run,trlyFreq,version);
       rc = GetTrolleyPosition<gm2field::trolleyPosition_v1_t>(run,trlyPos,version);
       NP = trlyPos.size();
@@ -180,7 +189,7 @@ int GetTrolleyData(int run,int method,std::vector<trolleyAnaEvent_t> &trlyEvent,
    bool validEvent = false;
    for(int i=startIndex;i<NT;i++){
       for(int j=0;j<NUM_TRLY;j++){
-         if(version.compare("run-1")==0){
+         if(version.compare("nearline")==0){
             arg_phi  = trlyPos[i].Phi[j][0]*gm2fieldUtil::Constants::DEG_PER_RAD;
             arg_freq = trlyFreq[i].Frequency[j][method];
          }else{
@@ -226,7 +235,7 @@ int GetPlungingProbeData(int run,int prMethod,int ppMethod,std::vector<plungingP
 
    int N=0;
    int lastRun=0;
-   if( version.compare("run-1")!=0 ){
+   if( version.compare("nearline")!=0 ){
       rc      = GetPlungingProbeFrequencies<gm2field::plungingProbeFrequency_t>(run,ppData_new,version);
       rc      = GetPlungingProbeInfo<gm2field::plungingProbeInfo_t>(run,ppInfo_new,version);
       lastRun = ppInfo[0].FlayRunNumber;
@@ -261,7 +270,7 @@ int GetPlungingProbeData(int run,int prMethod,int ppMethod,std::vector<plungingP
    int cntr=0,M=0;
 
    for(int i=0;i<N;i++){
-      if( version.compare("run-1")!=0 ){
+      if( version.compare("nearline")!=0 ){
          theTemp = tempSensor->GetTemperature( ppInfo_new[i].Temperature );
          theFreq = ppData_new[i].Frequency[prMethod]; 
          theLO   = ppData_new[i].FLO; 

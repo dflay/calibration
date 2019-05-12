@@ -69,6 +69,7 @@ int DeltaB_pp_prod(std::string configFile){
    bool useTimeWeight        = inputMgr->GetTimeWeightStatus();
    int probeNumber           = inputMgr->GetTrolleyProbe();
    int axis                  = inputMgr->GetAxis();
+   int runPeriod             = inputMgr->GetRunPeriod(); 
 
    date_t theDate; 
    GetDate(theDate);

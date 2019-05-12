@@ -74,6 +74,7 @@ int Process_trly_prod(std::string configFile){
    bool loadSwapTimes      = inputMgr->GetSwapTimeStatus();
    bool useTempCor         = inputMgr->GetTempCorStatus();  
    int probeNumber         = inputMgr->GetTrolleyProbe(); 
+   int runPeriod           = inputMgr->GetRunPeriod(); 
 
    date_t theDate;
    GetDate(theDate);
@@ -126,7 +127,7 @@ int Process_trly_prod(std::string configFile){
    double angle = 189.160; // nominal trolley location 
 
    if(loadSwapTimes){
-      LoadTimes(probeNumber,"swap","tr",time);
+      LoadTimes(probeNumber,runPeriod,"swap","tr",time);
    }else{
       FindTRLYStopTimes(probeNumber-1,angle,trlyData,trlyGalil,time);
    }

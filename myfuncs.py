@@ -99,7 +99,7 @@ def writeConfigFileProd_trlyDB(data,tag,keyList,axis,fitData,trlyProbe,outpath):
    json.dump(outData,outfile)
    outfile.close()
 #_______________________________________________________________________________
-def writeConfigFileProd_ShimScan(data,tag,keyList,axis,fitData,outpath):
+def writeConfigFileProd_ShimScan(data,confData,tag,keyList,axis,fitData,outpath):
    # special setup because sometimes we have multiple MIDAS runs for a scan...  
    # write a JSON file for the ROOT script defined by tag 
    # get the run list 
@@ -115,7 +115,7 @@ def writeConfigFileProd_ShimScan(data,tag,keyList,axis,fitData,outpath):
             runList.append(subRun) 
             if(key=="midas-runs"):
                 labelList.append("srm{0}".format(i+1))
-            else
+            else: 
                 labelList.append("sr{0}".format(i+1))
             i = i + 1 
       elif(key=="NONE"): 
@@ -123,12 +123,15 @@ def writeConfigFileProd_ShimScan(data,tag,keyList,axis,fitData,outpath):
 
    # extract the MIDAS run we want
    # first collect the midas runs into a separate list  
-   midasRunList = []
+   midasRunList  = []
+   nmrAnaRunList = []
    N = len(runList)
    for i in xrange(0,N): 
       theLabel = "srm{0}".format(i+1) 
       if(labelList[i]==theLabel): 
          midasRunList.append(runList[i])
+      else: 
+         nmrAnaRunList.append(runList[i]) 
    # build final runlist 
    fRunList   = []
    fLabelList = []
@@ -137,26 +140,28 @@ def writeConfigFileProd_ShimScan(data,tag,keyList,axis,fitData,outpath):
    if(NM==1): 
       # if we have a single MIDAS run, use that 
       fRunList.append(midasRunList[0])
+      fLabelList.append("midas-run")  
    else: 
       # otherwise, we choose the index that corresponds to the axis we want  
-      fRunList.append(midasRunList[axis]) 
-   # add all subruns -- these are determined from the key ppx, ppy, ppz
+      fRunList.append(midasRunList[axis])
+      fLabelList.append("midas-run")  
+   # add all NMR-ANA subruns -- these are determined from the key ppx, ppy, ppz
    # and hence should match the MIDAS run chosen  
-   for sr in subRun: 
+   for sr in nmrAnaRunList: 
       fRunList.append(sr) 
    # create labels for the final run list   
    NRL = len(fRunList)
-   for i in xrange(0,NRL): 
+   for i in xrange(1,NRL): 
       fLabelList.append( "sr{0}".format(i+1) ) 
  
    # save to output json object  
    outData = {} 
    outData['type']                 = data['type'] 
    outData['date']                 = data['date']
-   outData['blinding']             = data['blinding'] 
-   outData['run-period']           = data['run-period'] 
-   outData['prod-tag']             = data['prod-tag'] 
-   outData['nmr-ana-tag']          = data['nmr-ana-tag'] 
+   outData['blinding']             = confData['blinding'] 
+   outData['run-period']           = confData['run-period'] 
+   outData['prod-tag']             = confData['prod-tag'] 
+   outData['nmr-ana-tag']          = confData['nmr-ana-tag'] 
    outData['trly-probe']           = data['trly-probe'] 
    outData['fxpr-set']             = data['fxpr-set']
    outData['free-proton-cor']      = data['free-proton-cor'] 
@@ -186,7 +191,7 @@ def writeConfigFileProd_ShimScan(data,tag,keyList,axis,fitData,outpath):
    json.dump(outData,outfile)
    outfile.close()
 #_______________________________________________________________________________
-def writeConfigFileProd(data,tag,keyList,axis,fitData,outpath): 
+def writeConfigFileProd(data,confData,tag,keyList,axis,fitData,outpath): 
    # write a JSON file for the ROOT script defined by tag 
    # get the run list 
    runList   = []
@@ -210,10 +215,10 @@ def writeConfigFileProd(data,tag,keyList,axis,fitData,outpath):
    outData = {} 
    outData['type']                 = data['type'] 
    outData['date']                 = data['date']
-   outData['blinding']             = data['blinding'] 
-   outData['run-period']           = data['run-period'] 
-   outData['prod-tag']             = data['prod-tag'] 
-   outData['nmr-ana-tag']          = data['nmr-ana-tag'] 
+   outData['blinding']             = confData['blinding'] 
+   outData['run-period']           = confData['run-period'] 
+   outData['prod-tag']             = confData['prod-tag'] 
+   outData['nmr-ana-tag']          = confData['nmr-ana-tag'] 
    outData['trly-probe']           = data['trly-probe'] 
    outData['fxpr-set']             = data['fxpr-set']
    outData['free-proton-cor']      = data['free-proton-cor'] 
