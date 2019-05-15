@@ -7,7 +7,8 @@
 #include <fstream>
 #include <vector>
 #include <algorithm>  
-#include <cmath> 
+#include <cmath>
+#include <string>  
 
 #include "TString.h"
 #include "TCanvas.h"
@@ -65,10 +66,15 @@ int Process_pp_prod(std::string configFile){
    std::string nmrAnaVersion = inputMgr->GetNMRANATag();
    std::string anaDate       = inputMgr->GetAnalysisDate();
    std::string blindLabel    = inputMgr->GetBlindLabel();
+   std::string cutFile       = inputMgr->GetCutFile(); 
  
    bool isBlind              = inputMgr->IsBlind();
    int probeNumber           = inputMgr->GetTrolleyProbe();
    int runPeriod             = inputMgr->GetRunPeriod();  
+
+   char cutPath[200]; 
+   sprintf(cutPath,"./input/json/run-%d/%s",runPeriod,cutFile.c_str());
+   std::string cutpath = cutPath;  
 
    date_t theDate;
    GetDate(theDate);
@@ -104,7 +110,7 @@ int Process_pp_prod(std::string configFile){
    int NPP=0; 
    for(int i=0;i<NRUNS;i++){
       std::cout << "Getting PP data for run " << run[i] << "..." << std::endl;
-      rc = GetPlungingProbeData(run[i],prMethod,ppMethod,ppData,prodVersion,nmrAnaVersion);
+      rc = GetPlungingProbeData(run[i],prMethod,ppMethod,ppData,prodVersion,nmrAnaVersion,cutpath);
       if(rc!=0){
 	 std::cout << "No data!" << std::endl;
 	 return 1;
@@ -189,13 +195,24 @@ int GetSwapStatsForPP(perturbation_t ppPert,std::vector<plungingProbeAnaEvent_t>
    double mean_z=0,stdev_z=0;
    double freqFree=0,freqFreeErr_stat=0,freqFreeErr_syst=0;
    std::vector<double> F,FF,T,x,y,z;
- 
+
+   int rc=0; 
+   char msg[200];
+   std::string MSG; 
+
    for(int i=0;i<N;i++){
       M = data[i].numTraces;
-      nmrDAQ_run = data[i].run; 
-      if(nmrDAQ_run==888 || nmrDAQ_run==834 || nmrDAQ_run==789){
-	 std::cout << "WARNING: Known issue in run " << nmrDAQ_run << "!  Skipping..." << std::endl;
-	 continue;
+      nmrDAQ_run = data[i].run;
+      // shouldn't need this anymore, since it's in the cut file  
+      // if(nmrDAQ_run==888 || nmrDAQ_run==834 || nmrDAQ_run==789){
+      //    std::cout << "WARNING: Known issue in run " << nmrDAQ_run << "!  Skipping..." << std::endl;
+      //    continue;
+      // }
+      if(M==0){
+	 sprintf(msg,"[Process_pp_prod]: WARNING: No traces for PP run %d, continuing on...",nmrDAQ_run);
+	 MSG = msg; 
+         rc = Logger::PrintMessage(Logger::kINFO,"default",MSG,'a');  
+	 continue; 
       } 
       for(int j=0;j<M;j++){
          // we want to add back in the LO since we're comparing against the TRLY eventually 

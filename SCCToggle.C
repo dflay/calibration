@@ -19,6 +19,7 @@
 #include "gm2fieldGraph.h"
 #include "gm2fieldRootHelper.h"
 #include "gm2fieldUnits.h"
+#include "gm2fieldFunc.h"
 #include "TemperatureSensor.h"
 
 #include "./include/Constants.h"
@@ -26,23 +27,23 @@
 #include "./include/trolleyAnaEvent.h"
 #include "./include/sccEvent.h" 
 
+#include "./src/BlindFuncs.C"
+#include "./src/InputManager.C"
 #include "./src/FitFuncs.C"
-#include "./src/FXPRFuncs.C"
-#include "./src/TRLYFuncs.C"
-#include "./src/Consolidate.C"
-#include "./src/CustomMath.C"
-#include "./src/CustomGraph.C"
+#include "./src/CustomUtilities.C"
 #include "./src/CustomImport.C"
 #include "./src/CustomExport.C"
+#include "./src/CustomMath.C"
+#include "./src/CustomGraph.C"
 #include "./src/CustomAlgorithms.C"
+
+int PrintToFile_csv(const char *outpath,std::vector<double> off,std::vector<double> on); 
 
 int PrintToFile_avg(const char *outpath,int probe,double scc_on,double scc_on_err,double bare,double bare_err);
 int PrintToFile_avg(const char *outpath,int probe,double diff,double diff_err,double diff_aba,double diff_aba_err);
 int PrintToFile_scc(const char *outpath,int probe,int trial,double scc_on,double scc_on_err,double bare,double bare_err); 
 
 int CombineResults(std::vector<double> lo,std::vector<double> hi,std::vector<double> &u);
-int GetStats(int probe,int nev,std::vector<double> time,std::vector<trolleyAnaEvent_t> Data,
-             std::vector<double> &MEAN,std::vector<double> &STDEV);
 
 int CalculateDiff(std::vector<double> mu1,std::vector<double> sig1,
                   std::vector<double> mu2,std::vector<double> sig2,
@@ -62,24 +63,53 @@ int SCCToggle(){
    gm2fieldUtil::Import::GetRunList(run);
    const int NRUNS = run.size();
 
-   int coilSet = -9; 
+   int coilSet=-9,axis=-1; 
    std::cout << "Use bottom (0), top (1), or azi coils (-1)? ";
    std::cin  >> coilSet;
+   std::cout << "Enter axis (0 = x, 1 = y, 2 = z): ";
+   std::cin  >> axis;
 
-   // Surface coil data 
-   std::vector<gm2field::surfaceCoils_t> sccData; 
-   for(int i=0;i<NRUNS;i++) rc = gm2fieldUtil::RootHelper::GetSCCData(run[i],sccData);
+   char AXIS = 't'; 
+   if(axis==0) AXIS = 'x';
+   if(axis==1) AXIS = 'y';
+   if(axis==2) AXIS = 'z';
 
-   TGraph *gSCCb = GetSCCPlot(0,sccData); 
-   TGraph *gSCCt = GetSCCPlot(1,sccData);
+   std::string prodVersion = "v9_21_01"; 
+
+   // determine the correct ordering of the SCC on/off cycles 
+   std::vector<surfaceCoilEvent_t> sccData;
+   for(int i=0;i<NRUNS;i++) rc = GetSurfaceCoilData(run[i],sccData,prodVersion);
+   if(rc!=0) return 1;
+
+   TGraph *gSCCb = GetSCCPlot( 0,sccData);
+   TGraph *gSCCt = GetSCCPlot( 1,sccData);
+   TGraph *gSCCa = GetSCCPlot(-1,sccData);
+
+   gm2fieldUtil::Graph::SetGraphParameters(gSCCb,20,kBlack);
+   gm2fieldUtil::Graph::SetGraphParameters(gSCCt,20,kRed  );
+   gm2fieldUtil::Graph::SetGraphParameters(gSCCa,20,kBlue );
+
+   TMultiGraph *mgSCC = new TMultiGraph();
+   mgSCC->Add(gSCCb,"lp");
+   mgSCC->Add(gSCCt,"lp");
+   mgSCC->Add(gSCCa,"lp");
 
    double thr   = 10E-3;         // in A 
    double delta = 2.*60. + 40.;  // 2 min 40 sec   
    std::vector<double> sccOff,sccOn;
-   rc = FindTransitionTimes(coilSet,thr,delta,sccData,sccOff,sccOn);
+   // rc = FindTransitionTimes(coilSet,axis,thr,delta,sccData,sccOff,sccOn);
+
+   int probe = 7; 
+   int runPeriod = 1;
+   char trl[200]; 
+   sprintf(trl,"pp%c",AXIS);
+   std::string trLabel = trl;
+   rc = LoadSCCTimes(probe,runPeriod,trLabel,sccOff,sccOn);
 
    bool sccStartOn = false;
-   if(rc==1) sccStartOn = true;
+   // if(rc==1) sccStartOn = true;
+
+   if(sccOn[0]<sccOff[0]) sccStartOn = true;
 
    if(sccStartOn){
       std::cout << "SCC was ON at start of analysis" << std::endl;
@@ -87,8 +117,8 @@ int SCCToggle(){
       std::cout << "SCC was OFF at start analysis" << std::endl;
    }
 
-   double yMin_tr = 50E+3; 
-   double yMax_tr = 60E+3;
+   double yMin_tr = -30; 
+   double yMax_tr =  30;
 
    const int NToff = sccOff.size(); 
    const int NTon  = sccOn.size(); 
@@ -96,210 +126,63 @@ int SCCToggle(){
    TLine **tOn  = new TLine*[NTon]; 
    for(int i=0;i<NToff;i++){
       tOff[i] = new TLine(sccOff[i],yMin_tr,sccOff[i],yMax_tr); 
-      tOff[i]->SetLineColor(kRed); 
+      tOff[i]->SetLineColor(kRed);
+      tOff[i]->SetLineWidth(2);  
+      tOff[i]->SetLineStyle(2);  
    }
    for(int i=0;i<NTon;i++){
       tOn[i]  = new TLine(sccOn[i] ,yMin_tr,sccOn[i] ,yMax_tr); 
       tOn[i]->SetLineColor(kGreen+1); 
+      tOn[i]->SetLineWidth(2);  
+      tOn[i]->SetLineStyle(2);  
    }
 
-   gm2fieldUtil::Graph::SetGraphParameters(gSCCb,20,kBlack);  
-   gm2fieldUtil::Graph::SetGraphParameters(gSCCt,20,kRed  ); 
+   TCanvas *c1 = new TCanvas("c1","SCC Data",1200,600);
 
-   TMultiGraph *mgSCC = new TMultiGraph();
-   mgSCC->Add(gSCCb,"lp");  
-   mgSCC->Add(gSCCt,"lp");  
-
-   // Trolley data
-   int trlyMethod = gm2fieldUtil::Constants::kPhaseDerivative;  
-   std::vector<trolleyAnaEvent_t> trlyData;     
-   for(int i=0;i<NRUNS;i++) rc = GetTrolleyData("",run[i],trlyMethod,trlyData);
-   if(rc!=0){
-      std::cout << "No data!" << std::endl;
-      return 1;
-   }
-
-   const int NTRLY = 17; 
-   TGraph **gTRLY = new TGraph*[NTRLY]; 
-   for(int i=0;i<NTRLY;i++){
-      gTRLY[i] = GetTRLYTGraph(i,"GpsTimeStamp","freq",trlyData);
-      gm2fieldUtil::Graph::SetGraphParameters(gTRLY[i],21,kBlack);
-      gTRLY[i]->SetMarkerSize(0.5); 
-   }
-
-   // analysis
- 
-   double mean=0,stdev=0;
-   std::vector<double> trial,diff,err; 
-   std::vector<double> offMean_tr,offStdev_tr,onMean_tr,onStdev_tr; 
-   std::vector<double> diff_tr,err_tr; 
-
-   sccTrlyEvent_t scc_trial;                             // single trial  
-   std::vector<sccTrlyEvent_t> scc_probe;                // single probe, a collection of trials 
-   std::vector< std::vector<sccTrlyEvent_t> > sccEvent;  // all probes 
-  
-   char outpath[500];
-   sprintf(outpath,"./scc-toggle_all-data_run-%05d.txt",run[0]); 
- 
-   for(int i=0;i<NTRLY;i++){
-      // get statistics 
-      rc = GetStats(i,nev,sccOff,trlyData,offMean_tr,offStdev_tr);
-      rc = GetStats(i,nev,sccOn ,trlyData,onMean_tr ,onStdev_tr );
-      rc = CalculateDiff(onMean_tr,onStdev_tr,offMean_tr,offStdev_tr,diff_tr,err_tr);
-      if(rc!=0) return 1;
-      // fill vectors 
-      M = offMean_tr.size();  
-      for(int j=0;j<M;j++){
-	 scc_trial.probeID        = i+1;
-         scc_trial.freq_bare      = offMean_tr[j];  
-         scc_trial.freq_bare_err  = offStdev_tr[j];  
-         scc_trial.freq_scc       = onMean_tr[j];  
-         scc_trial.freq_scc_err   = onStdev_tr[j];  
-         scc_trial.freq_diff      = diff_tr[j];  
-         scc_trial.freq_diff_err  = err_tr[j]; 
-	 scc_probe.push_back(scc_trial); 
-	 // print to file 
-	 PrintToFile_scc(outpath,i+1,j+1,scc_trial.freq_scc,scc_trial.freq_scc_err,scc_trial.freq_bare,scc_trial.freq_bare_err);
-      }
-      sccEvent.push_back(scc_probe); 
-      // clear vectors 
-      scc_probe.clear();
-      offMean_tr.clear(); 
-      offStdev_tr.clear(); 
-      onMean_tr.clear(); 
-      onStdev_tr.clear(); 
-      diff_tr.clear(); 
-      err_tr.clear(); 
-   }   
-
-   std::vector<double> md,md_err,md_aba,md_aba_err; 
-   std::vector<double> x,y,z,dy,dz,aba,aba_err;
-  
-   double mean_scc=0,stdev_scc=0; 
-   double mean_bare=0,stdev_bare=0; 
-   double mean_aba=0,stdev_aba=0;
-
-   double zMin_h=10E+6; 
-   double zMax_h=-10E+6; 
- 
-   // print results 
-   sprintf(outpath,"./scc-toggle_avg_run-%05d.txt",run[0]); 
-   for(int i=0;i<NTRLY;i++){
-      M = sccEvent[i].size();
-      for(int j=0;j<M;j++){
-	 x.push_back(sccEvent[i][j].freq_diff); 
-	 y.push_back(sccEvent[i][j].freq_scc); 
-	 z.push_back(sccEvent[i][j].freq_bare); 
-	 dy.push_back(sccEvent[i][j].freq_scc_err); 
-	 dz.push_back(sccEvent[i][j].freq_bare_err); 
-	 // std::cout << Form("trial %02d: scc on = %.3lf +/- %.3lf, scc off = %.3lf +/- %.3lf, diff = %.3lf +/- %.3lf",
-         //                   j+1,sccEvent[i][j].freq_scc,sccEvent[i][j].freq_scc_err,sccEvent[i][j].freq_bare,sccEvent[i][j].freq_bare_err,
-	 //       	           sccEvent[i][j].freq_diff,sccEvent[i][j].freq_diff_err) << std::endl;
-      }
-
-      mean_scc   = gm2fieldUtil::Math::GetMean<double>(y); 
-      stdev_scc  = gm2fieldUtil::Math::GetStandardDeviation<double>(y); 
-      mean_bare  = gm2fieldUtil::Math::GetMean<double>(z); 
-      stdev_bare = gm2fieldUtil::Math::GetStandardDeviation<double>(z);
-      mean       = gm2fieldUtil::Math::GetMean<double>(x); 
-      stdev      = gm2fieldUtil::Math::GetStandardDeviation<double>(x); 
-      if(zMin_h>mean) zMin_h = mean;  
-      if(zMax_h<mean) zMax_h = mean;  
-      // get the ABA result
-      if(sccStartOn){
-	 GetDifference_ABA_sccFirst(y,dy,z,dz,aba,aba_err);
-      }else{
-	 GetDifference_ABA(y,dy,z,dz,aba,aba_err);
-      }
-      mean_aba  = gm2fieldUtil::Math::GetMean<double>(aba); 
-      stdev_aba = gm2fieldUtil::Math::GetStandardDeviation<double>(aba); 
-      std::cout << Form("PROBE %02d, mean = %.3lf +/- %.3lf Hz (%.3lf ppb), mean_aba = %.3lf +/- %.3lf Hz (%.3lf ppb)",
-                        i+1,mean,stdev,stdev/0.06179,mean_aba,stdev_aba,stdev_aba/0.06179) << std::endl; 
-      std::cout << "--------------------------------------------" << std::endl;
-      // print to file
-      PrintToFile_avg(outpath,i+1,mean,stdev,mean_aba,stdev_aba);
-      // store results 
-      md.push_back(mean); 
-      md_err.push_back(stdev);
-      md_aba.push_back(mean_aba); 
-      md_aba_err.push_back(stdev_aba);
-      // get ready for next probe
-      x.clear();
-      y.clear();
-      z.clear();
-      dy.clear();
-      dz.clear(); 
-      aba.clear();
-      aba_err.clear();
-   }
- 
-   // add 50% to the limits 
-   zMin_h *= 1.5; 
-   zMax_h *= 1.5; 
-
-   // now make some plots  
-
-   trolleyProbePosition_t trlyPos;
-   rc = GetTrolleyProbePositions(trlyPos);  
-
-   TGraph *gTrolleyPos = GetTRLYPositionsGraph();   
-
-   TGraph2D *g2D = new TGraph2D();
-   for(int i=0;i<17;i++) g2D->SetPoint(i,trlyPos.r[i],trlyPos.y[i],md_aba[i]); 
-
-   const int xBin = 100; 
-   double xMin_h  = -45; 
-   double xMax_h  =  45; 
-   const int yBin = 100; 
-   double yMin_h  = -45; 
-   double yMax_h  =  45;
-   TH2D *h2D = new TH2D("h","h",xBin,xMin_h,xMax_h,yBin,yMin_h,yMax_h);
-
-   TString Title;
-   TCanvas *c1 = new TCanvas("c1","TRLY Data",1000,800);
    c1->cd();
-
-   TPad *tpPad = new TPad("tpPad","",0,0,1,1); 
-   tpPad->SetFillStyle(4000);  // transparent 
-   tpPad->SetFrameFillStyle(0); 
-
-   tpPad->Draw();
-   tpPad->cd();
-   gStyle->SetOptStat(0);
-   g2D->SetHistogram(h2D);
-   g2D->Draw("colz"); 
-   g2D->GetHistogram()->SetMinimum(zMin_h); 
-   g2D->GetHistogram()->SetMaximum(zMax_h); 
-   g2D->Draw("colz");
-
-   tpPad->cd(); 
-   gTrolleyPos->Draw("p same"); 
- 
-   c1->Update();
-
-   TCanvas *c2 = new TCanvas("c2","Trolley Probes",1200,800); 
-   c2->Divide(4,5); 
-
-   for(int i=0;i<NUM_TRLY;i++){
-      c2->cd(i+1);
-      gTRLY[i]->Draw("alp");
-      gm2fieldUtil::Graph::SetGraphLabels(gTRLY[i],Form("Probe %02d",i+1),"","Frequency (Hz)"); 
-      gm2fieldUtil::Graph::UseTimeDisplay(gTRLY[i]); 
-      gTRLY[i]->Draw("alp");
-      for(int j=0;j<NToff;j++) tOff[j]->Draw("same"); 
-      for(int j=0;j<NTon;j++)  tOn[j]->Draw("same"); 
-      c2->Update(); 
-   }
-
-   TCanvas *c3 = new TCanvas("c3","SCC Data",1200,600);
-   c3->cd();
-
    mgSCC->Draw("a");
-   gm2fieldUtil::Graph::SetGraphLabels(mgSCC,"SCC Data","","Current (A)"); 
+   gm2fieldUtil::Graph::SetGraphLabels(mgSCC,"SCC Data","","Total Current (A)"); 
    gm2fieldUtil::Graph::UseTimeDisplay(mgSCC); 
    mgSCC->Draw("a");
-   c3->Update(); 
+   for(int i=0;i<NToff;i++) tOff[i]->Draw("same"); 
+   for(int i=0;i<NTon ;i++) tOn[i]->Draw("same"); 
+   c1->Update();
 
+   rc = PrintToFile_csv("test.csv",sccOff,sccOn);  
+
+   return 0;
+}
+//______________________________________________________________________________
+int PrintToFile_csv(const char *outpath,std::vector<double> off,std::vector<double> on){
+
+   const int NOFF = off.size(); 
+   const int NON  = on.size();
+   if(NOFF!=NON){
+      std::cout << "Unequal number of transitions! " << std::endl;
+      std::cout << "off = " << NOFF << " on = " << NON << std::endl;
+      return 1;
+   } 
+
+   unsigned long theTime=0; 
+   char outStr[200]; 
+
+   std::ofstream outfile;
+   outfile.open(outpath);
+
+   if( outfile.fail() ){
+      std::cout << "Cannot open the file: " << outpath << std::endl;
+      return 1;
+   }else{
+      for(int i=0;i<NOFF;i++){
+         theTime = (unsigned long)off[i];
+	 sprintf(outStr,"%s",gm2fieldUtil::GetStringTimeStampFromUTC(theTime).c_str());
+         outfile << outStr << std::endl; 
+         theTime = (unsigned long)on[i]; 
+	 sprintf(outStr,"%s",gm2fieldUtil::GetStringTimeStampFromUTC(theTime).c_str());
+         outfile << outStr << std::endl; 
+      }
+      outfile.close();
+   } 
    return 0;
 }
 //______________________________________________________________________________
@@ -383,36 +266,3 @@ int CalculateDiff(std::vector<double> mu1,std::vector<double> sig1,
    }
    return 0;
 } 
-//______________________________________________________________________________
-int GetStats(int probe,int nev,std::vector<double> time,std::vector<trolleyAnaEvent_t> Data,
-             std::vector<double> &MEAN,std::vector<double> &STDEV){
-
-   const int N = time.size();
-   int M=0,rc=0;
-   double mean=0,stdev=0;
-   std::vector<double> freq;
-   std::vector<trolleyAnaEvent_t> Event; 
-   for(int i=0;i<N;i++){
-      // std::cout << "Looking for time " << gm2fieldUtil::GetStringTimeStampFromUTC(time[i]) << std::endl;
-      // find events 
-      rc = FilterSingle(probe,nev,time[i],Data,freq); 
-      // now get mean of events 
-      mean  = gm2fieldUtil::Math::GetMean<double>(freq); 
-      stdev = gm2fieldUtil::Math::GetStandardDeviation<double>(freq);  
-      // store result
-      MEAN.push_back(mean); 
-      STDEV.push_back(stdev); 
-      // set up for next time 
-      freq.clear(); 
-   }
-  
-   // now restrict to less than 20 results if necessary 
-   // int cntr = MEAN.size();
-   // while(cntr>20){
-   //    MEAN.pop_back();
-   //    STDEV.pop_back();
-   //    cntr = MEAN.size();
-   // }
-
-   return 0;
-}

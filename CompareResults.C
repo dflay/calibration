@@ -1,119 +1,106 @@
-// Compare results 
+// compare calibration analysis results based on production tags 
 
 #include <cstdlib> 
 #include <iostream>
-#include <fstream>
-#include <vector>
-#include <algorithm>  
-#include <cmath> 
+#include <fstream> 
 
-#include "TString.h"
+#include "TPad.h"
 #include "TCanvas.h"
-#include "TLegend.h"
-#include "TSpline.h"
+#include "TStyle.h"
 
-#include "RootTreeStructs.h"
 #include "gm2fieldMath.h"
+#include "gm2fieldImport.h"
+#include "gm2fieldExport.h"
 #include "gm2fieldGraph.h"
-#include "gm2fieldRootHelper.h"
-#include "gm2fieldUnits.h"
-#include "TemperatureSensor.h"
 
-#include "./include/Constants.h"
-#include "./include/results.h"
-#include "./include/perturbation.h"
-#include "./include/deltab.h"
-#include "./include/plungingProbeAnaEvent.h"
-#include "./include/trolleyAnaEvent.h"
-#include "./include/nmr_meas.h"
-#include "./include/grad_meas.h"
-#include "./include/date.h"
+TGraphErrors *GetTGraphErrors(std::string xAxis,std::string yAxis,std::string yAxisErr,json data); 
 
-#include "./src/FXPRFuncs.C"
-#include "./src/Consolidate.C"
-#include "./src/CustomMath.C"
-#include "./src/CustomGraph.C"
-#include "./src/CustomImport.C"
-#include "./src/CustomExport.C"
-#include "./src/CustomAlgorithms.C"
-#include "./src/DeltaBFuncs.C"
-#include "./src/CalibFuncs.C"
-#include "./src/ErrorFuncs.C"
-#include "./src/CustomUtilities.C"
+int AddToMultiGraph(int color,std::string label,std::string xAxis,std::string yAxis,std::string yAxisErr,
+                    json data,TMultiGraph *mg,TLegend *L); 
 
 int CompareResults(){
 
-   int rc=0;
+   json input; 
 
-   result_t res1,res2; 
+   std::string inpath = "compare.json"; 
+   int rc = gm2fieldUtil::Import::ImportJSON(inpath,input);
 
-   int fxpr_set = -1;
-   std::cout << "Enter fixed probe set (1 or 2): ";
-   std::cin  >> fxpr_set; 
-     
-   std::string prefix = "./output/blinded/05-10-18";
-   char path[200]; 
-   // run 3077 
-   sprintf(path,"%s/trly-shim-3077/fxpr-set-%d/results.csv",prefix.c_str(),fxpr_set); 
-   std::string inpath = path; 
-   ImportResults(inpath,res1);  
+   const int NT = input["ana-set"].size(); 
 
-   // run 3084 
-   sprintf(path,"%s/trly-shim-3084/fxpr-set-%d/results.csv",prefix.c_str(),fxpr_set); 
-   inpath = path; 
-   ImportResults(inpath,res2);  
+   bool isBlind = (bool)input["blinding"]["enable"]; 
+   std::string blindLabel = input["blinding"]["label"]; 
+   std::string date       = input["date"];  
+
+   std::string prefix; 
+   if(isBlind){
+      prefix = "./output/blinded/" + blindLabel + "/" + date + "/"; 
+   }else{
+      prefix = "./output/"; 
+   }
+
+   std::string xAxis    = "probe"; 
+   std::string yAxis    = "calibCoeff_aba"; 
+   std::string yAxisErr = "calibCoeffErr_aba"; 
+
+   TString Title      = Form("Calibration Results"); 
+   TString xAxisTitle = Form("%s",xAxis.c_str());
+   TString yAxisTitle = Form("%s (Hz)",yAxis.c_str());
+
+   TMultiGraph *mg = new TMultiGraph(); 
+   TLegend *L = new TLegend(0.6,0.6,0.8,0.8); 
+
+   std::cout << "Comparing " << NT << " data sets..." << std::endl; 
+
+   std::string label;  
+   int color=0;
+   json result; 
+   for(int i=0;i<NT;i++){
+      color++;
+      label  = input["ana-set"][i]; 
+      inpath = prefix + label + "/calibData_" + date + ".json"; 
+      std::cout << "Processing " << label << std::endl; 
+      rc = gm2fieldUtil::Import::ImportJSON(inpath,result);
+      AddToMultiGraph(color,label,xAxis,yAxis,yAxisErr,result,mg,L); 
+      result.clear();
+   }   
+
+   TCanvas *c1 = new TCanvas("c1","Calibration Comparison",1200,600);
    
-   // average over these results 
-   std::vector<double> diff,diff_err,trly,trly_err;
- 
-   diff.push_back(res1.diff_fxpr); 
-   diff.push_back(res2.diff_fxpr); 
-   diff_err.push_back(res1.diff_fxpr_err); 
-   diff_err.push_back(res2.diff_fxpr_err); 
-
-   double arg = res1.trly_fxpr + res1.driftShim_fxpr; 
-   trly.push_back(arg); 
-   arg = res2.trly_fxpr + res2.driftShim_fxpr; 
-   trly.push_back(arg);
-
-   double arg_err = TMath::Sqrt( res1.trly_fxpr_err*res1.trly_fxpr_err + res1.driftShim_fxpr_err*res1.driftShim_fxpr_err); 
-   trly_err.push_back(arg_err); 
-   arg_err = TMath::Sqrt( res2.trly_fxpr_err*res2.trly_fxpr_err + res2.driftShim_fxpr_err*res2.driftShim_fxpr_err); 
-   trly_err.push_back(arg_err); 
-
-   double diff_stdev = gm2fieldUtil::Math::GetStandardDeviation<double>(diff);                 // add in standard deviation 
-   double diffAvg    = gm2fieldUtil::Math::GetMean<double>(diff); 
-   double diffErr    = gm2fieldUtil::Math::GetMean<double>(diff_err);  // average over the error for each run  
-   diffErr           = TMath::Sqrt( diffErr*diffErr + diff_stdev*diff_stdev); 
-
-   double trly_stdev = gm2fieldUtil::Math::GetStandardDeviation<double>(trly);                 // add in standard deviation 
-   double trlyAvg    = gm2fieldUtil::Math::GetMean<double>(trly); 
-   double trlyErr    = gm2fieldUtil::Math::GetMean<double>(trly_err);  // average over the error for each run  
-   trlyErr           = TMath::Sqrt( trlyErr*trlyErr + trly_stdev*trly_stdev);  
-
-   std::cout << "==================== FXPR SET " << fxpr_set << "====================" << std::endl;
-   std::cout << "PP (uncorrected): " << std::endl;
-   std::cout << Form("raw  = %.3lf +/- %.3lf Hz (%.3lf ppb)",res1.ppRaw,res1.ppRaw_err,res1.ppRaw_err/0.06179) << std::endl; 
-   std::cout << Form("fxpr = %.3lf +/- %.3lf Hz (%.3lf ppb)",res1.ppRaw_fxpr,res1.ppRaw_fxpr_err,res1.ppRaw_fxpr_err/0.06179) << std::endl; 
-   std::cout << "PP (free): " << std::endl;
-   std::cout << Form("raw  = %.3lf +/- %.3lf Hz (%.3lf ppb)",res1.ppFree,res1.ppFree_err,res1.ppFree_err/0.06179) << std::endl; 
-   std::cout << Form("fxpr = %.3lf +/- %.3lf Hz (%.3lf ppb)",res1.ppFree_fxpr,res1.ppFree_fxpr_err,res1.ppFree_fxpr_err/0.06179) << std::endl; 
-
-
-   std::cout << "USING TRLY RUN 3077" << std::endl;
-   std::cout << Form("raw   = %.3lf +/- %.3lf Hz (%.3lf ppb)",res1.trly     ,res1.trly_err     ,res1.trly_err/0.06179) << std::endl; 
-   std::cout << Form("fxpr  = %.3lf +/- %.3lf Hz (%.3lf ppb)",trly[0],trly_err[0],trly_err[0]/0.06179) << std::endl;
-   std::cout << Form("PP-TR = %.3lf +/- %.3lf Hz (%.3lf ppb)",res1.diff_fxpr,res1.diff_fxpr_err,res1.diff_fxpr_err/0.06179) << std::endl;
-
-   std::cout << "USING TRLY RUN 3084" << std::endl;
-   std::cout << Form("raw   = %.3lf +/- %.3lf Hz (%.3lf ppb)",res2.trly     ,res2.trly_err     ,res2.trly_err/0.06179) << std::endl; 
-   std::cout << Form("fxpr  = %.3lf +/- %.3lf Hz (%.3lf ppb)",trly[1],trly_err[1],trly_err[1]/0.06179) << std::endl;
-   std::cout << Form("PP-TR = %.3lf +/- %.3lf Hz (%.3lf ppb)",res2.diff_fxpr,res2.diff_fxpr_err,res2.diff_fxpr_err/0.06179) << std::endl;
-
-   std::cout << "COMBINED RESULTS" << std::endl;
-   std::cout << Form("trly  = %.3lf +/- %.3lf (%.3lf)",trlyAvg,trlyErr,trlyErr/0.06179) << std::endl;
-   std::cout << Form("PP-TR = %.3lf +/- %.3lf (%.3lf)",diffAvg,diffErr,diffErr/0.06179) << std::endl;
+   c1->cd();
+   mg->Draw("a");
+   gm2fieldUtil::Graph::SetGraphLabels(mg,Title,xAxisTitle,yAxisTitle); 
+   mg->Draw("a");
+   L->Draw("same"); 
 
    return 0;
 }
+//______________________________________________________________________________
+int AddToMultiGraph(int color,std::string label,std::string xAxis,std::string yAxis,std::string yAxisErr,
+                    json data,TMultiGraph *mg,TLegend *L){
 
+   TGraphErrors *g = GetTGraphErrors(xAxis,yAxis,yAxisErr,data);
+   gm2fieldUtil::Graph::SetGraphParameters(g,20,color); 
+
+   mg->Add(g,"lp"); 
+   L->AddEntry(g,label.c_str(),"p"); 
+
+   return 0;
+}
+//______________________________________________________________________________
+TGraphErrors *GetTGraphErrors(std::string xAxis,std::string yAxis,std::string yAxisErr,json data){
+
+   std::vector<double> x,y,ey; 
+   const int N = data[yAxis].size();
+   for(int i=0;i<N;i++){
+      if(xAxis.compare("probe")==0){
+	 x.push_back(i+1); 
+      }else{
+	 x.push_back( data[xAxis][i] ); 
+      } 
+      y.push_back( data[yAxis][i] ); 
+      ey.push_back( data[yAxisErr][i] ); 
+   }
+
+   TGraphErrors *g = gm2fieldUtil::Graph::GetTGraphErrors(x,y,ey);
+   return g; 
+}

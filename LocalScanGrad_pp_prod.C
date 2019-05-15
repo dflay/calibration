@@ -65,11 +65,17 @@ int LocalScanGrad_pp_prod(std::string configFile){
    std::string date          = inputMgr->GetAnalysisDate(); 
    std::string fitFunc       = inputMgr->GetValue("fit");
    std::string blindLabel    = inputMgr->GetBlindLabel();
+   std::string cutFile       = inputMgr->GetCutFile();
 
    bool isBlind              = inputMgr->IsBlind();
    int probeNumber           = inputMgr->GetTrolleyProbe(); 
    int axis                  = inputMgr->GetAxis();
-   int fxprSet               = inputMgr->GetFixedProbeListTag();  
+   int fxprSet               = inputMgr->GetFixedProbeListTag(); 
+   int runPeriod             = inputMgr->GetRunPeriod();  
+
+   char cutPath[200];
+   sprintf(cutPath,"./input/json/run-%d/%s",runPeriod,cutFile.c_str());
+   std::string cutpath = cutPath;
 
    date_t theDate;
    GetDate(theDate);
@@ -138,7 +144,7 @@ int LocalScanGrad_pp_prod(std::string configFile){
    // PP data 
    std::vector<plungingProbeAnaEvent_t> ppData,ppEvent; 
    std::cout << "Getting PP data for run " << midasRun << "..." << std::endl; 
-   rc = GetPlungingProbeData(midasRun,prMethod,ppMethod,ppData,prodVersion,nmrAnaVersion);
+   rc = GetPlungingProbeData(midasRun,prMethod,ppMethod,ppData,prodVersion,nmrAnaVersion,cutPath);
    if(rc!=0){
       std::cout << "No data!" << std::endl;
       return 1;

@@ -67,10 +67,15 @@ int GetImposedGradients(const char *inpath,std::vector<imposed_gradient_t> &imp_
 int GetShimmedGradients(const char *prefix,int probe,std::vector<std::string> gradName,
                         std::vector<grad_meas_t> &shim_grad);
 
-int PrintResults(const char *outpath,std::vector<result_prod_t> r,std::vector<result_prod_t> rFree,
-                 std::vector<std::vector<imposed_gradient_t>> ig,std::vector<std::vector<grad_meas_t> > mg,
-                 std::vector<std::vector<deltab_t>> dB_pp,std::vector<std::vector<deltab_t>> dB_tr,
-                 std::vector<misalignment_t> mis); 
+int PrintResults(const char *outpath,std::vector<calib_result_t> data,bool toROOT=true,bool toJSON=true); 
+
+int PrintToFile_json(const char *outpath,std::vector<calib_result_t> data); 
+int GetJSONObject(std::vector<calib_result_t> data,json &jData);
+ 
+int CollectData(std::vector<result_prod_t> r,std::vector<result_prod_t> rFree,
+                std::vector<std::vector<imposed_gradient_t>> ig,std::vector<std::vector<grad_meas_t> > mg,
+                std::vector<std::vector<deltab_t>> dB_pp,std::vector<std::vector<deltab_t>> dB_tr,
+                std::vector<misalignment_t> mis,std::vector<calib_result_t> &data); 
 
 
 int MakeTables_prod(int runPeriod,bool isBlind,std::string blindLabel,std::string theDate){
@@ -83,8 +88,8 @@ int MakeTables_prod(int runPeriod,bool isBlind,std::string blindLabel,std::strin
    if(!isBlind) sprintf(outDir,"./output/unblinded");
    sprintf(outDir,"%s/%s",outDir,theDate.c_str()); 
 
-   char rfPath[200]; 
-   sprintf(rfPath,"%s/calibData_%s.root",outDir,theDate.c_str()); 
+   char outPath[200]; 
+   sprintf(outPath,"%s/calibData_%s",outDir,theDate.c_str()); 
 
    result_prod_t result;
    std::vector<result_prod_t> res,resFree;
@@ -147,13 +152,15 @@ int MakeTables_prod(int runPeriod,bool isBlind,std::string blindLabel,std::strin
       // clean up the PP delta B container, and store in new vector 
       deltaB_pp.push_back(db);
       db.clear();
-      // load TRLY Delta-B values
+      // load TRLY Delta-B values [NEARLINE] 
       // rad and vert already computed offline
-      sprintf(inpath,"./input/delta-b/trly_xy_run-%d.csv",runPeriod);
-      LoadDeltaBData_trlyXY(inpath,probeNumber,db);
+      // sprintf(inpath,"./input/delta-b/trly_xy_run-%d.csv",runPeriod);
+      // LoadDeltaBData_trlyXY(inpath,probeNumber,db);
       // z axis 
-      sprintf(inpath,"%s/dB-trly_final-location_azi-grad_pr-%02d.csv",outDir,probeNumber);
-      LoadDeltaBData(inpath,db);  
+      for(int j=0;j<3;j++){ 
+	 sprintf(inpath,"%s/dB-trly_final-location_%s-grad_pr-%02d.csv",outDir,gradName[j].c_str(),probeNumber);
+	 LoadDeltaBData(inpath,db); 
+      } 
       for(int j=0;j<3;j++){
 	 if(db[j].dB_fxpr==0){
 	    std::cout << Form("--> No TRLY ABA data for probe %02d, axis %d.  Using raw data",probeNumber,j) << std::endl; 
@@ -293,79 +300,156 @@ int MakeTables_prod(int runPeriod,bool isBlind,std::string blindLabel,std::strin
 	                            impGrad[i][2].grad,0.0);
    }
 
-   rc = PrintResults(rfPath,res,resFree,impGrad,shimGrad,deltaB_pp,deltaB_trly,misalign); 
+   std::vector<calib_result_t> data; 
+   rc = CollectData(res,resFree,impGrad,shimGrad,deltaB_pp,deltaB_trly,misalign,data); 
+
+   rc = PrintResults(outPath,data); 
 
    return 0;
 }
 //______________________________________________________________________________
-int PrintResults(const char *outpath,std::vector<result_prod_t> r,std::vector<result_prod_t> rFree,
-                 std::vector<std::vector<imposed_gradient_t>> ig,std::vector<std::vector<grad_meas_t> > mg,
-                 std::vector<std::vector<deltab_t>> dB_pp,std::vector<std::vector<deltab_t>> dB_tr,
-                 std::vector<misalignment_t> mis){
+int CollectData(std::vector<result_prod_t> r,std::vector<result_prod_t> rFree,
+                std::vector<std::vector<imposed_gradient_t>> ig,std::vector<std::vector<grad_meas_t> > mg,
+                std::vector<std::vector<deltab_t>> dB_pp,std::vector<std::vector<deltab_t>> dB_tr,
+                std::vector<misalignment_t> mis,std::vector<calib_result_t> &data){
 
    // print the results to a ROOT file
-   calib_result_t data; 
-   std::vector<calib_result_t> x; 
+   calib_result_t dataPt; 
    const int N = r.size();
    for(int i=0;i<N;i++){
       // no proton corrections 
-      data.calibCoeff            = r[i].diff; 
-      data.calibCoeffErr         = r[i].diffErr;  
-      data.calibCoeff_aba        = r[i].diff_aba; 
-      data.calibCoeffErr_aba     = r[i].diffErr_aba;
+      dataPt.calibCoeff            = r[i].diff; 
+      dataPt.calibCoeffErr         = r[i].diffErr;  
+      dataPt.calibCoeff_aba        = r[i].diff_aba; 
+      dataPt.calibCoeffErr_aba     = r[i].diffErr_aba;
       // free proton corrections applied 
-      data.calibCoeffFree        = rFree[i].diff;  
-      data.calibCoeffFreeErr     = rFree[i].diffErr;  
-      data.calibCoeffFree_aba    = rFree[i].diff_aba;  
-      data.calibCoeffFreeErr_aba = rFree[i].diffErr_aba; 
-      data.freeErr               = rFree[i].pErr;  
+      dataPt.calibCoeffFree        = rFree[i].diff;  
+      dataPt.calibCoeffFreeErr     = rFree[i].diffErr;  
+      dataPt.calibCoeffFree_aba    = rFree[i].diff_aba;  
+      dataPt.calibCoeffFreeErr_aba = rFree[i].diffErr_aba; 
+      dataPt.freeErr               = rFree[i].pErr;  
       // imposed gradient data 
-      data.dBdx_imp              = ig[i][0].grad;  
-      data.dBdy_imp              = ig[i][1].grad;
-      data.dBdz_imp              = ig[i][2].grad; 
-      data.dBdx_impErr           = ig[i][0].grad_err;  
-      data.dBdy_impErr           = ig[i][1].grad_err;
-      data.dBdz_impErr           = ig[i][2].grad_err; 
+      dataPt.dBdx_imp              = ig[i][0].grad;  
+      dataPt.dBdy_imp              = ig[i][1].grad;
+      dataPt.dBdz_imp              = ig[i][2].grad; 
+      dataPt.dBdx_impErr           = ig[i][0].grad_err;  
+      dataPt.dBdy_impErr           = ig[i][1].grad_err;
+      dataPt.dBdz_impErr           = ig[i][2].grad_err; 
       // shimmed gradient data 
-      data.dBdx_shim             = mg[i][0].grad;  
-      data.dBdy_shim             = mg[i][1].grad;
-      data.dBdz_shim             = mg[i][2].grad; 
-      data.dBdx_shimErr          = mg[i][0].grad_err;  
-      data.dBdy_shimErr          = mg[i][1].grad_err;
-      data.dBdz_shimErr          = mg[i][2].grad_err; 
+      dataPt.dBdx_shim             = mg[i][0].grad;  
+      dataPt.dBdy_shim             = mg[i][1].grad;
+      dataPt.dBdz_shim             = mg[i][2].grad; 
+      dataPt.dBdx_shimErr          = mg[i][0].grad_err;  
+      dataPt.dBdy_shimErr          = mg[i][1].grad_err;
+      dataPt.dBdz_shimErr          = mg[i][2].grad_err; 
       // delta-B data  
-      data.deltaB_pp_x           = dB_pp[i][0].dB_fxpr; 
-      data.deltaB_pp_y           = dB_pp[i][1].dB_fxpr; 
-      data.deltaB_pp_z           = dB_pp[i][2].dB_fxpr; 
-      data.deltaB_pp_xErr        = dB_pp[i][0].dB_fxpr_err; 
-      data.deltaB_pp_yErr        = dB_pp[i][1].dB_fxpr_err; 
-      data.deltaB_pp_zErr        = dB_pp[i][2].dB_fxpr_err; 
-      data.deltaB_tr_x           = dB_tr[i][0].dB_fxpr; 
-      data.deltaB_tr_y           = dB_tr[i][1].dB_fxpr; 
-      data.deltaB_tr_z           = dB_tr[i][2].dB_fxpr; 
-      data.deltaB_tr_xErr        = dB_tr[i][0].dB_fxpr_err; 
-      data.deltaB_tr_yErr        = dB_tr[i][1].dB_fxpr_err; 
-      data.deltaB_tr_zErr        = dB_tr[i][2].dB_fxpr_err;
+      dataPt.deltaB_pp_x           = dB_pp[i][0].dB_fxpr; 
+      dataPt.deltaB_pp_y           = dB_pp[i][1].dB_fxpr; 
+      dataPt.deltaB_pp_z           = dB_pp[i][2].dB_fxpr; 
+      dataPt.deltaB_pp_xErr        = dB_pp[i][0].dB_fxpr_err; 
+      dataPt.deltaB_pp_yErr        = dB_pp[i][1].dB_fxpr_err; 
+      dataPt.deltaB_pp_zErr        = dB_pp[i][2].dB_fxpr_err; 
+      dataPt.deltaB_tr_x           = dB_tr[i][0].dB_fxpr; 
+      dataPt.deltaB_tr_y           = dB_tr[i][1].dB_fxpr; 
+      dataPt.deltaB_tr_z           = dB_tr[i][2].dB_fxpr; 
+      dataPt.deltaB_tr_xErr        = dB_tr[i][0].dB_fxpr_err; 
+      dataPt.deltaB_tr_yErr        = dB_tr[i][1].dB_fxpr_err; 
+      dataPt.deltaB_tr_zErr        = dB_tr[i][2].dB_fxpr_err;
       // misalignment data.  note that this is in Hz 
-      data.dx                    = mis[i].dB_x_aba; 
-      data.dy                    = mis[i].dB_y_aba; 
-      data.dz                    = mis[i].dB_z_aba;
-      data.dr                    = TMath::Sqrt( data.dx*data.dx + data.dy*data.dy + data.dz*data.dz );  
+      dataPt.dx                    = mis[i].dB_x_aba; 
+      dataPt.dy                    = mis[i].dB_y_aba; 
+      dataPt.dz                    = mis[i].dB_z_aba;
+      dataPt.dr                    = TMath::Sqrt( dataPt.dx*dataPt.dx + dataPt.dy*dataPt.dy + dataPt.dz*dataPt.dz );  
       // fill vector 
-      x.push_back(data);  
-   } 
-
-   // now print to ROOT file
+      data.push_back(dataPt);  
+   }
+   return 0;
+}
+//______________________________________________________________________________
+int PrintResults(const char *filename,std::vector<calib_result_t> data,bool toROOT,bool toJSON){
+   // ROOT file parameters 
+   char outpath_root[200],outpath_json[200];
+   sprintf(outpath_root,"%s.root",filename); 
+   sprintf(outpath_json,"%s.json",filename); 
 
    gm2fieldUtil::rootData_t rd;
-   rd.fileName      = outpath;
+   rd.fileName      = outpath_root;
    rd.treeName      = "CAL";
    rd.branchName    = "B";
    rd.leafStructure = calib_result_str; 
 
-   int rc = gm2fieldUtil::Export::PrintToROOTFile<calib_result_t>(rd,x); 
+   int rc=0;
+   if(toROOT) rc = gm2fieldUtil::Export::PrintToROOTFile<calib_result_t>(rd,data); 
+   if(toJSON) rc = PrintToFile_json(outpath_json,data); 
+   
    return rc;
+}
+//______________________________________________________________________________
+int PrintToFile_json(const char *outpath,std::vector<calib_result_t> data){
 
+   json jData;
+   int rc = GetJSONObject(data,jData);
+
+   std::ofstream outfile;
+   outfile.open(outpath); 
+
+   if( outfile.fail() ){
+      std::cout << "Cannot open the file: " << outpath << std::endl;
+   }else{
+      outfile << std::setw(5) << jData << std::endl;
+      outfile.close();
+   }
+   return 0;
+}
+//______________________________________________________________________________
+int GetJSONObject(std::vector<calib_result_t> data,json &jData){
+
+   const int N = data.size(); 
+
+   for(int i=0;i<N;i++){
+      jData["calibCoeff"][i]            = data[i].calibCoeff; 
+      jData["calibCoeff_aba"][i]        = data[i].calibCoeff_aba; 
+      jData["calibCoeffErr"][i]         = data[i].calibCoeffErr; 
+      jData["calibCoeffErr_aba"][i]     = data[i].calibCoeffErr_aba;
+      jData["calibCoeffFree"][i]        = data[i].calibCoeffFree; 
+      jData["calibCoeffFree_aba"][i]    = data[i].calibCoeffFree_aba; 
+      jData["calibCoeffFreeErr"][i]     = data[i].calibCoeffFreeErr; 
+      jData["calibCoeffFreeErr_aba"][i] = data[i].calibCoeffFreeErr_aba;
+      jData["freeErr"][i]               = data[i].freeErr; 
+      // imposed gradient data 
+      jData["dBdx_imp"][i]              = data[i].dBdx_imp;      
+      jData["dBdy_imp"][i]              = data[i].dBdy_imp;      
+      jData["dBdz_imp"][i]              = data[i].dBdz_imp;      
+      jData["dBdx_impErr"][i]           = data[i].dBdx_impErr;      
+      jData["dBdy_impErr"][i]           = data[i].dBdy_impErr;      
+      jData["dBdz_impErr"][i]           = data[i].dBdz_impErr;      
+      // shimmed gradient data 
+      jData["dBdx_shim"][i]             = data[i].dBdx_shim;      
+      jData["dBdy_shim"][i]             = data[i].dBdy_shim;      
+      jData["dBdz_shim"][i]             = data[i].dBdz_shim;      
+      jData["dBdx_shimErr"][i]          = data[i].dBdx_shimErr;      
+      jData["dBdy_shimErr"][i]          = data[i].dBdy_shimErr;      
+      jData["dBdz_shimErr"][i]          = data[i].dBdz_shimErr;      
+      // delta-B data  
+      jData["deltaB_pp_x"][i]           = data[i].deltaB_pp_x; 
+      jData["deltaB_pp_y"][i]           = data[i].deltaB_pp_y; 
+      jData["deltaB_pp_z"][i]           = data[i].deltaB_pp_z; 
+      jData["deltaB_pp_xErr"][i]        = data[i].deltaB_pp_xErr; 
+      jData["deltaB_pp_yErr"][i]        = data[i].deltaB_pp_yErr; 
+      jData["deltaB_pp_zErr"][i]        = data[i].deltaB_pp_zErr; 
+      jData["deltaB_tr_x"][i]           = data[i].deltaB_tr_x; 
+      jData["deltaB_tr_y"][i]           = data[i].deltaB_tr_y; 
+      jData["deltaB_tr_z"][i]           = data[i].deltaB_tr_z; 
+      jData["deltaB_tr_xErr"][i]        = data[i].deltaB_tr_xErr; 
+      jData["deltaB_tr_yErr"][i]        = data[i].deltaB_tr_yErr; 
+      jData["deltaB_tr_zErr"][i]        = data[i].deltaB_tr_zErr; 
+      // misalignment data 
+      jData["dx"][i]                    = data[i].dx;
+      jData["dy"][i]                    = data[i].dy;
+      jData["dz"][i]                    = data[i].dz;
+      jData["dr"][i]                    = data[i].dr;
+   }
+   return 0; 
 }
 //______________________________________________________________________________
 int GetImposedGradients(const char *inpath,std::vector<imposed_gradient_t> &imp_grad){

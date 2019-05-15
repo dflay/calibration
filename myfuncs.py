@@ -81,7 +81,6 @@ def writeConfigFileProd_trlyDB(data,tag,keyList,axis,fitData,trlyProbe,outpath):
    outData['fxpr-set']             = data['fxpr-set']
    outData['free-proton-cor']      = data['free-proton-cor'] 
    outData['load-trly-swap-times'] = data['load-trly-swap-times'] 
-   outData['load-trly-scc-times']  = data['load-trly-scc-times'] 
    outData['use-aba-time-weight']  = data['use-aba-time-weight']
    outData['use-trly-temp-cor']    = data['use-trly-temp-cor'] 
 
@@ -166,16 +165,19 @@ def writeConfigFileProd_ShimScan(data,confData,tag,keyList,axis,fitData,outpath)
    outData['fxpr-set']             = data['fxpr-set']
    outData['free-proton-cor']      = data['free-proton-cor'] 
    outData['load-trly-swap-times'] = data['load-trly-swap-times'] 
-   outData['load-trly-scc-times']  = data['load-trly-scc-times'] 
    outData['use-aba-time-weight']  = data['use-aba-time-weight']
-   outData['use-trly-temp-cor']    = data['use-trly-temp-cor'] 
+   outData['use-trly-temp-cor']    = data['use-trly-temp-cor']
+   outData['cut-file']             = confData['cut-file']  
 
    if(axis==0): 
-      outData['load-pp-scc-times'] = data['dB-pp_x']['load-times']
+      outData['load-pp-scc-times']   = data['dB-pp_x']['load-times']
+      outData['load-trly-scc-times'] = data['dB-trly_x']['load-times']
    elif(axis==1): 
-      outData['load-pp-scc-times'] = data['dB-pp_y']['load-times']
+      outData['load-pp-scc-times']   = data['dB-pp_y']['load-times']
+      outData['load-trly-scc-times'] = data['dB-trly_y']['load-times']
    elif(axis==2):  
-      outData['load-pp-scc-times'] = data['dB-pp_z']['load-times']
+      outData['load-pp-scc-times']   = data['dB-pp_z']['load-times']
+      outData['load-trly-scc-times'] = data['dB-trly_z']['load-times']
 
    if(fitData): 
       outData['fit'] = data[tag]['fit']  
@@ -223,16 +225,19 @@ def writeConfigFileProd(data,confData,tag,keyList,axis,fitData,outpath):
    outData['fxpr-set']             = data['fxpr-set']
    outData['free-proton-cor']      = data['free-proton-cor'] 
    outData['load-trly-swap-times'] = data['load-trly-swap-times'] 
-   outData['load-trly-scc-times']  = data['load-trly-scc-times'] 
    outData['use-aba-time-weight']  = data['use-aba-time-weight']
    outData['use-trly-temp-cor']    = data['use-trly-temp-cor'] 
+   outData['cut-file']             = confData['cut-file']  
 
    if(axis==0): 
-      outData['load-pp-scc-times'] = data['dB-pp_x']['load-times']
+      outData['load-pp-scc-times']   = data['dB-pp_x']['load-times']
+      outData['load-trly-scc-times'] = data['dB-trly_x']['load-times']
    elif(axis==1): 
-      outData['load-pp-scc-times'] = data['dB-pp_y']['load-times']
+      outData['load-pp-scc-times']   = data['dB-pp_y']['load-times']
+      outData['load-trly-scc-times'] = data['dB-trly_y']['load-times']
    elif(axis==2):  
-      outData['load-pp-scc-times'] = data['dB-pp_z']['load-times']
+      outData['load-pp-scc-times']   = data['dB-pp_z']['load-times']
+      outData['load-trly-scc-times'] = data['dB-trly_z']['load-times']
 
    if(fitData): 
       outData['fit'] = data[tag]['fit']  

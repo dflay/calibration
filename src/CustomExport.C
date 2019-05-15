@@ -1,5 +1,38 @@
 #include "../include/CustomExport.h"
 //______________________________________________________________________________
+int PrintToFile_sccTimes(const char *outpath,std::vector<double> off,std::vector<double> on){
+   // print SCC time stamps to file (as a string)  
+   const int NOFF = off.size();
+   const int NON  = on.size();
+   if(NOFF!=NON){
+      std::cout << "Unequal number of transitions! " << std::endl;
+      std::cout << "off = " << NOFF << " on = " << NON << std::endl;
+      return 1;
+   }
+
+   unsigned long theTime=0;
+   char outStr[200];
+
+   std::ofstream outfile;
+   outfile.open(outpath);
+
+   if( outfile.fail() ){
+      std::cout << "Cannot open the file: " << outpath << std::endl;
+      return 1;
+   }else{
+      for(int i=0;i<NOFF;i++){
+         theTime = (unsigned long)off[i];
+         sprintf(outStr,"%s",gm2fieldUtil::GetStringTimeStampFromUTC(theTime).c_str());
+         outfile << outStr << std::endl;
+         theTime = (unsigned long)on[i];
+         sprintf(outStr,"%s",gm2fieldUtil::GetStringTimeStampFromUTC(theTime).c_str());
+         outfile << outStr << std::endl;
+      }
+      outfile.close();
+   }
+   return 0;
+}
+//______________________________________________________________________________
 int PrintTRLYFrequencies(const char *outpath,int probe,std::vector<trolleyAnaEvent_t> data){
    const int N = data.size(); 
    char outStr[500]; 

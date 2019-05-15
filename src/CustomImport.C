@@ -1,5 +1,7 @@
 #include "../include/CustomImport.h"
 #include "TRLYCoordinates.C"
+#include "Cut.C"
+#include "Logger.C"
 //______________________________________________________________________________
 int SetDataFileParameters(std::string version,std::string &fileName,std::string &dataPath){
    // determine file name prefix and data path based upon version tag 
@@ -221,7 +223,7 @@ int GetTrolleyData(int run,int method,std::vector<trolleyAnaEvent_t> &trlyEvent,
 }
 //______________________________________________________________________________
 int GetPlungingProbeData(int run,int prMethod,int ppMethod,std::vector<plungingProbeAnaEvent_t> &data,
-                         std::string version,std::string nmrAnaVersion){
+                         std::string version,std::string nmrAnaVersion,std::string cutFile,bool useNMRANA){
 
    // prMethod = production method (from art analysis) 
    // ppMethod = UMass analysis method 
@@ -238,8 +240,8 @@ int GetPlungingProbeData(int run,int prMethod,int ppMethod,std::vector<plungingP
    if( version.compare("nearline")!=0 ){
       rc      = GetPlungingProbeFrequencies<gm2field::plungingProbeFrequency_t>(run,ppData_new,version);
       rc      = GetPlungingProbeInfo<gm2field::plungingProbeInfo_t>(run,ppInfo_new,version);
-      lastRun = ppInfo[0].FlayRunNumber;
-      N       = ppInfo.size();
+      lastRun = ppInfo_new[0].FlayRunNumber;
+      N       = ppInfo_new.size();
    }else{
       rc      = GetPlungingProbeFrequencies<gm2field::plungingProbeFrequency_v1_t>(run,ppData,version);
       rc      = GetPlungingProbeInfo<gm2field::plungingProbeInfo_v1_t>(run,ppInfo,version);
@@ -263,8 +265,8 @@ int GetPlungingProbeData(int run,int prMethod,int ppMethod,std::vector<plungingP
 
    std::string timeStamp;
 
-   int theRun=0;
-   double theTemp=0,theR=0,theY=0,thePhi=0,theFreq=0,theLO=0,theRF=0;
+   int theRun=0,NZero=0;
+   double theAmpl=0,theTemp=0,theR=0,theY=0,thePhi=0,theFreq=0,theLO=0,theRF=0;
    unsigned long long theTime=0;
 
    int cntr=0,M=0;
@@ -272,6 +274,8 @@ int GetPlungingProbeData(int run,int prMethod,int ppMethod,std::vector<plungingP
    for(int i=0;i<N;i++){
       if( version.compare("nearline")!=0 ){
          theTemp = tempSensor->GetTemperature( ppInfo_new[i].Temperature );
+         theAmpl = ppInfo_new[i].Amplitude;
+         NZero   = ppInfo_new[i].NZero;   
          theFreq = ppData_new[i].Frequency[prMethod]; 
          theLO   = ppData_new[i].FLO; 
          theRF   = ppData_new[i].F0; 
@@ -282,6 +286,8 @@ int GetPlungingProbeData(int run,int prMethod,int ppMethod,std::vector<plungingP
          thePhi  = ppInfo_new[i].Phi;
       }else{
          theTemp = tempSensor->GetTemperature( ppInfo[i].Temperature );
+         theAmpl = ppInfo[i].Amplitude;
+         NZero   = 0; 
          theFreq = ppData[i].Frequency[prMethod]; 
          theLO   = ppData[i].FLO; 
          theRF   = ppData[i].F0; 
@@ -292,18 +298,21 @@ int GetPlungingProbeData(int run,int prMethod,int ppMethod,std::vector<plungingP
          thePhi  = ppInfo[i].Phi;
       }
       timeStamp = gm2fieldUtil::GetStringTimeStampFromUTC(theTime/1E+9);
-      // std::cout << "******* " << timeStamp << " " << theRun << std::endl;
+      // std::cout << "EVENT " << i << " TIME " << timeStamp << " RUN " << theRun << std::endl;
       if(theRun==lastRun){
          // gather frequencies and temperatures for each NMR-DAQ run to average over 
-         subRun.run           = theRun;
-         subRun.time[cntr]    = theTime;
-         subRun.r[cntr]       = theR;
-         subRun.y[cntr]       = theY;
-         subRun.phi[cntr]     = thePhi;
-         subRun.temp[cntr]    = theTemp;
-         subRun.freq[cntr]    = theFreq;
-         subRun.freq_LO[cntr] = theLO;
-         subRun.freq_RF[cntr] = theRF;
+         subRun.run               = theRun;
+	 subRun.traceNumber[cntr] = cntr+1;  
+         subRun.time[cntr]        = theTime;
+         subRun.r[cntr]           = theR;
+         subRun.y[cntr]           = theY;
+         subRun.phi[cntr]         = thePhi;
+         subRun.temp[cntr]        = theTemp;
+         subRun.freq[cntr]        = theFreq;
+         subRun.freq_LO[cntr]     = theLO;
+         subRun.freq_RF[cntr]     = theRF;
+         subRun.nzc[cntr]         = NZero; 
+         subRun.ampl[cntr]        = theAmpl; 
          cntr++;
       }else{
          // done gathering, push back on the vector  
@@ -323,15 +332,18 @@ int GetPlungingProbeData(int run,int prMethod,int ppMethod,std::vector<plungingP
          // reset the counter 
          cntr = 0;
          // fill the data struct for this "event" since it's good for the next run 
-         subRun.run           = theRun; 
-         subRun.time[cntr]    = theTime;
-         subRun.r[cntr]       = theR;
-         subRun.y[cntr]       = theY;  
-         subRun.phi[cntr]     = thePhi; 
-         subRun.temp[cntr]    = theTemp;
-         subRun.freq[cntr]    = ppData[i].Frequency[prMethod];
-         subRun.freq_LO[cntr] = ppData[i].FLO;
-         subRun.freq_RF[cntr] = ppData[i].F0;
+         subRun.run               = theRun; 
+	 subRun.traceNumber[cntr] = cntr+1;  
+         subRun.time[cntr]        = theTime;
+         subRun.r[cntr]           = theR;
+         subRun.y[cntr]           = theY;  
+         subRun.phi[cntr]         = thePhi; 
+         subRun.temp[cntr]        = theTemp;
+	 subRun.freq[cntr]        = theFreq;
+	 subRun.freq_LO[cntr]     = theLO; 
+	 subRun.freq_RF[cntr]     = theRF;
+         subRun.nzc[cntr]         = NZero; 
+         subRun.ampl[cntr]        = theAmpl; 
          cntr++;
       }
       lastRun = theRun;
@@ -342,11 +354,12 @@ int GetPlungingProbeData(int run,int prMethod,int ppMethod,std::vector<plungingP
    data.push_back(subRun);
 
    const int NN = data.size();
-   std::cout << "NMR-DAQ runs: " << endl;
-   for(int i=0;i<NN;i++){
-      rc = ModifyPlungingProbeData(ppMethod,data[i],nmrAnaVersion);
-      // std::cout << Form("%d, x = %.3lf mm, y = %.3lf mm, z = %.3lf mm",
-      //                   data[i].run,data[i].r[0],data[i].y[0],data[i].phi[0]) << endl;
+   if(useNMRANA){
+      std::cout << "[GetPlungingProbeData]: Using NMR-ANA results... " << endl;
+      for(int i=0;i<NN;i++){
+	 rc = ModifyPlungingProbeData(ppMethod,data[i],nmrAnaVersion,cutFile);
+      }
+      std::cout << "[GetPlungingProbeData]: --> Done." << std::endl;
    }
 
    delete tempSensor;
@@ -354,31 +367,102 @@ int GetPlungingProbeData(int run,int prMethod,int ppMethod,std::vector<plungingP
    return 0;
 }
 //______________________________________________________________________________
-int ModifyPlungingProbeData(int method,plungingProbeAnaEvent_t &data,std::string nmrAnaVersion){
-   // replace the frequency values with those calculated by the NMR-ANA framework  
+int ModifyPlungingProbeData(int method,plungingProbeAnaEvent_t &data,std::string nmrAnaVersion,std::string cutFile){
+   // replace the frequency values with those calculated by the NMR-ANA framework 
+   char msg[400];
+   std::string timeStamp,MSG;
+
    int runNumber = data.run;
    std::vector<nmrAnaEvent_t> inData;
    // std::cout << "Trying NMR-DAQ run " << runNumber << std::endl; 
    char inpath[512];
    sprintf(inpath,"./input/NMR-ANA/%s/run-%05d/results_pulse-stats.dat",nmrAnaVersion.c_str(),runNumber);
-   int rc = ImportNMRANAData(inpath,inData);
+   int rc = ImportNMRANAData(inpath,inData,cutFile);
    if(rc!=0){
-      std::cout << "[ModifyPlungingProbeData]: No data for NMR-DAQ run " << runNumber << "!" << std::endl;
+      sprintf(msg,"[ModifyPlungingProbeData]: No data for NMR-DAQ run %d!",runNumber);
+      MSG = msg; 
+      rc = Logger::PrintMessage(Logger::kINFO,"default",MSG,'a'); 
       return 1;
    }
 
+   bool isDiff = false;
    const int N = inData.size();
    if(N!=data.numTraces){
-      std::cout << "[ModifyPlungingProbeData]: Inconsistent number of traces for MIDAS and NMR-ANA!" << std::endl;
-      std::cout << "NMR-DAQ run: " << data.run       << std::endl;
-      std::cout << "MIDAS:       " << data.numTraces << " traces" << std::endl;
-      std::cout << "NMR-ANA:     " << N              << " traces" << std::endl;
-      return 1;
+      sprintf(msg,"[ModifyPlungingProbeData]: Inconsistent number of traces for MIDAS and NMR-ANA!");
+      MSG = msg; 
+      rc = Logger::PrintMessage(Logger::kINFO,"default",MSG,'a'); 
+      sprintf(msg,"NMR-DAQ run: %d",data.run);
+      MSG = msg; 
+      rc = Logger::PrintMessage(Logger::kINFO,"default",MSG,'a'); 
+      sprintf(msg,"MIDAS:       %d traces",data.numTraces);
+      MSG = msg; 
+      rc = Logger::PrintMessage(Logger::kINFO,"default",MSG,'a'); 
+      sprintf(msg,"NMR-ANA:     %d traces",N             );
+      MSG = msg; 
+      rc = Logger::PrintMessage(Logger::kINFO,"default",MSG,'a'); 
+      // return 1;
+      isDiff = true;
    }
 
-   data.numTraces = N;
-   for(int i=0;i<N;i++) data.freq[i] = inData[i].freq[method];
+   int M = data.numTraces; 
 
+   if(isDiff){ 
+      MSG = "----------- INCOMING PP DATA ------------";
+      rc = Logger::PrintMessage(Logger::kINFO,"default",MSG,'a'); 
+
+      for(int i=0;i<M;i++){
+	 timeStamp = gm2fieldUtil::GetStringTimeStampFromUTC( data.time[i]/1E+9 ); 
+	 sprintf(msg,"run %05d, trace %02d: time = %s, ampl = %.3lf, freq = %.3lf, temp = %.3lf",
+	       data.run,data.traceNumber[i],timeStamp.c_str(),data.ampl[i],data.freq[i],data.temp[i]);
+	 MSG = msg;
+	 rc = Logger::PrintMessage(Logger::kINFO,"default",MSG,'a'); 
+      } 
+   }
+
+   // now we may have excluded traces here, so we have to be careful 
+   int k=0;
+   for(int i=0;i<M;i++){       // loop over MIDAS data 
+      for(int j=0;j<N;j++){    // loop over NMR-ANA data
+	 if(data.traceNumber[i]==inData[j].pulse){
+	    // we have a match -- update the struct
+            // data.run            = data.run;  
+	    data.traceNumber[k] = data.traceNumber[i];  
+	    data.time[k]        = data.time[i];
+	    data.r[k]           = data.r[i];
+	    data.y[k]           = data.y[i];  
+	    data.phi[k]         = data.phi[i]; 
+	    data.temp[k]        = data.temp[i];
+	    data.freq[k]        = inData[j].freq[method];
+	    data.freq_LO[k]     = data.freq_LO[i]; 
+	    data.freq_RF[k]     = data.freq_RF[i];
+	    data.nzc[k]         = data.nzc[i]; 
+	    data.ampl[k]        = data.ampl[i]; 
+	    k++; // move to next index of modified data set 
+	 }
+      }
+   }
+   
+   if(N!=k){
+      sprintf(msg,"[ModifyPlungingProbeData]: Error! N (NMR-ANA) = %d, k matches = %d",N,k);
+      MSG = msg;
+      rc = Logger::PrintMessage(Logger::kERR,"default",MSG,'a'); 
+      return 1;
+   }
+   data.numTraces = k;
+
+   // print for confirmation
+   if(isDiff){
+      MSG = "----------- UPDATED PP DATA ------------";
+      rc = Logger::PrintMessage(Logger::kINFO,"default",MSG,'a'); 
+      for(int i=0;i<k;i++){
+	 timeStamp = gm2fieldUtil::GetStringTimeStampFromUTC( data.time[i]/1E+9 ); 
+	 sprintf(msg,"run %05d, trace %02d: time = %s, ampl = %.3lf, freq = %.3lf, temp = %.3lf",
+	       data.run,data.traceNumber[i],timeStamp.c_str(),data.ampl[i],data.freq[i],data.temp[i]);
+         MSG = msg; 
+	 rc = Logger::PrintMessage(Logger::kINFO,"default",MSG,'a'); 
+      }
+   } 
+   
    return 0;
 }
 //______________________________________________________________________________
@@ -783,10 +867,10 @@ int LoadImposedAziGradData_bak(const char *inpath,int probe,double &dBdz){
    return 0;
 }
 //______________________________________________________________________________
-int LoadImposedAziGradData(const char *inpath,int probe,double &dBdz){
+int LoadImposedAziGradData(const char *inpath,int probe,double &dBdz,double &dBdz_err){
 
    int ipr=0;
-   std::string stp,sgr;  // probe, imposed gradient @ 0.82 A (Hz/mm)  
+   std::string stp,sgr,sgr_err;  // probe, imposed gradient @ 0.82 A (Hz/mm)  
 
    ifstream infile;
    infile.open(inpath);
@@ -796,9 +880,13 @@ int LoadImposedAziGradData(const char *inpath,int probe,double &dBdz){
    }else{
       while( !infile.eof() ){
          std::getline(infile,stp,',');
-         std::getline(infile,sgr);
+         std::getline(infile,sgr,',');
+         std::getline(infile,sgr_err);
          ipr = std::atoi( stp.c_str() ); 
-         if(ipr==probe) dBdz = std::atof( sgr.c_str() ); 
+         if(ipr==probe){
+	    dBdz     = std::atof( sgr.c_str() ); 
+            dBdz_err = std::atof( sgr_err.c_str() );
+         } 
       }
       infile.close();
    }
@@ -869,14 +957,16 @@ int LoadTrolleyPositionData(const char *inpath,trolleyProbePosition_t &data){
    return 0;
 }
 //______________________________________________________________________________
-int ImportNMRANAData(const char *inpath,std::vector<nmrAnaEvent_t> &Data){
-   // load data from the NMR-ANA framework 
+int ImportNMRANAData(const char *inpath,std::vector<nmrAnaEvent_t> &Data,std::string cutFile){
+   // load cuts 
+   Cut *myCuts = new Cut(cutFile); 
 
+   // load data from the NMR-ANA framework 
    nmrAnaEvent_t inData;
 
    // allowed amplitude in volts 
-   double VMIN = 0.3; 
-   double VMAX = 1.5; 
+   // double VMIN = 0.3; 
+   // double VMAX = 1.5; 
 
    int cntr=0;
    int N=0,k=0;
@@ -889,6 +979,8 @@ int ImportNMRANAData(const char *inpath,std::vector<nmrAnaEvent_t> &Data){
    ifstream infile;
    infile.open(inpath,ios::in);
 
+   bool goodEvent = false;
+
    if(infile.fail()){
       cout << "Cannot open the file: " << inpath << endl;
       return 1;
@@ -897,7 +989,9 @@ int ImportNMRANAData(const char *inpath,std::vector<nmrAnaEvent_t> &Data){
       // for(int i=0;i<1;i++) infile.getline(buf,MAX);
       while( !infile.eof() ){
          infile >> irun >> ipulse >> iampl >> inoise >> izc >> inc >> ifa >> ifb >> ifc >> ifa_ph >> ifb_ph >> ifc_ph;
-         if( izc>10&&ifc_ph>0 && (iampl>VMIN&&iampl<VMAX) ){
+         goodEvent = myCuts->CheckEvent_nmrAna(irun,ipulse,izc,iampl,ifc_ph); 
+         if(goodEvent){
+         // if( izc>10&&ifc_ph>0 && (iampl>VMIN&&iampl<VMAX) ){
 	    inData.run     = irun;
 	    inData.ampl    = iampl;
 	    inData.noise   = inoise;
@@ -913,14 +1007,17 @@ int ImportNMRANAData(const char *inpath,std::vector<nmrAnaEvent_t> &Data){
 	    Data.push_back(inData);
 	    cntr++;
          }else{
-           std::cout << Form("[ImportData]: WARNING: rejected run %d pulse %d",irun,ipulse) << std::endl;
-           std::cout << Form("              ampl = %.3lf V, zc = %d, freq = %.3lf",iampl,izc,ifc_ph) << std::endl;
+	    // skip the event 
+	    // std::cout << Form("[ImportData]: WARNING: rejected run %d pulse %d",irun,ipulse) << std::endl;
+	    // std::cout << Form("              ampl = %.3lf V, zc = %d, freq = %.3lf",iampl,izc,ifc_ph) << std::endl;
          }
       }
       infile.close();
       if(cntr>0) Data.pop_back();
    }
-
+   
+   delete myCuts; 
+   
    return 0;
 }
 //______________________________________________________________________________

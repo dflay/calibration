@@ -67,6 +67,9 @@ int DeltaB_trly_prod(std::string configFile){
    int axis                = inputMgr->GetAxis();
    int runPeriod           = inputMgr->GetRunPeriod();
 
+   // update the analysis method according to Ran's guidance 
+   if(prodVersion.compare("v9_21_01")==0) method = gm2fieldUtil::Constants::kHilbertPhaseLinear; 
+
    date_t theDate; 
    GetDate(theDate);
 
@@ -78,7 +81,10 @@ int DeltaB_trly_prod(std::string configFile){
    if(axis==1) gradName = "vert"; 
    if(axis==2) gradName = "azi";
 
-   PrintMessage("DeltaB_trly_prod","",__LINE__); 
+   std::string trLabel; 
+   if(axis==0) trLabel = "trx"; 
+   if(axis==1) trLabel = "try"; 
+   if(axis==2) trLabel = "trz";
 
    char outpath[200];
    sprintf(outpath,"%s/dB-trly_final-location_%s-grad_pr-%02d.csv",outDir.c_str(),gradName.c_str(),probeNumber);
@@ -87,8 +93,6 @@ int DeltaB_trly_prod(std::string configFile){
    double blindMag = inputMgr->GetBlindScale(); 
    gm2fieldUtil::Blinder *myBlind = new gm2fieldUtil::Blinder(blindLabel,blindMag,blindUnits);
    double blindValue = myBlind->GetBlinding(2); // in Hz
-   
-   PrintMessage("DeltaB_trly_prod","",__LINE__); 
 
    std::vector<int> run;
    std::vector<std::string> label;
@@ -100,8 +104,6 @@ int DeltaB_trly_prod(std::string configFile){
       std::cout << "No data!" << std::endl;
       return 1;
    }
-   
-   PrintMessage("DeltaB_trly_prod","",__LINE__); 
 
    bool loadOnline = false; 
    for(int i=0;i<NRUN;i++){
@@ -124,8 +126,6 @@ int DeltaB_trly_prod(std::string configFile){
       delta = 2.*50.;
       // if(axis==2) delta = 2.*60. + 12.; 
    }
-   
-   PrintMessage("DeltaB_trly_prod","Loading SCC data",__LINE__); 
 
    // determine the correct ordering of the SCC on/off cycles 
    std::vector<surfaceCoilEvent_t> sccData;
@@ -161,7 +161,7 @@ int DeltaB_trly_prod(std::string configFile){
    }else{
       if(loadTimes){
 	 // better to use pre-defined transition times   
-	 rc = LoadSCCTimes(probeNumber,runPeriod,"tr",sccOff,sccOn);
+	 rc = LoadSCCTimes(probeNumber,runPeriod,trLabel,sccOff,sccOn);
 	 if(sccOn[0]<sccOff[0]) sccStartOn = true;
       }else{
 	 rc = FindTransitionTimes(coilSet,axis,thr,delta,sccData,sccOff,sccOn);
@@ -172,14 +172,17 @@ int DeltaB_trly_prod(std::string configFile){
 	 if(rc==1) sccStartOn = true;
       }
    }
-   
-   PrintMessage("DeltaB_trly_prod","",__LINE__); 
 
    if(sccStartOn){
       std::cout << "SCC was ON to start the sequence" << std::endl;
    }else{
       std::cout << "SCC was OFF to start the sequence" << std::endl;
    } 
+
+   // save the times -- DO NOT NEED AFTER FIRST ANA PASS
+   // char scc_time_path[200];                                                              
+   // sprintf(scc_time_path,"./input/scc-times/run-%d/%s-%02d.txt",runPeriod,trLabel.c_str(),probeNumber);
+   // if(prodVersion.compare("nearline")==0) rc = PrintToFile_sccTimes(scc_time_path,sccOff,sccOn);
 
    // TRLY data
    std::vector<trolleyAnaEvent_t> trlyData;

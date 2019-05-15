@@ -48,7 +48,7 @@ int FindTRLYStopTimes(int probe,double angle,std::vector<trolleyAnaEvent_t> trly
                       std::vector<double> &time); 
 
 int FindTransitionTimes(int type,int gradType,double thr,double delta,std::vector<surfaceCoilEvent_t> data,
-                        std::vector<double> &timeOff,std::vector<double> &timeOn); 
+                        std::vector<double> &timeOff,std::vector<double> &timeOn,int coilNum=-1); 
 
 int CalculateTRLYAvg_Stationary(int probeNumber,std::vector<trolleyAnaEvent_t> Event,double &mean,double &stdev);
 

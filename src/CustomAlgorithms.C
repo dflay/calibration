@@ -338,7 +338,7 @@ int FindTRLYStopTimes(int probe,double angle,std::vector<trolleyAnaEvent_t> trly
 // }
 //______________________________________________________________________________
 int FindTransitionTimes(int type,int gradType,double thr,double delta,std::vector<surfaceCoilEvent_t> data,
-                        std::vector<double> &timeOff,std::vector<double> &timeOn){
+                        std::vector<double> &timeOff,std::vector<double> &timeOn,int coilNum){
    // find the transition times of turning off and on the surface coils 
    // use the sum of the coils to determine if they're on or off 
    // type: 0 (bottom), 1 (top), -1 (azi)
@@ -360,8 +360,13 @@ int FindTransitionTimes(int type,int gradType,double thr,double delta,std::vecto
    // std::cout << "Scanning " << NEV << " events..." << std::endl;
    do{ 
       for(int j=0;j<M;j++){
-	 bot = data[i].BotCurrents[j]; 
-	 top = data[i].TopCurrents[j]; 
+         if(coilNum>0){
+	    bot = data[i].BotCurrents[coilNum]; 
+	    top = data[i].TopCurrents[coilNum]; 
+         }else{
+	    bot = data[i].BotCurrents[j]; 
+	    top = data[i].TopCurrents[j]; 
+         }
 	 azi = data[i].AzCurrents[0];
          BOT = TMath::Abs(bot); 
          TOP = TMath::Abs(top); 

@@ -112,7 +112,8 @@ int InputManager::Parse(){
    bool tempStatus   = DoesKeyExist("use-trly-temp-cor");
    bool runpStatus   = DoesKeyExist("run-period"); 
    bool prodStatus   = DoesKeyExist("prod-tag");  
-   bool nmrAnaStatus = DoesKeyExist("nmr-ana-tag");  
+   bool nmrAnaStatus = DoesKeyExist("nmr-ana-tag"); 
+   bool cutStatus    = DoesKeyExist("cut-file");  
 
    // parameters common to all 
    std::string unitStr="";
@@ -149,6 +150,7 @@ int InputManager::Parse(){
       if(sccStatus)  fLoadSCCTime   = (bool)( (int)fParams["load-trly-scc-times"] ); 
       if(timeStatus) fUseTimeWeight = (bool)( (int)fParams["use-aba-time-weight"] ); 
       if(tempStatus) fUseTempCor    = (bool)( (int)fParams["use-trly-temp-cor"] ); 
+      if(cutStatus)  fCutFile       = fParams["cut-file"]; 
    }
 
    // trolley Delta-B measurements

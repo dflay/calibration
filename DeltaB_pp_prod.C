@@ -64,12 +64,17 @@ int DeltaB_pp_prod(std::string configFile){
    std::string nmrAnaVersion = inputMgr->GetNMRANATag();  
    std::string date          = inputMgr->GetAnalysisDate();
    std::string blindLabel    = inputMgr->GetBlindLabel();
+   std::string cutFile       = inputMgr->GetCutFile();
 
    bool isBlind              = inputMgr->IsBlind();
    bool useTimeWeight        = inputMgr->GetTimeWeightStatus();
    int probeNumber           = inputMgr->GetTrolleyProbe();
    int axis                  = inputMgr->GetAxis();
    int runPeriod             = inputMgr->GetRunPeriod(); 
+
+   char cutPath[200];
+   sprintf(cutPath,"./input/json/run-%d/%s",runPeriod,cutFile.c_str());
+   std::string cutpath = cutPath;
 
    date_t theDate; 
    GetDate(theDate);
@@ -142,24 +147,19 @@ int DeltaB_pp_prod(std::string configFile){
       std::cout << "SCC was OFF to start the sequence" << std::endl;
    } 
 
+   // save the times -- DO NOT NEED AFTER FIRST ANA PASS 
+   // char scc_time_path[200]; 
+   // sprintf(scc_time_path,"./input/scc-times/run-%d/%s-%02d.txt",runPeriod,ppLabel.c_str(),probeNumber);
+   // if(prodVersion.compare("nearline")==0) rc = PrintToFile_sccTimes(scc_time_path,sccOff,sccOn);
+
    const int NSCC     = sccOn.size();
-
-   // if(NSCC!=NSCC_off){
-   //    std::cout << "ERROR! SCC on/off swaps not equal!" << std::endl;
-   //    return 1;
-   // }
-
-   // for(int i=0;i<NSCC;i++){
-   //    std::cout << "on = "   << gm2fieldUtil::GetStringTimeStampFromUTC( (unsigned long)sccOn[i] ) 
-   //              << " off = " << gm2fieldUtil::GetStringTimeStampFromUTC( (unsigned long)sccOff[i] ) << std::endl; 
-   // }
 
    // PP data 
    const int N3 = run.size(); 
    std::vector<plungingProbeAnaEvent_t> PP,ppEvent; 
    for(int i=0;i<N3;i++){
       std::cout << "Getting PP data for run " << run[i] << "..." << std::endl; 
-      rc = GetPlungingProbeData(run[i],prMethod,ppMethod,ppEvent,prodVersion,nmrAnaVersion);
+      rc = GetPlungingProbeData(run[i],prMethod,ppMethod,ppEvent,prodVersion,nmrAnaVersion,cutpath);
       if(rc!=0){
 	 std::cout << "No data!" << std::endl;
 	 return 1;
@@ -167,18 +167,6 @@ int DeltaB_pp_prod(std::string configFile){
    }
 
    const int NPP = ppEvent.size(); 
-
-   // int rejIndex=500; 
-   // for(int i=0;i<NPP;i++){
-   //    rc = ModifyPlungingProbeData(kLeastSquaresPhase,PP[i]);
-   //    if( abs(i-rejIndex)<2 ) continue; //reject pairs of events if necessary  
-   //    if(rc==0){
-   //       ppEvent.push_back(PP[i]);
-   //    }else{
-   //       std::cout << Form("Event rejected (NMR-DAQ run %d)",PP[i].run) << std::endl; 
-   //       rejIndex = i;
-   //    }
-   // }
 
    if(isBlind) ApplyBlindingPP(blindValue,ppEvent);
 
@@ -319,8 +307,8 @@ int DeltaB_pp_prod(std::string configFile){
    c1->Print(plotPath);
    delete c1;  
 
-   double yMin_scc = -3; 
-   double yMax_scc =  3; 
+   double yMin_scc = -50; 
+   double yMax_scc =  50; 
 
    TLine **tON  = new TLine*[NSCC];
    TLine **tOFF = new TLine*[NSCC];

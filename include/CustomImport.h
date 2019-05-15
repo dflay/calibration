@@ -35,8 +35,8 @@ int GetTrolleyData(std::string date,int run,int method,std::vector<trolleyAnaEve
 
 // Reading PP data
 int GetPlungingProbeData(int run,int prMethod,int ppMethod,std::vector<plungingProbeAnaEvent_t> &data,
-                         std::string version,std::string nmrAnaVersion); 
-int ModifyPlungingProbeData(int method,plungingProbeAnaEvent_t &data,std::string nmrAnaVersion); 
+                         std::string version,std::string nmrAnaVersion,std::string cutData="UNKNOWN.json",bool useNMRANA=true); 
+int ModifyPlungingProbeData(int method,plungingProbeAnaEvent_t &data,std::string nmrAnaVersion,std::string cutFile); 
 
 // Reading SCC data 
 int GetSurfaceCoilData(int run,std::vector<surfaceCoilEvent_t> &data,std::string version);  
@@ -49,7 +49,7 @@ int LoadImageParameters(std::string inpath,std::string type,std::vector<imagePar
 
 int LoadRunSummaryData(const char *inpath,runSummary_t &x); 
 int LoadNMRDAQEventData(const char *inpath,std::vector<NMRDAQEvent_t> &event); 
-int ImportNMRANAData(const char *inpath,std::vector<nmrAnaEvent_t> &Data);
+int ImportNMRANAData(const char *inpath,std::vector<nmrAnaEvent_t> &Data,std::string cutFile);
 int ImportDeltaBFileList_csv(const char *inpath,
                     std::vector<int> &x1,std::vector<std::string> &x2,
                     std::vector<double> &x3); 
@@ -67,7 +67,7 @@ int LoadCalibSwapData(const char *inpath,std::vector<calibSwap_t> &data);
 
 int LoadImposedGradientData(const char *inpath,imposed_gradient_t &data); 
 int LoadImposedGradientData(const char *inpath,std::vector<imposed_gradient_t> &data);
-int LoadImposedAziGradData(const char *inpath,int probe,double &dBdz); 
+int LoadImposedAziGradData(const char *inpath,int probe,double &dBdz,double &dBdz_err); 
 int LoadImposedAziGradData_bak(const char *inpath,int probe,double &dBdz); 
 
 int LoadTrolleyDeltaBData(const char *inpath,trolleyDeltaB_t &data); 
