@@ -63,11 +63,13 @@ int SCCToggle(){
    gm2fieldUtil::Import::GetRunList(run);
    const int NRUNS = run.size();
 
-   int coilSet=-9,axis=-1; 
+   int probe=-1,coilSet=-9,axis=-1; 
    std::cout << "Use bottom (0), top (1), or azi coils (-1)? ";
    std::cin  >> coilSet;
    std::cout << "Enter axis (0 = x, 1 = y, 2 = z): ";
    std::cin  >> axis;
+   std::cout << "Enter probe: ";
+   std::cin  >> probe; 
 
    char AXIS = 't'; 
    if(axis==0) AXIS = 'x';
@@ -75,6 +77,17 @@ int SCCToggle(){
    if(axis==2) AXIS = 'z';
 
    std::string prodVersion = "v9_21_01"; 
+
+   // get trolley data
+   std::vector<trolleyAnaEvent_t> trlyData;
+   for(int i=0;i<NRUNS;i++) rc = GetTrolleyData(run[i],method,trlyData,prodVersion);
+   if(rc!=0){
+      std::cout << "No data!" << std::endl;
+      return 1;
+   }
+
+   TGraph *gTR = GetTRLYTGraph(probe-1,"GpsTimeStamp","freq",trlyData);
+   gm2fieldUtil::Graph::SetGraphParameters(gTR,20,kBlack);
 
    // determine the correct ordering of the SCC on/off cycles 
    std::vector<surfaceCoilEvent_t> sccData;
@@ -99,12 +112,11 @@ int SCCToggle(){
    std::vector<double> sccOff,sccOn;
    // rc = FindTransitionTimes(coilSet,axis,thr,delta,sccData,sccOff,sccOn);
 
-   int probe = 7; 
    int runPeriod = 1;
    char trl[200]; 
-   sprintf(trl,"pp%c",AXIS);
+   sprintf(trl,"tr%c",AXIS);
    std::string trLabel = trl;
-   rc = LoadSCCTimes(probe,runPeriod,trLabel,sccOff,sccOn);
+   rc = LoadSCCTimes(probe,runPeriod,prodVersion,trLabel,sccOff,sccOn);
 
    bool sccStartOn = false;
    // if(rc==1) sccStartOn = true;
@@ -117,35 +129,58 @@ int SCCToggle(){
       std::cout << "SCC was OFF at start analysis" << std::endl;
    }
 
-   double yMin_tr = -30; 
-   double yMax_tr =  30;
+   double yMin_scc = -30; 
+   double yMax_scc =  30;
+
+   double yMin_tr = 50E+3; 
+   double yMax_tr = 60E+3;
 
    const int NToff = sccOff.size(); 
    const int NTon  = sccOn.size(); 
    TLine **tOff = new TLine*[NToff]; 
    TLine **tOn  = new TLine*[NTon]; 
+   TLine **tOff_tr = new TLine*[NToff]; 
+   TLine **tOn_tr  = new TLine*[NTon]; 
    for(int i=0;i<NToff;i++){
-      tOff[i] = new TLine(sccOff[i],yMin_tr,sccOff[i],yMax_tr); 
+      tOff[i] = new TLine(sccOff[i],yMin_scc,sccOff[i],yMax_scc); 
       tOff[i]->SetLineColor(kRed);
       tOff[i]->SetLineWidth(2);  
       tOff[i]->SetLineStyle(2);  
+      tOff_tr[i] = new TLine(sccOff[i],yMin_tr,sccOff[i],yMax_tr); 
+      tOff_tr[i]->SetLineColor(kRed);
+      tOff_tr[i]->SetLineWidth(2);  
+      tOff_tr[i]->SetLineStyle(2);  
    }
    for(int i=0;i<NTon;i++){
-      tOn[i]  = new TLine(sccOn[i] ,yMin_tr,sccOn[i] ,yMax_tr); 
+      tOn[i]  = new TLine(sccOn[i] ,yMin_scc,sccOn[i] ,yMax_scc); 
       tOn[i]->SetLineColor(kGreen+1); 
       tOn[i]->SetLineWidth(2);  
       tOn[i]->SetLineStyle(2);  
+      tOn_tr[i]  = new TLine(sccOn[i] ,yMin_tr,sccOn[i] ,yMax_tr); 
+      tOn_tr[i]->SetLineColor(kGreen+1); 
+      tOn_tr[i]->SetLineWidth(2);  
+      tOn_tr[i]->SetLineStyle(2);  
    }
 
    TCanvas *c1 = new TCanvas("c1","SCC Data",1200,600);
+   c1->Divide(1,2); 
 
-   c1->cd();
+   c1->cd(1);
    mgSCC->Draw("a");
    gm2fieldUtil::Graph::SetGraphLabels(mgSCC,"SCC Data","","Total Current (A)"); 
    gm2fieldUtil::Graph::UseTimeDisplay(mgSCC); 
    mgSCC->Draw("a");
    for(int i=0;i<NToff;i++) tOff[i]->Draw("same"); 
    for(int i=0;i<NTon ;i++) tOn[i]->Draw("same"); 
+   c1->Update();
+
+   c1->cd(2);
+   gTR->Draw("alp");
+   gm2fieldUtil::Graph::SetGraphLabels(gTR,"TRLY Data","","Frequency (Hz)"); 
+   gm2fieldUtil::Graph::UseTimeDisplay(gTR); 
+   gTR->Draw("alp");
+   for(int i=0;i<NToff;i++) tOff_tr[i]->Draw("same"); 
+   for(int i=0;i<NTon ;i++) tOn_tr[i]->Draw("same"); 
    c1->Update();
 
    rc = PrintToFile_csv("test.csv",sccOff,sccOn);  

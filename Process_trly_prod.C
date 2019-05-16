@@ -127,7 +127,7 @@ int Process_trly_prod(std::string configFile){
    double angle = 189.160; // nominal trolley location 
 
    if(loadSwapTimes){
-      LoadTimes(probeNumber,runPeriod,"swap","tr",time);
+      LoadTimes(probeNumber,runPeriod,prodVersion,"swap","tr",time);
    }else{
       FindTRLYStopTimes(probeNumber-1,angle,trlyData,trlyGalil,time);
    }

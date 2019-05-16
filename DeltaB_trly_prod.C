@@ -161,7 +161,7 @@ int DeltaB_trly_prod(std::string configFile){
    }else{
       if(loadTimes){
 	 // better to use pre-defined transition times   
-	 rc = LoadSCCTimes(probeNumber,runPeriod,trLabel,sccOff,sccOn);
+	 rc = LoadSCCTimes(probeNumber,runPeriod,prodVersion,trLabel,sccOff,sccOn);
 	 if(sccOn[0]<sccOff[0]) sccStartOn = true;
       }else{
 	 rc = FindTransitionTimes(coilSet,axis,thr,delta,sccData,sccOff,sccOn);

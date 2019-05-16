@@ -130,7 +130,7 @@ int DeltaB_pp_prod(std::string configFile){
  
    if(loadTimes){
       // better to use pre-defined transition times   
-      rc = LoadSCCTimes(probeNumber,runPeriod,ppLabel,sccOff,sccOn);
+      rc = LoadSCCTimes(probeNumber,runPeriod,prodVersion,ppLabel,sccOff,sccOn);
       if(sccOn[0]<sccOff[0]) sccStartOn = true;
    }else{
       rc = FindTransitionTimes(coilSet,axis,thr,delta,sccData,sccOff,sccOn);

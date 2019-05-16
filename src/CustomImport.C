@@ -522,13 +522,13 @@ int LoadImageParameters(std::string inpath,std::string type,std::vector<imagePar
    return rc;
 }
 //______________________________________________________________________________
-int LoadTimes(int probe,int runPeriod,std::string type,std::string dev,std::vector<double> &time){
+int LoadTimes(int probe,int runPeriod,std::string prodVersion,std::string type,std::string dev,std::vector<double> &time){
    // load in the by-hand determined swap times 
    std::vector<std::string> stime;
    unsigned long int aTime;
    std::string st;
    char inpath[200];
-   sprintf(inpath,"./input/%s-times/run-%d/%s-%02d.txt",type.c_str(),runPeriod,dev.c_str(),probe);
+   sprintf(inpath,"./input/%s-times/run-%d/%s/%s-%02d.txt",type.c_str(),runPeriod,prodVersion.c_str(),dev.c_str(),probe);
    std::ifstream infile;
    infile.open(inpath);
    if( infile.fail() ){
@@ -551,10 +551,11 @@ int LoadTimes(int probe,int runPeriod,std::string type,std::string dev,std::vect
    return 0;
 }
 //______________________________________________________________________________
-int LoadSCCTimes(int probe,int runPeriod,std::string dev,std::vector<double> &sccOff,std::vector<double> &sccOn){
+int LoadSCCTimes(int probe,int runPeriod,std::string prodVersion,std::string dev, 
+                 std::vector<double> &sccOff,std::vector<double> &sccOn){
    // load in the by-hand determined SCC times 
    std::vector<double> time;
-   int rc = LoadTimes(probe,runPeriod,"scc",dev,time); 
+   int rc = LoadTimes(probe,runPeriod,prodVersion,"scc",dev,time); 
    // now fill the vectors appropriately 
    int N = time.size();
    for(int i=0;i<N;i++){

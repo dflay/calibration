@@ -56,8 +56,8 @@ int ImportDeltaBFileList_csv(const char *inpath,
 
 int LoadImagesData(const char *inpath,int probe,double &image,double &image_err); 
 
-int LoadTimes(int probe,int runPeriod,std::string type,std::string dev,std::vector<double> &time); 
-int LoadSCCTimes(int probe,int runPeriod,std::string dev,std::vector<double> &sccOff,std::vector<double> &sccOn);
+int LoadTimes(int probe,int runPeriod,std::string prodVersion,std::string type,std::string dev,std::vector<double> &time); 
+int LoadSCCTimes(int probe,int runPeriod,std::string prodVersion,std::string dev,std::vector<double> &sccOff,std::vector<double> &sccOn);
 
 int LoadResultsProdData(const char *inpath,result_prod_t &data); 
 int LoadResultsProdFinalData(const char *inpath,result_prod_t &data); 
