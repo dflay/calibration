@@ -44,7 +44,7 @@
 
 int GetAziGrad(TGraph *g,double &grad,double &gradErr);
 int GetCoordinates(std::vector<calibSwap_t> data,std::vector<double> &r); 
-int RedefineOrigin(std::vector<plungingProbeAnaEvent_t> &data,std::vector<double> &r0); 
+int RedefineOrigin(std::vector<plungingProbeAnaEvent_t> &data,std::vector<double> r0); 
 
 int LocalScanGrad_pp_prod(std::string configFile){
 
@@ -179,8 +179,8 @@ int LocalScanGrad_pp_prod(std::string configFile){
       F.clear();
    } 
 
-   min -= 5; 
-   max += 5; 
+   min -= 8; 
+   max += 8; 
 
    // plunging probe swap data 
    std::vector<calibSwap_t> ppCalib_data;
@@ -194,17 +194,23 @@ int LocalScanGrad_pp_prod(std::string configFile){
    sprintf(inpath_tr,"%s/trly-swap-data_pr-%02d_%s.csv",outDir.c_str(),probeNumber,date.c_str());
    rc = LoadCalibSwapData(inpath_tr,trlyCalib_data);  
 
-   // get the coordinates of the PP and trly probe  
+   // get the coordinates of the PP and trly probe during rapid swapping  
    std::vector<double> ppCoord,trlyCoord;
    rc = GetCoordinates(ppCalib_data  ,ppCoord  );  
    rc = GetCoordinates(trlyCalib_data,trlyCoord);  
    
-   // subtract off PP coordinates from the PP data (redefine the origin) 
+   // redefine PP origin based on average location in rapid swapping.  We want
+   // the gradient at this point   
    rc = RedefineOrigin(ppEvent,ppCoord);
 
+   // Want to evaluate the gradient at the average location of the PP. 
+   // not sure if this is right... 
    // we do something different for the z axis (see below) 
-   double X = (-1.)*(ppCoord[axis] - trlyCoord[axis]);  // WARNING: we impose a NEGATIVE gradient, so our convention flips here
-   if(axis!=2) X = 0; 
+   // double X = (-1.)*(ppCoord[axis] - trlyCoord[axis]);  // WARNING: we impose a NEGATIVE gradient, so our convention flips here
+   // if(axis!=2) X = 0;
+   // std::cout << "[LocalScanGrad_pp_prod]: Evaluating gradient at z = " << X << std::endl;
+   // this seems like the most obvious choice, since we redefine the origin according the PP swap location (average)  
+   double X = 0;
    
    TLine *evalPoint = new TLine(X,min,X,max);
    evalPoint->SetLineColor(kBlue);
@@ -212,11 +218,11 @@ int LocalScanGrad_pp_prod(std::string configFile){
    evalPoint->SetLineWidth(2); 
 
    // fixed probe data
-   char fxpr_path[200]; 
-   sprintf(fxpr_path,"./input/probe-lists/fxpr-list_set-%d.csv",fxprSet); 
-   std::string fxprPath = fxpr_path;
-   std::vector<int> fxprList;
-   gm2fieldUtil::Import::ImportData1<int>(fxprPath,"csv",fxprList);
+   // char fxpr_path[200]; 
+   // sprintf(fxpr_path,"./input/probe-lists/fxpr-list_set-%d.csv",fxprSet); 
+   // std::string fxprPath = fxpr_path;
+   // std::vector<int> fxprList;
+   // gm2fieldUtil::Import::ImportData1<int>(fxprPath,"csv",fxprList);
 
    // std::vector<gm2field::fixedProbeFrequency_t> fxprData;
    // rc = gm2fieldUtil::RootHelper::GetFPFrequencies(midasRun,fxprData);
@@ -259,7 +265,7 @@ int LocalScanGrad_pp_prod(std::string configFile){
    g->Draw("ap");
    g->GetYaxis()->SetRangeUser(min,max); 
    TFitResultPtr fitResult = g->Fit(fitFunc.c_str(),"QS"); 
-   if(axis!=2) evalPoint->Draw("same"); 
+   evalPoint->Draw("same"); 
    c1->Update(); 
 
    TString plotPath = Form("%s/pp-shimmed-scan-%s_pr-%02d.png",plotDir.c_str(),Axis.c_str(),probeNumber); 
@@ -345,7 +351,7 @@ int LocalScanGrad_pp_prod(std::string configFile){
    return 0;
 }
 //______________________________________________________________________________
-int RedefineOrigin(std::vector<plungingProbeAnaEvent_t> &data,std::vector<double> &r0){
+int RedefineOrigin(std::vector<plungingProbeAnaEvent_t> &data,std::vector<double> r0){
    int M=0;
    const int N = data.size();
    for(int i=0;i<N;i++){

@@ -224,12 +224,17 @@ int DeltaB_pp_prod(std::string configFile){
       trial.push_back(i+1);
       std::cout << Form("RAW trial %d: %.3lf +/- %.3lf Hz",i+1,diff[i],diffErr[i]) << std::endl;
    }
-   
+
    const int NDA = diff_aba.size();
    std::vector<double> trial_aba;
    for(int i=0;i<NDA;i++){
       trial_aba.push_back(i+1);
       std::cout << Form("ABA trial %d: %.3lf +/- %.3lf Hz",i+1,diff_aba[i],diffErr_aba[i]) << std::endl;
+   }
+  
+   // single trial, use shot uncertainty 
+   if(ND==1){
+      dB_err[0] = diffErr[0]; 
    }
 
    dB[1]     = mean_aba;
@@ -237,7 +242,11 @@ int DeltaB_pp_prod(std::string configFile){
 
    // if we have a single ABA trial, use statistical uncertainty as the error 
    if(NDA==1) dB_err[1] = diffErr_aba[0];  
-   
+
+   // clean up junk results
+   for(int i=0;i<3;i++) if( gm2fieldUtil::Math::IsInfOrNaN<double>(dB[i]) )     dB[i] = 0.;
+   for(int i=0;i<3;i++) if( gm2fieldUtil::Math::IsInfOrNaN<double>(dB_err[i]) ) dB_err[i] = 0.;
+
    // Plots
 
    TGraphErrors *gPP_bare  = gm2fieldUtil::Graph::GetTGraphErrors(bareTime ,bare      ,bareErr      );

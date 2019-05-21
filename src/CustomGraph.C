@@ -202,17 +202,45 @@ int FillPPVector3(TString axis,plungingProbeAnaEvent_t data,std::vector<double> 
 //    TGraphErrors *g = gm2fieldUtil::Graph::GetTGraphErrors(TIME,FREQ,ERR);
 //    return g; 
 // }
-// //______________________________________________________________________________
-// TGraph *GetTGraphNew(std::vector<fixedProbeEvent_t> fxprData){
-//    std::vector<double> TIME,FREQ; 
-//    int NPTS = fxprData.size();
-//    for(int i=0;i<NPTS;i++){
-//       TIME.push_back(fxprData[i].time);
-//       FREQ.push_back(fxprData[i].freq);
-//    }
-//    TGraph *g = gm2fieldUtil::Graph::GetTGraph(TIME,FREQ);
-//    return g; 
-// }
+//______________________________________________________________________________
+TGraph *GetFXPRTGraph(std::string xAxis,std::string yAxis,std::vector<fixedProbeEvent_t> data){
+   std::vector<double> x,y;
+   FillFPVector(xAxis,data,x);  
+   FillFPVector(yAxis,data,y);  
+   TGraph *g = gm2fieldUtil::Graph::GetTGraph(x,y);
+   return g; 
+}
+//______________________________________________________________________________
+TGraphErrors *GetFXPRTGraph_avg(std::string xAxis,std::string yAxis,std::string yAxisErr,std::vector<averageFixedProbeEvent_t> data){
+   std::vector<double> x,y,ey;
+   FillFPVector_avg(xAxis,data,x);  
+   FillFPVector_avg(yAxis,data,y);  
+   FillFPVector_avg(yAxisErr,data,ey);  
+   TGraphErrors *g = gm2fieldUtil::Graph::GetTGraphErrors(x,y,ey);
+   return g; 
+}
+//______________________________________________________________________________
+int FillFPVector(std::string axis,std::vector<fixedProbeEvent_t> data,std::vector<double> &v){
+   const int N = data.size();
+   for(int i=0;i<N;i++){
+      if( axis.compare("GpsTimeStamp")==0 ) v.push_back( data[i].time/1E+9 );
+      if( axis.compare("freq")==0         ) v.push_back( data[i].freq      );
+      if( axis.compare("aziID")==0        ) v.push_back( (double)data[i].aziID     );
+      if( axis.compare("probeID")==0      ) v.push_back( (double)data[i].probeID   );
+   }
+   return 0;
+}
+//______________________________________________________________________________
+int FillFPVector_avg(std::string axis,std::vector<averageFixedProbeEvent_t> data,std::vector<double> &v){
+   const int N = data.size();
+   for(int i=0;i<N;i++){
+      if( axis.compare("GpsTimeStamp")==0 ) v.push_back( data[i].time/1E+9 );
+      if( axis.compare("freq")==0         ) v.push_back( data[i].freq      );
+      if( axis.compare("freqErr")==0      ) v.push_back( data[i].freqErr   );
+      if( axis.compare("NONE")==0         ) v.push_back(0.);
+   }
+   return 0;
+}
 // //______________________________________________________________________________
 // TGraph *GetTGraph(int method,unsigned long long timeStart,unsigned long long timeStop,unsigned long long timeStep,
 //                   std::vector<int> fxprList,std::vector<gm2field::fixedProbeFrequency_t> fxprData){

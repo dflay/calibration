@@ -655,7 +655,7 @@ int GetDifference_ABA_final(bool useTimeWeight,
    // WARNING: This assumes that the A measurement comes first!
    double w=0,w_prev=0,dt_tot=0;
    double diff=0,diff_prev=0;
-   double arg=0,arg_err=0;
+   double arg=0,arg_err=0,arg_err_sq=0;
    const int N = B.size();
    for(int i=1;i<N;i++){
       // set up time weights 
@@ -667,8 +667,12 @@ int GetDifference_ABA_final(bool useTimeWeight,
       diff      = A[i]   - B[i-1];
       // now get the ABA difference
       if(useTimeWeight){
-	 arg     = w*diff + w_prev*diff_prev;
-	 arg_err = TMath::Sqrt( B_err[i-1]*B_err[i-1] + w*w*A_err[i]*A_err[i] + w_prev*w_prev*A_err[i-1]*A_err[i-1] );
+	 arg        = w*diff + w_prev*diff_prev;
+	 arg_err_sq = B_err[i-1]*B_err[i-1] + w*w*A_err[i]*A_err[i] + w_prev*w_prev*A_err[i-1]*A_err[i-1];
+         // account for correlations in measurements 
+	 // arg_err_sq = B_err[i-1]*B_err[i-1] + w*w*A_err[i]*A_err[i] + w_prev*w_prev*A_err[i-1]*A_err[i-1] 
+         //            + 2.*w*w_prev*A_err[i]*A_err[i-1] - 2.*w*w_prev*A_err[i]*B_err[i-1] - 2.*w*w_prev*A_err[i-1]*B_err[i-1];
+	 arg_err    = TMath::Sqrt(arg_err_sq);
       }else{ 
 	 arg     = 0.5*(diff + diff_prev);
 	 arg_err = TMath::Sqrt( B_err[i-1]*B_err[i-1] + 0.25*A_err[i]*A_err[i] + 0.25*A_err[i-1]*A_err[i-1] );

@@ -169,6 +169,7 @@ int SCCToggle(){
    mgSCC->Draw("a");
    gm2fieldUtil::Graph::SetGraphLabels(mgSCC,"SCC Data","","Total Current (A)"); 
    gm2fieldUtil::Graph::UseTimeDisplay(mgSCC); 
+   gm2fieldUtil::Graph::SetGraphLabelSizes(mgSCC,0.05,0.06); 
    mgSCC->Draw("a");
    for(int i=0;i<NToff;i++) tOff[i]->Draw("same"); 
    for(int i=0;i<NTon ;i++) tOn[i]->Draw("same"); 
@@ -177,6 +178,7 @@ int SCCToggle(){
    c1->cd(2);
    gTR->Draw("alp");
    gm2fieldUtil::Graph::SetGraphLabels(gTR,"TRLY Data","","Frequency (Hz)"); 
+   gm2fieldUtil::Graph::SetGraphLabelSizes(gTR,0.05,0.06); 
    gm2fieldUtil::Graph::UseTimeDisplay(gTR); 
    gTR->Draw("alp");
    for(int i=0;i<NToff;i++) tOff_tr[i]->Draw("same"); 

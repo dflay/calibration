@@ -72,7 +72,8 @@ int Process_trly_prod(std::string configFile){
  
    bool isBlind            = inputMgr->IsBlind();
    bool loadSwapTimes      = inputMgr->GetSwapTimeStatus();
-   bool useTempCor         = inputMgr->GetTempCorStatus();  
+   bool useTempCor         = inputMgr->GetTempCorStatus(); 
+   int axis                = inputMgr->GetAxis();  
    int probeNumber         = inputMgr->GetTrolleyProbe(); 
    int runPeriod           = inputMgr->GetRunPeriod(); 
 
@@ -126,8 +127,14 @@ int Process_trly_prod(std::string configFile){
    // find the times for each TRLY swap
    double angle = 189.160; // nominal trolley location 
 
+   std::string dev = "tr";
+   // if(axis==-1) dev = "NONE";  
+   // if(axis==0) dev = "trx"; 
+   // if(axis==1) dev = "try"; 
+   // if(axis==2) dev = "trz"; 
+
    if(loadSwapTimes){
-      LoadTimes(probeNumber,runPeriod,prodVersion,"swap","tr",time);
+      LoadTimes(probeNumber,runPeriod,prodVersion,"swap",dev,time);
    }else{
       FindTRLYStopTimes(probeNumber-1,angle,trlyData,trlyGalil,time);
    }

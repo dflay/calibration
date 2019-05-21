@@ -48,7 +48,7 @@ double gMarkerSize = 0.8;
 double gXSize      = 0.05;  
 double gYSize      = 0.06;  
 
-int ApplyShimmedGradEstimates(int probe,std::vector<grad_meas_t> &data); 
+int ApplyShimmedGradEstimates(int probe,std::string prodVersion,std::vector<grad_meas_t> &data); 
 int PrintTableOfResults(const char *outpath,int probe,double diff,double diffFree,
                         double swapErr,double mErr,double pErr);
 
@@ -64,7 +64,7 @@ int PrintTableOfResults_mis(const char *outpath,int probe,double dx,double dB_x,
                             double dy,double dB_y,double dz,double dB_z);
 
 int GetImposedGradients(const char *inpath,std::vector<imposed_gradient_t> &imp_grad); 
-int GetShimmedGradients(const char *prefix,int probe,std::vector<std::string> gradName,
+int GetShimmedGradients(const char *prefix,int probe,std::string prodVersion,std::vector<std::string> gradName,
                         std::vector<grad_meas_t> &shim_grad);
 
 int PrintResults(const char *outpath,std::vector<calib_result_t> data,bool toROOT=true,bool toJSON=true); 
@@ -82,6 +82,13 @@ int MakeTables_prod(int runPeriod,bool isBlind,std::string blindLabel,std::strin
 
    int rc=0;
    int method = gm2fieldUtil::Constants::kPhaseDerivative;
+
+   json configData; 
+   char inpath_config[200];
+   sprintf(inpath_config,"./input/json/run-%d/config.json",runPeriod); 
+   std::string cPath = inpath_config; 
+   rc = gm2fieldUtil::Import::ImportJSON(cPath,configData);
+   std::string prodVersion = configData["prod-tag"]; 
 
    char outDir[200];
    if(isBlind)  sprintf(outDir,"./output/blinded/%s",blindLabel.c_str());
@@ -144,6 +151,7 @@ int MakeTables_prod(int runPeriod,bool isBlind,std::string blindLabel,std::strin
 	 rc = LoadDeltaBData(inpath,db);
 	 if(db[j].dB_fxpr==0){
 	    std::cout << Form("--> No PP ABA data for probe %02d, axis %d.  Using raw data",probeNumber,j) << std::endl; 
+	    std::cout << db[j].dB << " " << db[j].dB_err << std::endl;
 	    db[j].dB_fxpr     = db[j].dB;
 	    db[j].dB_fxpr_err = db[j].dB_err;
 	    update = true;
@@ -174,7 +182,7 @@ int MakeTables_prod(int runPeriod,bool isBlind,std::string blindLabel,std::strin
       deltaB_trly.push_back(db);
       db.clear(); 
       // load shimmed gradients 
-      rc = GetShimmedGradients(outDir,probeNumber,gradName,grad); 
+      rc = GetShimmedGradients(outDir,probeNumber,prodVersion,gradName,grad); 
       shimGrad.push_back(grad);
       // clean up 
       grad.clear(); 
@@ -199,16 +207,26 @@ int MakeTables_prod(int runPeriod,bool isBlind,std::string blindLabel,std::strin
 	 misalign[k].dB_x_aba = misalign[k].dx_aba*shimGrad[k][0].grad; 
 	 misalign[k].dB_y_aba = misalign[k].dy_aba*shimGrad[k][1].grad; 
 	 misalign[k].dB_z_aba = misalign[k].dz_aba*shimGrad[k][2].grad;
+         std::cout << Form("dx = %.3lf mm, dBs/dx = %.3lf Hz/mm, dx*dBs/dx = %.3lf Hz",
+                           misalign[k].dx_aba,shimGrad[k][0].grad,misalign[k].dB_x_aba) << std::endl; 
+         std::cout << Form("dy = %.3lf mm, dBs/dy = %.3lf Hz/mm, dy*dBs/dy = %.3lf Hz",
+                           misalign[k].dy_aba,shimGrad[k][1].grad,misalign[k].dB_y_aba) << std::endl; 
+         std::cout << Form("dz = %.3lf mm, dBs/dz = %.3lf Hz/mm, dz*dBs/dz = %.3lf Hz",
+                           misalign[k].dz_aba,shimGrad[k][2].grad,misalign[k].dB_z_aba) << std::endl; 
          // now propagate to the PP-TRLY difference 
-         sum_sq               = misalign[k].dB_x_aba*misalign[k].dB_x_aba + misalign[k].dB_y_aba*misalign[k].dB_y_aba
-                              + misalign[k].dB_z_aba*misalign[k].dB_z_aba; 
+         sum_sq               = TMath::Power(misalign[k].dB_x_aba,2.) + TMath::Power(misalign[k].dB_y_aba,2.)
+                              + TMath::Power(misalign[k].dB_z_aba,2.); 
 	 res[i].mErr_aba = TMath::Sqrt(sum_sq);
+	 std::cout << Form("PROBE %d THE MISALIGNMENT ERROR IS NOW %.3lf Hz",i+1,res[i].mErr_aba) << std::endl;
 	 std::cout << "--> Misalignments recalculated." << std::endl;
       }
       // reset 
       update = false; 
       k++;
    }
+
+   std::cout << "MISALIGNMENT ERRORS" << std::endl;
+   for(int i=0;i<17;i++) std::cout << Form("probe %02d: %.3lf Hz",i+1,res[i].mErr_aba) << std::endl;
 
    // now make tables
 
@@ -478,7 +496,7 @@ int GetImposedGradients(const char *inpath,std::vector<imposed_gradient_t> &imp_
    return 0;
 }
 //______________________________________________________________________________
-int GetShimmedGradients(const char *prefix,int probe,std::vector<std::string> gradName,
+int GetShimmedGradients(const char *prefix,int probe,std::string prodVersion,std::vector<std::string> gradName,
                         std::vector<grad_meas_t> &shim_grad){
    // load in shimmed gradients
    // we do this for N runs!
@@ -495,12 +513,12 @@ int GetShimmedGradients(const char *prefix,int probe,std::vector<std::string> gr
    }
 
    // apply estimates if necessary
-   int rc = ApplyShimmedGradEstimates(probe,shim_grad);
+   int rc = ApplyShimmedGradEstimates(probe,prodVersion,shim_grad);
 
    return 0;
 }
 //______________________________________________________________________________
-int ApplyShimmedGradEstimates(int probe,std::vector<grad_meas_t> &data){
+int ApplyShimmedGradEstimates(int probe,std::string prodVersion,std::vector<grad_meas_t> &data){
    // load estimates of shimmed gradient and apply to the data 
    // for use when we don't know the shimmed gradient 
    const int NAXES = 3;
@@ -510,7 +528,7 @@ int ApplyShimmedGradEstimates(int probe,std::vector<grad_meas_t> &data){
    double ipr,ig,ix,iy,iz; 
 
    char inpath[200]; 
-   sprintf(inpath,"./input/gradients/shim-grad-estimates.csv");
+   sprintf(inpath,"./input/gradients/shim-grad-estimates_%s.csv",prodVersion.c_str());
 
    std::ifstream infile;
    infile.open(inpath); 
@@ -534,7 +552,8 @@ int ApplyShimmedGradEstimates(int probe,std::vector<grad_meas_t> &data){
 		  if(i==0) ig = ix;
 		  if(i==1) ig = iy;
 		  if(i==2) ig = iz;
-		  data[i].grad = ig;
+		  data[i].grad     = ig;
+		  data[i].grad_err = fabs(ig);
 		  std::cout << "WARNING for probe " << probe << ": grad estimate of " << ig << " applied for axis " << axis[i] << std::endl;
 	       }
             }

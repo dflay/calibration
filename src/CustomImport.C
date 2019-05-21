@@ -32,7 +32,67 @@ int SetDataFileParameters(std::string version,std::string &fileName,std::string 
    return 0;
 }
 //______________________________________________________________________________
-int GetFixedProbeData(int run,int method,std::vector<int> probe,std::vector<averageFixedProbeEvent_t> &data,std::string version){
+int GetFixedProbeData(int run,int method,int probe,std::vector<fixedProbeEvent_t> &data,std::string version){
+   // gather AVERAGED fixed probe data according to the probe list input
+
+   std::vector<gm2field::fixedProbeFrequency_v1_t> fxpr; 
+   std::vector<gm2field::fixedProbeFrequency_t> fxpr_new;
+
+   std::vector<gm2field::fixedProbeHeader_v1_t> fxprHeader;
+   std::vector<gm2field::fixedProbeHeader_t> fxprHeader_new;  
+
+   int rc=0,N=0;
+   if( version.compare("nearline")!=0 ){
+      rc = GetFixedProbeFrequencies<gm2field::fixedProbeFrequency_t>(run,fxpr_new,version);
+      rc = GetFixedProbeHeader<gm2field::fixedProbeHeader_t>(run,fxprHeader_new,version);
+      N = fxpr_new.size(); 
+   }else{
+      rc = GetFixedProbeFrequencies<gm2field::fixedProbeFrequency_v1_t>(run,fxpr,version); 
+      rc = GetFixedProbeHeader<gm2field::fixedProbeHeader_v1_t>(run,fxprHeader,version);
+      N = fxpr.size(); 
+   }
+
+   fixedProbeEvent_t dataPt; 
+
+   char arg_lay_id='t',arg_rad_id='t',arg_yoke_id='t';
+   int arg_stat_id=0,arg_azi_id=0,arg_probe_id=0;
+   unsigned long long arg_t=0,mean_t=0;
+   double arg_f=0;
+
+   for(int i=0;i<N;i++){
+      if( version.compare("nearline")!=0 ){
+	 arg_t       = fxpr_new[i].GpsTimeStamp[probe];
+	 arg_f       = fxpr_new[i].Frequency[probe][method];
+	 arg_azi_id  = fxprHeader_new[i].AziId[probe];
+	 arg_lay_id  = fxprHeader_new[i].LayerId[probe];
+	 arg_yoke_id = fxprHeader_new[i].YokeId[probe];
+	 arg_rad_id  = fxprHeader_new[i].RadId[probe];
+	 arg_stat_id = fxprHeader_new[i].StationId[probe];
+      }else{
+	 arg_t        = fxpr[i].GpsTimeStamp[probe];
+	 arg_f        = fxpr[i].Frequency[probe][method];
+	 arg_azi_id   = fxprHeader[i].AziId[probe];
+	 arg_lay_id   = fxprHeader[i].LayerId[probe];
+	 arg_yoke_id  = fxprHeader[i].YokeId[probe];
+	 arg_rad_id   = fxprHeader[i].RadId[probe];
+         arg_probe_id = fxprHeader[i].ProbeId[probe];  
+	 arg_stat_id  = 0;
+      }
+      dataPt.time      = arg_t; 
+      dataPt.freq      = arg_f;
+      dataPt.yokeID    = arg_yoke_id; 
+      dataPt.layerID   = arg_lay_id; 
+      dataPt.radID     = arg_rad_id;
+      dataPt.aziID     = arg_azi_id; 
+      dataPt.probeID   = arg_probe_id;
+      dataPt.stationID = arg_stat_id;  
+      data.push_back(dataPt); 
+   }
+
+   return 0;
+}
+//______________________________________________________________________________
+int GetFixedProbeData_avg(int run,int method,std::vector<int> probe,std::vector<averageFixedProbeEvent_t> &data,std::string version){
    // gather AVERAGED fixed probe data according to the probe list input
 
    std::vector<gm2field::fixedProbeFrequency_v1_t> fxpr; 

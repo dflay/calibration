@@ -38,6 +38,9 @@ int GetPlungingProbeData(int run,int prMethod,int ppMethod,std::vector<plungingP
                          std::string version,std::string nmrAnaVersion,std::string cutData="UNKNOWN.json",bool useNMRANA=true); 
 int ModifyPlungingProbeData(int method,plungingProbeAnaEvent_t &data,std::string nmrAnaVersion,std::string cutFile); 
 
+int GetFixedProbeData(int run,int method,int probe,std::vector<fixedProbeEvent_t> &data,std::string version);
+int GetFixedProbeData_avg(int run,int method,std::vector<int> probe,std::vector<averageFixedProbeEvent_t> &data,std::string version); 
+
 // Reading SCC data 
 int GetSurfaceCoilData(int run,std::vector<surfaceCoilEvent_t> &data,std::string version);  
 
@@ -192,6 +195,17 @@ template <typename T> int GetFixedProbeFrequencies(int run,std::vector<T> &data,
    std::string dirName    = "TreeGenFixedProbe";
    std::string treeName   = "fixedProbe";
    std::string branchName = "Frequency";
+   std::string fileName,dataPath;
+   rc = SetDataFileParameters(version,fileName,dataPath);
+   rc = gm2fieldUtil::RootHelper::GetDataFromTree<T>(run,dirName,treeName,branchName,data,-1,-1,fileName,dataPath);
+   return rc;
+}
+//______________________________________________________________________________
+template <typename T> int GetFixedProbeHeader(int run,std::vector<T> &data,std::string version){
+   int rc=0;
+   std::string dirName    = "TreeGenFixedProbe";
+   std::string treeName   = "fixedProbe";
+   std::string branchName = "Header";
    std::string fileName,dataPath;
    rc = SetDataFileParameters(version,fileName,dataPath);
    rc = gm2fieldUtil::RootHelper::GetDataFromTree<T>(run,dirName,treeName,branchName,data,-1,-1,fileName,dataPath);

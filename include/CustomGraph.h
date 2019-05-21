@@ -15,6 +15,7 @@
 #include "grad_meas.h"
 #include "plungingProbeAnaEvent.h"
 #include "trolleyAnaEvent.h"
+#include "fixedProbeEvent.h"
 #include "sccEvent.h"
 
 #include "TRLYFuncs.h"
@@ -48,7 +49,14 @@ int FillTRVector(int probe,TString axis,std::vector<trolleyAnaEvent_t> data,doub
 
 TGraphErrors *GetSCCTestGraphTRLY(int probe,TString xAxis,TString yAxis,std::vector< std::vector<sccTrlyEvent_t> > data);
 
-TGraphErrors *GetTRLYTGraph_aziScan(int probe,double thr,TString yAxis,std::vector<trolleyAnaEvent_t> data); 
+TGraphErrors *GetTRLYTGraph_aziScan(int probe,double thr,TString yAxis,std::vector<trolleyAnaEvent_t> data);
+
+// fxpr plots 
+TGraph *GetFXPRTGraph(std::string xAxis,std::string yAxis,std::vector<fixedProbeEvent_t> data);
+TGraphErrors *GetFXPRTGraph_avg(std::string xAxis,std::string yAxis,std::string yAxisErr,std::vector<averageFixedProbeEvent_t> data);
+
+int FillFPVector_avg(std::string axis,std::vector<averageFixedProbeEvent_t> data,std::vector<double> &v);  
+int FillFPVector(std::string axis,std::vector<fixedProbeEvent_t> data,std::vector<double> &v);  
 
 // fixed probe plots 
 // TGraph *GetTGraphNew(int method,unsigned long long timeStart,unsigned long long timeStop,unsigned long long timeStep,
