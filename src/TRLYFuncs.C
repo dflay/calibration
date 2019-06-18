@@ -112,26 +112,37 @@ int FilterSingle(std::string var,int probe,int nev,double T,std::vector<trolleyA
    return 0;
 }
 //______________________________________________________________________________
-int GetTRLYStatsAtTime(bool UseTempCor,int probe,int nev,double fLO,std::vector<double> time,
+int GetTRLYStatsAtTime(bool UseTempCor,bool UseOscCor,int probe,int nev,double fLO,
+                       std::vector<double> time,std::vector<averageFixedProbeEvent_t> fxpr,
                        std::vector<trolleyAnaEvent_t> Data,std::vector<calibSwap_t> &Event){
 
    // find the mean field at the times specified in the time vector 
 
    calibSwap_t theEvent; 
 
+   // first gather the FXPR data 
+   std::vector<double> tt,ff;
+   const int NFP = fxpr.size();
+   for(int i=0;i<NFP;i++){
+      tt.push_back( fxpr[i].time/1E+9 );
+      ff.push_back( fxpr[i].freq );
+   }
+
    const int N = time.size();
-   int M=0,rc=0;
-   double delta=0;
+   int M=0,rc=0,lo=0,hi=0;
+   double f0,theFreq,stdev; 
+   double delta_t=0,delta_osc=0;
    double mean_freq=0,stdev_freq=0;
    double mean_temp=0,stdev_temp=0;
    double mean_x=0,stdev_x=0;
    double mean_y=0,stdev_y=0;
    double mean_z=0,stdev_z=0;
-   std::vector<double> freq,temp,x,y,z;
+   std::vector<double> trt,freq,temp,x,y,z;
    for(int i=0;i<N;i++){
       // std::cout << "Looking for time " << gm2fieldUtil::GetStringTimeStampFromUTC(time[i]) << std::endl;
       // find events 
       // rc = FilterSingle("time",probe,nev,time[i],Data,time);
+      rc = FilterSingle("time",probe,nev,time[i],Data,trt);
       rc = FilterSingle("freq",probe,nev,time[i],Data,freq);
       rc = FilterSingle("temp",probe,nev,time[i],Data,temp);
       rc = FilterSingle("r"   ,probe,nev,time[i],Data,x);
@@ -141,11 +152,18 @@ int GetTRLYStatsAtTime(bool UseTempCor,int probe,int nev,double fLO,std::vector<
       M = freq.size();
       for(int j=0;j<M;j++){
 	 if(UseTempCor){
-	    // apply a temperature correction if necessary
+	    // FIXME: apply a temperature correction if necessary
 	    // accounts for the trolley being at a temperature other than 25 deg c  
-	    delta = (10.36E-9)*(temp[j]-25.0);
+	    delta_t = (4.0E-9)*(temp[j]-25.0);
 	 }
-	 freq[j] = (freq[j]+fLO)/(1. - delta); 
+         if(UseOscCor){
+	    gm2fieldUtil::Algorithm::BinarySearch<double>(tt,trt[j],lo,hi);
+	    // take average over +/- 5 events in time 
+	    rc = GetStats_vec(lo-5,hi+5,ff,theFreq,stdev);
+	    if(j==0) f0 = theFreq;
+	    delta_osc = theFreq - f0
+         }
+	 freq[j] = (freq[j]+fLO-delta_osc)/(1. - delta_t); 
       }
       // now get mean of events 
       mean_freq  = gm2fieldUtil::Math::GetMean<double>(freq);
@@ -172,6 +190,7 @@ int GetTRLYStatsAtTime(bool UseTempCor,int probe,int nev,double fLO,std::vector<
       theEvent.phiErr  = stdev_z;       
       Event.push_back(theEvent);  
       // set up for next time 
+      trt.clear();
       freq.clear();
       temp.clear();
       x.clear();
@@ -182,19 +201,39 @@ int GetTRLYStatsAtTime(bool UseTempCor,int probe,int nev,double fLO,std::vector<
    return 0;
 }
 //______________________________________________________________________________
-int GetTRLYStats_sccToggle(int probe,int nev,std::vector<double> time,std::vector<trolleyAnaEvent_t> Data,
+int GetTRLYStats_sccToggle(bool useOscCor,int probe,int nev,std::vector<double> time,
+                           std::vector<averageFixedProbeEvent_t> fxpr,std::vector<trolleyAnaEvent_t> Data,
                            std::vector<double> &TIME,std::vector<double> &MEAN,std::vector<double> &STDEV){
 
    // find the mean field at the times specified in the time vector 
 
+   // first gather the FXPR data 
+   std::vector<double> tt,ff;
+   const int NFP = fxpr.size();
+   for(int i=0;i<NFP;i++){
+      tt.push_back( fxpr[i].time/1E+9 );
+      ff.push_back( fxpr[i].freq );
+   }
+
    const int N = time.size();
    int M=0,rc=0;
    double mean=0,stdev=0;
-   std::vector<double> freq;
+   std::vector<double> trt,freq;
    for(int i=0;i<N;i++){
       // std::cout << "Looking for time " << gm2fieldUtil::GetStringTimeStampFromUTC(time[i]) << std::endl;
       // find events 
+      rc = FilterSingle("time",probe,nev,time[i],Data,trt);
       rc = FilterSingle("freq",probe,nev,time[i],Data,freq);
+      if(UseOscCor){
+	 for(int j=0;j<M;j++){
+	    gm2fieldUtil::Algorithm::BinarySearch<double>(tt,trt[j],lo,hi);
+	    // take average over +/- 5 events in time 
+	    rc = GetStats_vec(lo-5,hi+5,ff,theFreq,stdev);
+	    if(j==0) f0 = theFreq;
+	    delta_osc = theFreq - f0; 
+	    freq[j] -= delta_osc; 
+	 }
+      }
       // now get mean of events 
       mean  = gm2fieldUtil::Math::GetMean<double>(freq);
       stdev = gm2fieldUtil::Math::GetStandardDeviation<double>(freq);
@@ -202,7 +241,8 @@ int GetTRLYStats_sccToggle(int probe,int nev,std::vector<double> time,std::vecto
       TIME.push_back(time[i]); 
       MEAN.push_back(mean);
       STDEV.push_back(stdev);
-      // set up for next time 
+      // set up for next time
+      trt.clear(); 
       freq.clear();
    }
 

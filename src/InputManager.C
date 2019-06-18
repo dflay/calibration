@@ -19,7 +19,9 @@ int InputManager::Init(){
    fLoadSwapTime    = false; 
    fLoadSCCTime     = false;
    fUseTimeWeight   = false; 
-   fUseTempCor      = false; 
+   fUseTempCor      = false;
+   fUseOscCor       = false; 
+   fNumEventsToAvg  =  0;  
    fTrolleyProbe    = -1; 
    fAxis            = -1;
    fFXPRListTag     = -1;
@@ -38,6 +40,7 @@ int InputManager::Init(){
 //______________________________________________________________________________
 int InputManager::ClearVectors(){
    fRunList.clear();
+   fFXPRList.clear();
    fRunLabel.clear();
    return 0;
 }
@@ -59,6 +62,41 @@ int InputManager::GetRunList(std::vector<int> &v){
    }
    for(int i=0;i<N;i++){
       v.push_back(fRunList[i]); 
+   }
+   return 0;
+}
+//______________________________________________________________________________
+int InputManager::LoadFXPRList(){
+
+   int N=0,ifp=0;
+   char inpath[200];
+   sprintf(inpath,"./input/probe-lists/fxpr-list_set-%d.csv",fFXPRListTag); 
+   std::ifstream infile; 
+   infile.open(inpath); 
+
+   if( infile.fail() ){
+      std::cout << "[InputManager::LoadFXPRList]: Cannot open the file: " << inpath << std::endl;
+      return 1;
+   }else{
+      while( !infile.eof() ){
+	 infile >> ifp;
+	 fFXPRList.push_back(ifp);  
+      }
+      N = fFXPRList.size();
+      if(N>1) fFXPRList.pop_back();
+      infile.close();
+   } 
+   return 0;
+}
+//______________________________________________________________________________
+int InputManager::GetFXPRList(std::vector<int> &v){
+   const int N = fFXPRList.size();
+   if(N==0){
+      std::cout << "[InputManager::GetFXPRList]: No runs!" << std::endl;
+      return 1;
+   }
+   for(int i=0;i<N;i++){
+      v.push_back(fFXPRList[i]); 
    }
    return 0;
 }
@@ -101,26 +139,27 @@ int InputManager::Parse(){
    bool p2pStatus    = DoesKeyExist("p2p-fit"); 
    bool protStatus   = DoesKeyExist("free-proton-cor");
    bool runStatus    = DoesKeyExist("nruns"); 
+   bool fxprStatus   = DoesKeyExist("fxpr-set"); 
    bool dateStatus   = DoesKeyExist("date"); 
    bool blindStatus  = DoesKeyExist("blinding"); 
    bool trlyStatus   = DoesKeyExist("trly-probe");
-   bool fxprStatus   = DoesKeyExist("fxpr-set"); 
    bool fitStatus    = DoesKeyExist("fit"); 
    bool swapStatus   = DoesKeyExist("load-trly-swap-times");  
    bool sccStatus    = DoesKeyExist("load-trly-scc-times");  
    bool timeStatus   = DoesKeyExist("use-aba-time-weight");
    bool tempStatus   = DoesKeyExist("use-trly-temp-cor");
+   bool oscStatus    = DoesKeyExist("use-osc-cor");
    bool runpStatus   = DoesKeyExist("run-period"); 
    bool prodStatus   = DoesKeyExist("prod-tag");  
    bool nmrAnaStatus = DoesKeyExist("nmr-ana-tag"); 
-   bool cutStatus    = DoesKeyExist("cut-file");  
+   bool cutStatus    = DoesKeyExist("cut-file"); 
+   bool nevStatus    = DoesKeyExist("num-events-to-avg");  
 
    // parameters common to all 
    std::string unitStr="";
    if(dateStatus)   fRunDate      = fParams["date"];
    if(prodStatus)   fProdTag      = fParams["prod-tag"]; 
    if(nmrAnaStatus) fNMRANATag    = fParams["nmr-ana-tag"]; 
-   if(fxprStatus)   fFXPRListTag  = (int)fParams["fxpr-set"]; 
    if(blindStatus){
       fIsBlind    = (bool)( (int)fParams["blinding"]["enable"] );
       fBlindLabel = fParams["blinding"]["label"];
@@ -138,19 +177,26 @@ int InputManager::Parse(){
 	 fRunLabel.push_back( fParams["run-label"][i] ); 
       }
    }
+
+   if(fxprStatus){
+      fFXPRListTag = (int)fParams["fxpr-set"]; 
+      LoadFXPRList(); 
+   } 
    
    // calibration: production 
    if( fType.compare("calib-prod")==0 ){
-      if(trlyStatus) fTrolleyProbe  = (int)fParams["trly-probe"]; 
-      if(runpStatus) fRunPeriod     = fParams["run-period"];  
-      if(axisStatus) fAxis          = (int)fParams["axis"];
-      if(protStatus) fIsFreeProton  = (bool)( (int)fParams["free-proton-cor"] );  
-      if(fitStatus)  fFitFunc       = fParams["fit"];
-      if(swapStatus) fLoadSwapTime  = (bool)( (int)fParams["load-trly-swap-times"] ); 
-      if(sccStatus)  fLoadSCCTime   = (bool)( (int)fParams["load-trly-scc-times"] ); 
-      if(timeStatus) fUseTimeWeight = (bool)( (int)fParams["use-aba-time-weight"] ); 
-      if(tempStatus) fUseTempCor    = (bool)( (int)fParams["use-trly-temp-cor"] ); 
-      if(cutStatus)  fCutFile       = fParams["cut-file"]; 
+      if(trlyStatus) fTrolleyProbe   = (int)fParams["trly-probe"]; 
+      if(runpStatus) fRunPeriod      = fParams["run-period"];  
+      if(axisStatus) fAxis           = (int)fParams["axis"];
+      if(protStatus) fIsFreeProton   = (bool)( (int)fParams["free-proton-cor"] );  
+      if(fitStatus)  fFitFunc        = fParams["fit"];
+      if(swapStatus) fLoadSwapTime   = (bool)( (int)fParams["load-trly-swap-times"] ); 
+      if(sccStatus)  fLoadSCCTime    = (bool)( (int)fParams["load-trly-scc-times"] ); 
+      if(timeStatus) fUseTimeWeight  = (bool)( (int)fParams["use-aba-time-weight"] ); 
+      if(tempStatus) fUseTempCor     = (bool)( (int)fParams["use-trly-temp-cor"] ); 
+      if(oscStatus)  fUseOscCor      = (bool)( (int)fParams["use-osc-cor"] ); 
+      if(cutStatus)  fCutFile        = fParams["cut-file"];
+      if(nevStatus)  fNumEventsToAvg = (int)fParams["num-events-to-avg"];  
    }
 
    // trolley Delta-B measurements

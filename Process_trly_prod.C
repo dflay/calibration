@@ -73,6 +73,7 @@ int Process_trly_prod(std::string configFile){
    bool isBlind            = inputMgr->IsBlind();
    bool loadSwapTimes      = inputMgr->GetSwapTimeStatus();
    bool useTempCor         = inputMgr->GetTempCorStatus(); 
+   bool useOscCor          = inputMgr->GetOscCorStatus(); 
    int axis                = inputMgr->GetAxis();  
    int probeNumber         = inputMgr->GetTrolleyProbe(); 
    int runPeriod           = inputMgr->GetRunPeriod(); 
@@ -109,7 +110,19 @@ int Process_trly_prod(std::string configFile){
 	 return 1;
       }
    }
-   
+ 
+   std::vector<int> fxprList;
+   inputMgr->GetFXPRList(fxprList);
+
+   std::vector<averageFixedProbeEvent_t> fxprData;  
+   bool subtractDrift = true;
+   int period = 10;
+   rc = GetFixedProbeData_avg(run,method,fxprList,fxprData,prodVersion,subtractDrift,period,0);
+   if(rc!=0){
+      std::cout << "No data!" << std::endl;
+      return 1;
+   }
+ 
    if(isBlind) ApplyBlindingTRLY(blindValue,trlyData);
 
    // TGraph *gSig  = GetTRLYVelocityTGraph(probeNumber-1,"GpsTimeStamp","vSig" ,trlyGalil,trlyData);
@@ -143,11 +156,11 @@ int Process_trly_prod(std::string configFile){
    std::cout << "Found " << NL << " trolley swaps" << std::endl;
 
    // now get average field for 30 seconds BEFORE each time stamp
-   int nev = 30;
+   int nev = inputMgr->GetNumEventsToAvg(); // 30;
    double fLO = 61.74E+6; 
 
    std::vector<calibSwap_t> trlySwap; 
-   rc = GetTRLYStatsAtTime(useTempCor,probeNumber-1,nev,fLO,time,trlyData,trlySwap);
+   rc = GetTRLYStatsAtTime(useTempCor,useOscCor,probeNumber-1,nev,fLO,time,fxprData,trlyData,trlySwap);
 
    char outPath[500];
    sprintf(outPath,"%s/trly-swap-data_pr-%02d_%s.csv",outDir.c_str(),probeNumber,anaDate.c_str());

@@ -25,6 +25,9 @@ int SetDataFileParameters(std::string version,std::string &fileName,std::string 
    }else if( version.compare("nearline")==0 ){
       fileName = "FieldGraphOut"; 
       dataPath = "/data1/newg2/DataProduction/Nearline/ArtTFSDir"; 
+   }else if( version.compare("nearline-run-2")==0 ){
+      fileName = "FieldGraphOut"; 
+      dataPath = "/mnt/nfs/g2field-server-2/newg2/DataProduction/Nearline/ArtTFSDir"; 
    }else{
       std::cout << "No match for production tag: " << version << std::endl;
       return 1;
@@ -92,7 +95,9 @@ int GetFixedProbeData(int run,int method,int probe,std::vector<fixedProbeEvent_t
    return 0;
 }
 //______________________________________________________________________________
-int GetFixedProbeData_avg(int run,int method,std::vector<int> probe,std::vector<averageFixedProbeEvent_t> &data,std::string version){
+int GetFixedProbeData_avg(int run,int method,std::vector<int> probe,
+                          std::vector<averageFixedProbeEvent_t> &data,std::string version,
+                          bool subtractDrift,int period,unsigned long long t0){
    // gather AVERAGED fixed probe data according to the probe list input
 
    std::vector<gm2field::fixedProbeFrequency_v1_t> fxpr; 
@@ -108,12 +113,13 @@ int GetFixedProbeData_avg(int run,int method,std::vector<int> probe,std::vector<
    }
 
    averageFixedProbeEvent_t dataPt; 
-   const int NPR = probe.size(); 
+   const int NPR = probe.size();
+   std::cout << "--> Using " << NPR << " probes" << std::endl;
 
-   unsigned long long arg_t=0,mean_t=0;
-   double arg_f=0,mean_f=0,stdev_f=0;
-   std::vector<unsigned long long> T; 
-   std::vector<double> F; 
+   unsigned long long arg_t=0;
+   double t0d = t0/1E+9; 
+   double arg_f=0,mean_t=0,mean_f=0,stdev_f=0,f0=0;
+   std::vector<double> tt,ff,T,F; 
 
    int k=0;
    for(int i=0;i<N;i++){
@@ -126,21 +132,59 @@ int GetFixedProbeData_avg(int run,int method,std::vector<int> probe,std::vector<
 	    arg_t = fxpr[i].GpsTimeStamp[k];
 	    arg_f = fxpr[i].Frequency[k][method];
 	 }
-         T.push_back(arg_t);
-         F.push_back(arg_f);
+	 T.push_back(arg_t/1E+9);
+	 F.push_back(arg_f);
       }
       // compute averages 
-      mean_t  = gm2fieldUtil::Math::GetMean<unsigned long long>(T);
+      mean_t  = gm2fieldUtil::Math::GetMean<double>(T);
       mean_f  = gm2fieldUtil::Math::GetMean<double>(F);
       stdev_f = gm2fieldUtil::Math::GetStandardDeviation<double>(F);
-      // store results and clear vectors 
-      dataPt.time    = mean_t; 
-      dataPt.freq    = mean_f; 
-      dataPt.freqErr = stdev_f;
-      data.push_back(dataPt);  
+      // store results and clear vectors
+      if(mean_t>=t0d){ 
+	 tt.push_back(mean_t); 
+	 ff.push_back(mean_f);
+      }
       T.clear();
       F.clear();
    }
+
+   // construct moving average over time 
+   double x,y;
+   std::vector<double> TT,FF;
+   gm2fieldUtil::Algorithm::MovingAverage<double> *mvAvg1 = new gm2fieldUtil::Algorithm::MovingAverage<double>(period);
+   gm2fieldUtil::Algorithm::MovingAverage<double> *mvAvg2 = new gm2fieldUtil::Algorithm::MovingAverage<double>(period);
+   const int NN = tt.size();
+   for(int i=0;i<NN;i++){
+      x = mvAvg1->GetUpdatedAverage(tt[i]);
+      y = mvAvg2->GetUpdatedAverage(ff[i]);
+      TT.push_back(x);
+      FF.push_back(y);
+   }
+
+   delete mvAvg1; 
+   delete mvAvg2; 
+
+   // determine slope of data 
+   double slope=0,intercept=0,r=0;
+   rc = gm2fieldUtil::Math::LeastSquaresFitting(TT,FF,intercept,slope,r);
+
+   // subtract off slope
+   double arg=0;
+   for(int i=0;i<NN;i++){
+      arg = FF[i] - (intercept + slope*TT[i]);
+      if(subtractDrift){
+	 dataPt.freq = arg;
+      }else{
+	 dataPt.freq = FF[i]; 
+      } 
+      dataPt.time    = (unsigned long long)(TT[i]*1E+9);  // this needs to be unsigned long long 
+      dataPt.freqErr = 0;
+      data.push_back(dataPt);  
+   }
+
+   // first data sample is the point to which we want to reference 
+   // double F0 = data[0].freq; 
+   // for(int i=0;i<NN;i++) data[i].freq -= F0;
 
    return 0;
 } 

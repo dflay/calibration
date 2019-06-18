@@ -1,5 +1,36 @@
 #include "../include/CustomMath.h" 
 //______________________________________________________________________________
+int GetStats_vec(int lo,int hi,std::vector<double> x,double &mean,double &stdev){
+   const int N = x.size();
+   int start=0,stop=hi;
+   if(lo>0) start = lo; 
+   if(hi>N) stop  = N;  
+   std::vector<double> v;
+   for(int i=start;i<stop;i++) v.push_back(x[i]); 
+   mean  = gm2fieldUtil::Math::GetMean<double>(v); 
+   stdev = gm2fieldUtil::Math::GetStandardDeviation<double>(v); 
+   return 0;  
+}
+//______________________________________________________________________________
+int GetStats(std::string varName,plungingProbeAnaEvent_t data,double &mean,double &stdev){
+   const int N = data.numTraces;
+   if(N==0) return -1;
+
+   std::vector<double> x;
+   for(int i=0;i<N;i++){
+      if( varName.compare("r")==0    ) x.push_back(data.r[i]   ); 
+      if( varName.compare("y")==0    ) x.push_back(data.y[i]   ); 
+      if( varName.compare("phi")==0  ) x.push_back(data.phi[i] ); 
+      if( varName.compare("freq")==0 ) x.push_back(data.freq[i]); 
+      if( varName.compare("temp")==0 ) x.push_back(data.temp[i]); 
+   }
+
+   mean  = gm2fieldUtil::Math::GetMean<double>(x); 
+   stdev = gm2fieldUtil::Math::GetStandardDeviation<double>(x);
+
+   return 0;   
+}
+//______________________________________________________________________________
 int GetStats(std::string varName,std::vector<plungingProbeAnaEvent_t> data,double &mean,double &stdev){
    const int N = data.size();
    if(N==0) return -1;

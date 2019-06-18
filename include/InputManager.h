@@ -16,13 +16,15 @@ class InputManager{
       json fParams; 
       bool fIsSimple,fIsFullAnalysis,fIsBlind,fUseP2PFit,fIsFinalLocation;
       bool fUseAxis,fIsFreeProton,fLoadSwapTime,fLoadSCCTime,fUseTimeWeight,fUseTempCor;
-      int fTrolleyProbe,fAxis,fFXPRListTag,fBlindUnits,fRunPeriod; 
+      bool fUseOscCor; 
+      int fTrolleyProbe,fAxis,fFXPRListTag,fBlindUnits,fRunPeriod,fNumEventsToAvg; 
       double fBlindScale; 
       std::string fType,fDevice,fRunDate,fFitFunc,fBlindLabel,fProdTag,fNMRANATag,fCutFile;
-      std::vector<int> fRunList; 
+      std::vector<int> fRunList,fFXPRList; 
       std::vector<std::string> fRunLabel; 
 
-      int Parse(); 
+      int Parse();
+      int LoadFXPRList(); 
 
    public: 
       InputManager();
@@ -36,7 +38,8 @@ class InputManager{
       int Load(std::string inpath);
 
       int GetRunList(std::vector<int> &v);        
-      int GetRunLabels(std::vector<std::string> &v);       
+      int GetRunLabels(std::vector<std::string> &v); 
+      int GetFXPRList(std::vector<int> &v);       
 
       bool DoesKeyExist(std::string keyName); 
 
@@ -48,13 +51,15 @@ class InputManager{
       bool GetSwapTimeStatus()       const { return fLoadSwapTime;    }  
       bool GetSCCTimeStatus()        const { return fLoadSCCTime;     }  
       bool GetTimeWeightStatus()     const { return fUseTimeWeight;   } 
-      bool GetTempCorStatus()        const { return fUseTempCor;      }  
+      bool GetTempCorStatus()        const { return fUseTempCor;      } 
+      bool GetOscCorStatus()         const { return fUseOscCor;       }  
      
       int GetTrolleyProbe()          const { return fTrolleyProbe;    } 
       int GetAxis()                  const { return fAxis;            }
       int GetFixedProbeListTag()     const { return fFXPRListTag;     }
       int GetBlindUnits()            const { return fBlindUnits;      }
       int GetRunPeriod()             const { return fRunPeriod;       } 
+      int GetNumEventsToAvg()        const { return fNumEventsToAvg;  }  
 
       double GetBlindScale()         const { return fBlindScale;      }   
 

@@ -39,7 +39,9 @@ int GetPlungingProbeData(int run,int prMethod,int ppMethod,std::vector<plungingP
 int ModifyPlungingProbeData(int method,plungingProbeAnaEvent_t &data,std::string nmrAnaVersion,std::string cutFile); 
 
 int GetFixedProbeData(int run,int method,int probe,std::vector<fixedProbeEvent_t> &data,std::string version);
-int GetFixedProbeData_avg(int run,int method,std::vector<int> probe,std::vector<averageFixedProbeEvent_t> &data,std::string version); 
+int GetFixedProbeData_avg(int run,int method,std::vector<int> probe,
+                          std::vector<averageFixedProbeEvent_t> &data,std::string version,
+                          bool subtractDrift=false,int period=1,unsigned long long t0=0); 
 
 // Reading SCC data 
 int GetSurfaceCoilData(int run,std::vector<surfaceCoilEvent_t> &data,std::string version);  

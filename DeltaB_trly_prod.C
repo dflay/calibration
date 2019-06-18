@@ -61,7 +61,8 @@ int DeltaB_trly_prod(std::string configFile){
    std::string blindLabel  = inputMgr->GetBlindLabel();
 
    bool isBlind            = inputMgr->IsBlind();
-   bool useTimeWeight      = inputMgr->GetTimeWeightStatus();  
+   bool useTimeWeight      = inputMgr->GetTimeWeightStatus(); 
+   bool useOscCor          = inputMgr->GetOscCorStatus();  
    bool loadTimes          = inputMgr->GetSCCTimeStatus(); 
    int probeNumber         = inputMgr->GetTrolleyProbe();
    int axis                = inputMgr->GetAxis();
@@ -193,6 +194,19 @@ int DeltaB_trly_prod(std::string configFile){
 	 return 1;
       }
    }
+   if(isBlind) ApplyBlindingTRLY(blindValue,trlyData);
+
+   std::vector<int> fxprList;
+   inputMgr->GetFXPRList(fxprList);
+
+   std::vector<averageFixedProbeEvent_t> fxprData;
+   bool subtractDrift = true;
+   int period = 10;
+   rc = GetFixedProbeData_avg(run,method,fxprList,fxprData,prodVersion,subtractDrift,period,0);
+   if(rc!=0){
+      std::cout << "No data!" << std::endl;
+      return 1;
+   }
 
    std::vector<double> X; 
    int NEV = trlyData.size();
@@ -231,13 +245,11 @@ int DeltaB_trly_prod(std::string configFile){
       tOFF_scc[i]->SetLineStyle(2);
    }
 
-   if(isBlind) ApplyBlindingTRLY(blindValue,trlyData);
-
    // get the mean field with SCC off and on 
-   int nev = 30;  // keep 30 events in the analysis
+   int nev = inputMgr->GetNumEventsToAvg(); // 30;  // keep 30 events in the analysis
    std::vector<double> bareTime,bare,bareErr,sccTime,scc,sccErr;  
-   rc = GetTRLYStats_sccToggle(probeNumber-1,nev,sccOff,trlyData,bareTime,bare,bareErr); 
-   rc = GetTRLYStats_sccToggle(probeNumber-1,nev,sccOn ,trlyData,sccTime ,scc ,sccErr ); 
+   rc = GetTRLYStats_sccToggle(useOscCor,probeNumber-1,nev,sccOff,fxprData,trlyData,bareTime,bare,bareErr); 
+   rc = GetTRLYStats_sccToggle(useOscCor,probeNumber-1,nev,sccOn ,fxprData,trlyData,sccTime ,scc ,sccErr ); 
 
    // do delta B calcs
    // raw difference 

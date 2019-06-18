@@ -522,6 +522,43 @@ TGraph *GetSCCPlot(int type,std::vector<surfaceCoilEvent_t> data){
    return g;
 }
 //______________________________________________________________________________
+TMultiGraph *GetSCCPlot_mg(int type,std::vector<surfaceCoilEvent_t> data){
+   TMultiGraph *mg = new TMultiGraph(); 
+   int N = 100;
+   if(type==-1) N = 4; 
+   for(int i=0;i<N;i++){
+      TGraph *g = GetSCCPlot_byCoil(type,i,data);
+      gm2fieldUtil::Graph::SetGraphParameters(g,20,i+1); 
+      mg->Add(g,"lp");  
+   }
+   return mg; 
+}
+//______________________________________________________________________________
+TGraph *GetSCCPlot_byCoil(int type,int coil,std::vector<surfaceCoilEvent_t> data){
+   // construct the sum of the top (type=1), bottom (type=0) or azi (type=-1) coil currents 
+   // to see what the SCC config is
+   double sum=0;
+   std::vector<double> x,y;
+   int M=4; // for azi coils
+   if(type==0||type==1) M = 100;
+   if( TMath::Abs(type)>1 ) return NULL;
+   int NEV = data.size();
+   for(int i=0;i<NEV;i++){
+      if(type==0){
+	 x.push_back(data[i].BotTime[coil]/1E+9); 
+	 y.push_back(data[i].BotCurrents[coil]); 
+      }else if(type==1){
+	 x.push_back(data[i].TopTime[coil]/1E+9); 
+	 y.push_back(data[i].TopCurrents[coil]); 
+      }else if(type==-1){
+	 x.push_back(data[i].TopTime[coil]/1E+9); 
+	 y.push_back(data[i].AzCurrents[coil]); 
+      }
+   }
+   TGraph *g = gm2fieldUtil::Graph::GetTGraph(x,y);
+   return g;
+}
+//______________________________________________________________________________
 int FillTRVector(int probe,TString axis,std::vector<trolleyAnaEvent_t> data,double sf,std::vector<double> &x){
    const int N = data.size();
    if(axis=="GpsTimeStamp") for(int i=0;i<N;i++) x.push_back( data[i].time[probe]/1E+9 );  

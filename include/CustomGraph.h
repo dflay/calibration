@@ -22,6 +22,8 @@
 
 // scc plots
 TGraph *GetSCCPlot(int type,std::vector<surfaceCoilEvent_t> data); 
+TGraph *GetSCCPlot_byCoil(int type,int coil,std::vector<surfaceCoilEvent_t> data); 
+TMultiGraph *GetSCCPlot_mg(int type,std::vector<surfaceCoilEvent_t> data); 
 
 // gradient plots
 TGraphErrors *GetTGraphErrors(std::vector<imposed_gradient_t> data); 
@@ -40,7 +42,7 @@ int FillPPVector3(TString axis,plungingProbeAnaEvent_t ppData,std::vector<double
 
 // trolley plots
 TGraph *GetTRLYPositionsGraph(); 
-TGraph *GetTRLYTGraph(int probe,TString xAxis,TString yAxis,std::vector<trolleyAnaEvent_t> data,double sf=1);
+TGraph *GetTRLYTGraph(int probe,TString xAxis,TString yAxis,std::vector<trolleyAnaEvent_t> data,double sf=0);
 TGraphErrors *GetSlicePlot(char axis,std::vector<trolleyAnaEvent_t> trlyData); 
 TGraphErrors *GetSlicePlot(char axis,std::vector<trolleyAnaEvent_t> trlyData,
                            std::vector<double> &X,std::vector<double> &Y,std::vector<double> &EY); 

@@ -28,6 +28,8 @@
 int GetStats(std::string varName,int probe,std::vector<trolleyAnaEvent_t> data,double &mean,double &stdev);
 int GetStats(std::string varName,std::vector<calibSwap_t> data,double &mean,double &stdev);  
 int GetStats(std::string varName,std::vector<plungingProbeAnaEvent_t> data,double &mean,double &stdev);
+int GetStats(std::string varName,plungingProbeAnaEvent_t data,double &mean,double &stdev);
+int GetStats_vec(int lo,int hi,std::vector<double> x,double &mean,double &stdev); 
 
 int GetStats(std::vector<double> x,double &mean,double &stdev); 
 int GetStats(int probeNumber,int method,std::vector<gm2field::fixedProbeFrequency_t> Data,double &mean,double &stdev); 
