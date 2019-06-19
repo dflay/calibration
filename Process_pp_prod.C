@@ -42,6 +42,7 @@
 #include "./src/CustomMath.C"
 #include "./src/CustomGraph.C"
 #include "./src/CustomAlgorithms.C"
+#include "./src/OscFuncs.C"
 
 double gMarkerSize = 0.8; 
 
@@ -69,6 +70,7 @@ int Process_pp_prod(std::string configFile){
    std::string cutFile       = inputMgr->GetCutFile(); 
  
    bool isBlind              = inputMgr->IsBlind();
+   bool useOscCor            = inputMgr->GetOscCorStatus(); 
    int probeNumber           = inputMgr->GetTrolleyProbe();
    int runPeriod             = inputMgr->GetRunPeriod();  
 
@@ -104,20 +106,41 @@ int Process_pp_prod(std::string configFile){
 
    TString ppPlotPath;  
 
-   // PP data 
-   std::vector<plungingProbeAnaEvent_t> ppData;
+   std::vector<int> fxprList; 
+   inputMgr->GetFXPRList(fxprList);
 
-   int NPP=0; 
+   std::vector<averageFixedProbeEvent_t> fxprData;
+   bool subtractDrift = true;
+   int period = inputMgr->GetNumEventsTimeWindow(); // 10;
    for(int i=0;i<NRUNS;i++){
-      std::cout << "Getting PP data for run " << run[i] << "..." << std::endl;
-      rc = GetPlungingProbeData(run[i],prMethod,ppMethod,ppData,prodVersion,nmrAnaVersion,cutpath);
+      rc = GetFixedProbeData_avg(run[i],prMethod,fxprList,fxprData,prodVersion,subtractDrift,period,0);
       if(rc!=0){
 	 std::cout << "No data!" << std::endl;
 	 return 1;
       }
    }
 
+   // PP data 
+   std::vector<plungingProbeAnaEvent_t> ppInput,ppData;
+
+   int NPP=0; 
+   for(int i=0;i<NRUNS;i++){
+      std::cout << "Getting PP data for run " << run[i] << "..." << std::endl;
+      rc = GetPlungingProbeData(run[i],prMethod,ppMethod,ppInput,prodVersion,nmrAnaVersion,cutpath);
+      if(rc!=0){
+	 std::cout << "No data!" << std::endl;
+	 return 1;
+      }
+   }
+  
    if(isBlind) ApplyBlindingPP(blindValue,ppData);
+   
+   // oscillation correction 
+   if(useOscCor){
+      rc = CorrectOscillation_pp(fxprData,ppInput,ppData);
+   }else{
+      CopyPlungingProbe(ppInput,ppData);
+   }
 
    // load in perturbation data 
    char inpath[200]; 

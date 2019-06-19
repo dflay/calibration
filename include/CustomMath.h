@@ -24,6 +24,8 @@
 #include "Constants.h"
 #include "plungingProbeAnaEvent.h"
 #include "trolleyAnaEvent.h"
+#include "results.h"
+#include "nmr_meas.h"
 
 int GetStats(std::string varName,int probe,std::vector<trolleyAnaEvent_t> data,double &mean,double &stdev);
 int GetStats(std::string varName,std::vector<calibSwap_t> data,double &mean,double &stdev);  

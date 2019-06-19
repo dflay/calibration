@@ -41,6 +41,7 @@
 #include "./src/CustomMath.C"
 #include "./src/CustomGraph.C"
 #include "./src/CustomAlgorithms.C"
+#include "./src/OscFuncs.C"
 
 double gMarkerSize = 0.8; 
 
@@ -48,10 +49,12 @@ TGraph *GetTRLYVelocityTGraph(int probe,TString xAxis,TString yAxis,
                               std::vector<gm2field::galilTrolley_t> galil,
                               std::vector<trolleyAnaEvent_t> trly); 
 
-int GetTRLYSwapPlots(int probe,int nev,std::vector<double> time,
-                     std::vector<trolleyAnaEvent_t> trlyData,TGraph **gFreq,TGraph **gTemp);
+int GetTRLYSwapPlots(bool useOscCor,int probe,int nev,std::vector<double> time,
+                     std::vector<averageFixedProbeEvent_t> fxpr,std::vector<trolleyAnaEvent_t> trlyData,
+                     TGraph **gFreq,TGraph **gTemp); 
 
-int GetTRLYSwapData(int probe,int nev,double time,std::vector<trolleyAnaEvent_t> Data,
+int GetTRLYSwapData(bool useOscCor,int probe,int nev,double time,std::vector<averageFixedProbeEvent_t> fxpr,
+                    std::vector<trolleyAnaEvent_t> Data,
                     std::vector<double> &TIME,std::vector<double> &FREQ,std::vector<double> &TEMP,
 		    std::vector<double> &X,std::vector<double> &Y,std::vector<double> &Z); 
 
@@ -110,20 +113,20 @@ int Process_trly_prod(std::string configFile){
 	 return 1;
       }
    }
+   
+   if(isBlind) ApplyBlindingTRLY(blindValue,trlyData);
  
    std::vector<int> fxprList;
    inputMgr->GetFXPRList(fxprList);
 
    std::vector<averageFixedProbeEvent_t> fxprData;  
    bool subtractDrift = true;
-   int period = 10;
+   int period = inputMgr->GetNumEventsTimeWindow();
    rc = GetFixedProbeData_avg(run,method,fxprList,fxprData,prodVersion,subtractDrift,period,0);
    if(rc!=0){
       std::cout << "No data!" << std::endl;
       return 1;
    }
- 
-   if(isBlind) ApplyBlindingTRLY(blindValue,trlyData);
 
    // TGraph *gSig  = GetTRLYVelocityTGraph(probeNumber-1,"GpsTimeStamp","vSig" ,trlyGalil,trlyData);
    // TGraph *gFish = GetTRLYVelocityTGraph(probeNumber-1,"GpsTimeStamp","vFish",trlyGalil,trlyData);
@@ -174,7 +177,7 @@ int Process_trly_prod(std::string configFile){
 
    TGraph **gFreq = new TGraph*[NL]; 
    TGraph **gTemp = new TGraph*[NL];
-   rc = GetTRLYSwapPlots(probeNumber-1,nev,time,trlyData,gFreq,gTemp); 
+   rc = GetTRLYSwapPlots(useOscCor,probeNumber-1,nev,time,fxpr,trlyData,gFreq,gTemp); 
 
    TMultiGraph *mgf = new TMultiGraph();
    TMultiGraph *mgt = new TMultiGraph();
@@ -297,14 +300,15 @@ TGraph *GetTRLYVelocityTGraph(int probe,TString xAxis,TString yAxis,
    return g;
 }
 //______________________________________________________________________________
-int GetTRLYSwapPlots(int probe,int nev,std::vector<double> time,
-                     std::vector<trolleyAnaEvent_t> trlyData,TGraph **gFreq,TGraph **gTemp){
+int GetTRLYSwapPlots(bool useOscCor,int probe,int nev,std::vector<double> time,
+                     std::vector<averageFixedProbeEvent_t> fxpr,std::vector<trolleyAnaEvent_t> trlyData,
+                     TGraph **gFreq,TGraph **gTemp){
    // for diagnostic plots
    int M=0,rc=0;
    const int NL = time.size();
    std::vector<double> EV,TIME,FREQ,TEMP,X,Y,Z;
    for(int i=0;i<NL;i++){
-      rc = GetTRLYSwapData(probe,nev,time[i],trlyData,TIME,FREQ,TEMP,X,Y,Z);
+      rc = GetTRLYSwapData(useOscCor,probe,nev,time[i],fxpr,trlyData,TIME,FREQ,TEMP,X,Y,Z);
       M = FREQ.size();
       if(M==0) std::cout << "[GetTRLYSwapPlots]: NO EVENTS!" << std::endl;
       for(int j=0;j<M;j++) EV.push_back(j+1);
@@ -324,17 +328,35 @@ int GetTRLYSwapPlots(int probe,int nev,std::vector<double> time,
    return 0;
 }
 //______________________________________________________________________________
-int GetTRLYSwapData(int probe,int nev,double time,std::vector<trolleyAnaEvent_t> Data,
+int GetTRLYSwapData(bool useOscCor,int probe,int nev,double time,
+                    std::vector<averageFixedProbeEvent_t> fxpr,
+                    std::vector<trolleyAnaEvent_t> Data,
                     std::vector<double> &TIME,std::vector<double> &FREQ,std::vector<double> &TEMP,
 		    std::vector<double> &X,std::vector<double> &Y,std::vector<double> &Z){
    // find the mean field at the times specified in the time vector 
+
    int rc=0;
+   // all variables 
    rc = FilterSingle("time",probe,nev,time,Data,TIME);
-   rc = FilterSingle("freq",probe,nev,time,Data,FREQ);
    rc = FilterSingle("temp",probe,nev,time,Data,TEMP);
    rc = FilterSingle("r"   ,probe,nev,time,Data,X   );
    rc = FilterSingle("y"   ,probe,nev,time,Data,Y   );
    rc = FilterSingle("phi" ,probe,nev,time,Data,Z   );
+   // now for frequency 
+   // do oscillation correction and obtain ALL data associated with toggle times in time vector 
+   std::vector<double> tt;
+   tt.push_back(time); 
+   std::vector<double> trFreq,trFreq_cor;
+   int rc = CorrectOscillation_trly(probe,nev,tt,fxpr,Data,TIME,trFreq,trFreq_cor);
+   int M = TIME.size(); 
+   for(int i=0;i<M;i++){
+      if(useOscCor){
+	 FREQ.push_back(trFreq_cor[i]); 
+      }else{
+	 FREQ.push_back(trFreq[i]); 
+      }
+   }
+
    return 0;
 }
 //______________________________________________________________________________

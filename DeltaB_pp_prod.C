@@ -41,6 +41,7 @@
 #include "./src/CustomGraph.C"
 #include "./src/CustomAlgorithms.C"
 // #include "./src/DeltaBFuncs.C"
+#include "./src/OscFuncs.C"
 
 int SortPPDAQRuns(std::vector<plungingProbeAnaEvent_t> data,bool sccStartOn,
                   std::vector<double> &sccTime ,std::vector<double> &scc ,std::vector<double> &sccErr,
@@ -68,6 +69,7 @@ int DeltaB_pp_prod(std::string configFile){
 
    bool isBlind              = inputMgr->IsBlind();
    bool useTimeWeight        = inputMgr->GetTimeWeightStatus();
+   bool useOscCor            = inputMgr->GetOscCorStatus(); 
    int probeNumber           = inputMgr->GetTrolleyProbe();
    int axis                  = inputMgr->GetAxis();
    int runPeriod             = inputMgr->GetRunPeriod(); 
@@ -154,12 +156,27 @@ int DeltaB_pp_prod(std::string configFile){
 
    const int NSCC     = sccOn.size();
 
+   // FXPR data 
+   std::vector<int> fxprList;
+   inputMgr->GetFXPRList(fxprList);
+
+   std::vector<averageFixedProbeEvent_t> fxprData;
+   bool subtractDrift = true;
+   int period = inputMgr->GetNumEventsTimeWindow(); // 10;
+   for(int i=0;i<NRUNS;i++){
+      rc = GetFixedProbeData_avg(run[i],prMethod,fxprList,fxprData,prodVersion,subtractDrift,period,0);
+      if(rc!=0){
+         std::cout << "No data!" << std::endl;
+         return 1;
+      }
+   }
+
    // PP data 
    const int N3 = run.size(); 
-   std::vector<plungingProbeAnaEvent_t> PP,ppEvent; 
+   std::vector<plungingProbeAnaEvent_t> ppInput,ppEvent; 
    for(int i=0;i<N3;i++){
       std::cout << "Getting PP data for run " << run[i] << "..." << std::endl; 
-      rc = GetPlungingProbeData(run[i],prMethod,ppMethod,ppEvent,prodVersion,nmrAnaVersion,cutpath);
+      rc = GetPlungingProbeData(run[i],prMethod,ppMethod,ppInput,prodVersion,nmrAnaVersion,cutpath);
       if(rc!=0){
 	 std::cout << "No data!" << std::endl;
 	 return 1;
@@ -169,6 +186,13 @@ int DeltaB_pp_prod(std::string configFile){
    const int NPP = ppEvent.size(); 
 
    if(isBlind) ApplyBlindingPP(blindValue,ppEvent);
+
+   // oscillation correction 
+   if(useOscCor){
+      rc = CorrectOscillation_pp(fxprData,ppInput,ppEvent);
+   }else{
+      CopyPlungingProbe(ppInput,ppEvent);
+   }
 
    // gather the PP DAQ runs to analyze
    std::vector<double> sccTime,scc,sccErr,bareTime,bare,bareErr; 

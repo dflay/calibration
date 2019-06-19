@@ -17,7 +17,7 @@ class InputManager{
       bool fIsSimple,fIsFullAnalysis,fIsBlind,fUseP2PFit,fIsFinalLocation;
       bool fUseAxis,fIsFreeProton,fLoadSwapTime,fLoadSCCTime,fUseTimeWeight,fUseTempCor;
       bool fUseOscCor; 
-      int fTrolleyProbe,fAxis,fFXPRListTag,fBlindUnits,fRunPeriod,fNumEventsToAvg; 
+      int fTrolleyProbe,fAxis,fFXPRListTag,fBlindUnits,fRunPeriod,fNumEventsToAvg,fNumEventsTimeWindow; 
       double fBlindScale; 
       std::string fType,fDevice,fRunDate,fFitFunc,fBlindLabel,fProdTag,fNMRANATag,fCutFile;
       std::vector<int> fRunList,fFXPRList; 
@@ -60,6 +60,7 @@ class InputManager{
       int GetBlindUnits()            const { return fBlindUnits;      }
       int GetRunPeriod()             const { return fRunPeriod;       } 
       int GetNumEventsToAvg()        const { return fNumEventsToAvg;  }  
+      int GetNumEventsTimeWindow()   const { return fNumEventsTimeWindow; }  
 
       double GetBlindScale()         const { return fBlindScale;      }   
 

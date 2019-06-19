@@ -22,6 +22,7 @@ int InputManager::Init(){
    fUseTempCor      = false;
    fUseOscCor       = false; 
    fNumEventsToAvg  =  0;  
+   fNumEventsTimeWindow =  0;  
    fTrolleyProbe    = -1; 
    fAxis            = -1;
    fFXPRListTag     = -1;
@@ -154,6 +155,7 @@ int InputManager::Parse(){
    bool nmrAnaStatus = DoesKeyExist("nmr-ana-tag"); 
    bool cutStatus    = DoesKeyExist("cut-file"); 
    bool nevStatus    = DoesKeyExist("num-events-to-avg");  
+   bool twStatus     = DoesKeyExist("num-events-time-window");  
 
    // parameters common to all 
    std::string unitStr="";
@@ -197,6 +199,7 @@ int InputManager::Parse(){
       if(oscStatus)  fUseOscCor      = (bool)( (int)fParams["use-osc-cor"] ); 
       if(cutStatus)  fCutFile        = fParams["cut-file"];
       if(nevStatus)  fNumEventsToAvg = (int)fParams["num-events-to-avg"];  
+      if(twStatus )  fNumEventsTimeWindow = (int)fParams["num-events-time-window"];  
    }
 
    // trolley Delta-B measurements
