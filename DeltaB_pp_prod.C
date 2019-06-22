@@ -22,6 +22,7 @@
 #include "gm2fieldRootHelper.h"
 #include "gm2fieldUnits.h"
 #include "TemperatureSensor.h"
+#include "MovingAverage.h"
 #include "Blinder.h"
 
 #include "./include/date.h"
@@ -31,16 +32,15 @@
 #include "./include/plungingProbeAnaEvent.h"
 #include "./include/trolleyAnaEvent.h"
 
-#include "./src/BlindFuncs.C"
-#include "./src/InputManager.C"
-#include "./src/FitFuncs.C"
 #include "./src/CustomUtilities.C"
 #include "./src/CustomImport.C"
 #include "./src/CustomExport.C"
 #include "./src/CustomMath.C"
 #include "./src/CustomGraph.C"
 #include "./src/CustomAlgorithms.C"
-// #include "./src/DeltaBFuncs.C"
+#include "./src/BlindFuncs.C"
+#include "./src/InputManager.C"
+#include "./src/FitFuncs.C"
 #include "./src/OscFuncs.C"
 
 int SortPPDAQRuns(std::vector<plungingProbeAnaEvent_t> data,bool sccStartOn,
@@ -163,7 +163,7 @@ int DeltaB_pp_prod(std::string configFile){
    std::vector<averageFixedProbeEvent_t> fxprData;
    bool subtractDrift = true;
    int period = inputMgr->GetNumEventsTimeWindow(); // 10;
-   for(int i=0;i<NRUNS;i++){
+   for(int i=0;i<NRUN;i++){
       rc = GetFixedProbeData_avg(run[i],prMethod,fxprList,fxprData,prodVersion,subtractDrift,period,0);
       if(rc!=0){
          std::cout << "No data!" << std::endl;
@@ -183,16 +183,17 @@ int DeltaB_pp_prod(std::string configFile){
       }
    }
 
-   const int NPP = ppEvent.size(); 
-
-   if(isBlind) ApplyBlindingPP(blindValue,ppEvent);
+   if(isBlind) ApplyBlindingPP(blindValue,ppInput);
 
    // oscillation correction 
    if(useOscCor){
+      std::cout << "DOING OSCILLATION CORRECTION" << std::endl;
       rc = CorrectOscillation_pp(fxprData,ppInput,ppEvent);
    }else{
       CopyPlungingProbe(ppInput,ppEvent);
    }
+   
+   const int NPP = ppEvent.size(); 
 
    // gather the PP DAQ runs to analyze
    std::vector<double> sccTime,scc,sccErr,bareTime,bare,bareErr; 
@@ -301,12 +302,10 @@ int DeltaB_pp_prod(std::string configFile){
 
    std::cout << Form("====================== RESULTS FOR PROBE %02d ======================",probeNumber) << std::endl;
    std::cout << "Raw results: " << std::endl;
-   std::cout << Form("dB (%s): %.3lf +/- %.3lf Hz (%.3lf +/- %.3lf ppb)",gradName.c_str(),
-                     dB[0],dB_err[0],dB[0]/0.06179,dB_err[0]/0.06179) << std::endl;
+   std::cout << Form("dB (%s): %.3lf +/- %.3lf Hz",gradName.c_str(),dB[0],dB_err[0]) << std::endl;
    std::cout << "-----------------------------------------------------" << std::endl; 
    std::cout << "Drift corrected [ABA]: " << std::endl;
-   std::cout << Form("dB (%s): %.3lf +/- %.3lf Hz (%.3lf +/- %.3lf ppb)",gradName.c_str(),
-                     dB[1],dB_err[1],dB[1]/0.06179,dB_err[1]/0.06179) << std::endl;
+   std::cout << Form("dB (%s): %.3lf +/- %.3lf Hz",gradName.c_str(),dB[1],dB_err[1]) << std::endl;
 
    char outpath[200];
    sprintf(outpath,"%s/dB-pp_final-location_%s-grad_pr-%02d.csv",outDir.c_str(),gradName.c_str(),probeNumber);

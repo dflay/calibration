@@ -96,10 +96,16 @@ int FilterSingle(std::string var,int probe,int nev,double T,std::vector<trolleyA
    const int N = in.size();
    for(int i=0;i<N;i++) tt.push_back(in[i].time[probe]/1E+9);
 
-   int lo=0,hi=0;
-   gm2fieldUtil::Algorithm::BinarySearch(tt,T,lo,hi);
-   int end   = lo;
-   int start = end-nev;
+   int lo=0,hi=0,start=0,end=0;
+   if(nev<0){
+      start = 0;
+      end   = N;
+   }else{
+      gm2fieldUtil::Algorithm::BinarySearch(tt,T,lo,hi);
+      end   = lo;
+      start = end-nev;
+   }
+
    for(int i=start;i<end;i++){
       if( var.compare("time")==0 ) x.push_back(in[i].time[probe]/1E+9); 
       if( var.compare("freq")==0 ) x.push_back(in[i].freq[probe]     );
@@ -214,20 +220,23 @@ int GetTRLYStatsAtTime(bool UseTempCor,bool UseOscCor,int probe,int nev,double f
 
    // now need to average over each toggle 
 
-   std::vector<double> tt,ff; 
+   int n=0;
    int M = trTime.size();
    const int NT = time.size();
+   double lastTime=0;
    double arg_freq=0,delta_t=0;
    double mean_freq=0,stdev_freq=0;
    double mean_temp=0,stdev_temp=0;
    double mean_x=0,stdev_x=0;
    double mean_y=0,stdev_y=0;
    double mean_z=0,stdev_z=0;
-   std::vector<double> freq,temp,x,y,z;
+   std::vector<double> tt,freq,temp,x,y,z;
    for(int i=0;i<NT;i++){
-      // find events that satisfy the timestamp for frequency and apply corrections  
+      // find events that satisfy the timestamp for frequency and apply corrections 
+      // WARNING: be careful to not accumulate events from previous swaps!  
       for(int j=0;j<M;j++){
-	 if(trTime[j]<time[i]){
+	 if(trTime[j]>lastTime && trTime[j]<time[i]){
+	    tt.push_back(trTime[j]); 
 	    if(UseTempCor){
 	       // FIXME: apply a temperature correction if necessary
 	       // accounts for the trolley being at a temperature other than 25 deg c  
@@ -271,6 +280,9 @@ int GetTRLYStatsAtTime(bool UseTempCor,bool UseOscCor,int probe,int nev,double f
       theEvent.phiErr  = stdev_z;       
       Event.push_back(theEvent);  
       // set up for next time 
+      n = tt.size();
+      lastTime = tt[n-1];
+      tt.clear(); 
       freq.clear();
       temp.clear();
       x.clear();
@@ -339,16 +351,22 @@ int GetTRLYStats_sccToggle(bool useOscCor,int probe,int nev,std::vector<double> 
    std::vector<double> trTime,trFreq,trFreq_cor; 
    int rc = CorrectOscillation_trly(probe,nev,time,fxpr,Data,trTime,trFreq,trFreq_cor);
 
+   // if(useOscCor) std::cout << "[GetTRLYStats_sccToggle]: USING OSCILLATION CORRECTION" << std::endl;
+   // std::cout << "nev = " << nev << std::endl;
+
    // now need to average over each toggle 
 
-   double mean=0,stdev=0;
-   std::vector<double> ff; 
+   int n=0;
+   double lastTime=0,mean=0,stdev=0;
+   std::vector<double> tt,ff; 
    int M = trTime.size();
    const int NT = time.size();
    for(int i=0;i<NT;i++){
-      // find events that satisfy the timestamp 
+      // find events that satisfy the timestamp
+      // WARNING: must be careful to not accumulate events from previous toggles!  
       for(int j=0;j<M;j++){
-	 if(trTime[j]<time[i]){
+	 if(trTime[j]>lastTime && trTime[j]<time[i]){
+	    tt.push_back(trTime[j]);
 	    if(useOscCor){
 	       ff.push_back(trFreq_cor[j]);
             }else{
@@ -363,7 +381,10 @@ int GetTRLYStats_sccToggle(bool useOscCor,int probe,int nev,std::vector<double> 
       TIME.push_back(time[i]); 
       MEAN.push_back(mean); 
       STDEV.push_back(stdev);
-      // set up for next time  
+      // set up for next time 
+      n = tt.size();
+      lastTime = tt[n-1]; 
+      tt.clear();
       ff.clear();
    } 
 

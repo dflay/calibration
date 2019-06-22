@@ -31,11 +31,6 @@
 #include "./include/sccEvent.h"
 #include "./include/nmr_meas.h" 
 
-#include "./src/BlindFuncs.C"
-#include "./src/InputManager.C"
-#include "./src/FitFuncs.C"
-#include "./src/TRLYFuncs.C"
-#include "./src/CalibFuncs.C"
 #include "./src/CustomUtilities.C"
 #include "./src/CustomImport.C"
 #include "./src/CustomExport.C"
@@ -43,6 +38,11 @@
 #include "./src/CustomGraph.C"
 #include "./src/CustomAlgorithms.C"
 #include "./src/OscFuncs.C"
+#include "./src/BlindFuncs.C"
+#include "./src/InputManager.C"
+#include "./src/FitFuncs.C"
+#include "./src/TRLYFuncs.C"
+#include "./src/CalibFuncs.C"
 
 double gMarkerSize = 0.8; 
 
@@ -133,7 +133,7 @@ int Process_pp_prod(std::string configFile){
       }
    }
   
-   if(isBlind) ApplyBlindingPP(blindValue,ppData);
+   if(isBlind) ApplyBlindingPP(blindValue,ppInput);
    
    // oscillation correction 
    if(useOscCor){

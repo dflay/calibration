@@ -21,6 +21,7 @@
 #include "gm2fieldRootHelper.h"
 #include "gm2fieldUnits.h"
 #include "TemperatureSensor.h"
+#include "MovingAverage.h"
 #include "Blinder.h"
 
 #include "./include/Constants.h"
@@ -29,18 +30,18 @@
 #include "./include/trolleyAnaEvent.h"
 #include "./include/fixedProbeEvent.h"
 
-#include "./src/BlindFuncs.C"
-#include "./src/MyFits.C"
-#include "./src/FitErr.C"
-#include "./src/InputManager.C"
-#include "./src/TRLYFuncs.C"
 #include "./src/CustomUtilities.C"
 #include "./src/CustomImport.C"
 #include "./src/CustomExport.C"
 #include "./src/CustomAlgorithms.C"
 #include "./src/CustomMath.C"
 #include "./src/CustomGraph.C"
-#include "./src/DeltaBFuncs.C"
+#include "./src/OscFuncs.C" 
+#include "./src/BlindFuncs.C"
+#include "./src/MyFits.C"
+#include "./src/FitErr.C"
+#include "./src/InputManager.C"
+#include "./src/TRLYFuncs.C"
 
 int GetAziGrad(TGraph *g,double &grad,double &gradErr);
 int GetCoordinates(std::vector<calibSwap_t> data,std::vector<double> &r); 
@@ -68,9 +69,9 @@ int LocalScanGrad_pp_prod(std::string configFile){
    std::string cutFile       = inputMgr->GetCutFile();
 
    bool isBlind              = inputMgr->IsBlind();
+   bool useOscCor            = inputMgr->GetOscCorStatus();
    int probeNumber           = inputMgr->GetTrolleyProbe(); 
    int axis                  = inputMgr->GetAxis();
-   int fxprSet               = inputMgr->GetFixedProbeListTag(); 
    int runPeriod             = inputMgr->GetRunPeriod();  
 
    char cutPath[200];
@@ -142,15 +143,36 @@ int LocalScanGrad_pp_prod(std::string configFile){
    }
 
    // PP data 
-   std::vector<plungingProbeAnaEvent_t> ppData,ppEvent; 
+   std::vector<plungingProbeAnaEvent_t> ppData,ppEvent,ppInput; 
    std::cout << "Getting PP data for run " << midasRun << "..." << std::endl; 
-   rc = GetPlungingProbeData(midasRun,prMethod,ppMethod,ppData,prodVersion,nmrAnaVersion,cutPath);
+   rc = GetPlungingProbeData(midasRun,prMethod,ppMethod,ppInput,prodVersion,nmrAnaVersion,cutPath);
    if(rc!=0){
       std::cout << "No data!" << std::endl;
       return 1;
    }
   
-   if(isBlind) ApplyBlindingPP(blindValue,ppData);
+   if(isBlind) ApplyBlindingPP(blindValue,ppInput);
+
+   std::vector<int> fxprList;
+   inputMgr->GetFXPRList(fxprList);
+
+   std::vector<averageFixedProbeEvent_t> fxprData;
+   bool subtractDrift = true;
+   int period = inputMgr->GetNumEventsTimeWindow(); // 10;
+   for(int i=0;i<NRUN;i++){
+      rc = GetFixedProbeData_avg(run[i],prMethod,fxprList,fxprData,prodVersion,subtractDrift,period,0);
+      if(rc!=0){
+         std::cout << "No data!" << std::endl;
+         return 1;
+      }
+   }
+
+   // oscillation correction 
+   if(useOscCor){
+      rc = CorrectOscillation_pp(fxprData,ppInput,ppData);
+   }else{
+      CopyPlungingProbe(ppInput,ppData);
+   }
 
    // trolley probe coordinates 
    // std::vector<calibSwap_t> trData; 
@@ -216,30 +238,6 @@ int LocalScanGrad_pp_prod(std::string configFile){
    evalPoint->SetLineColor(kBlue);
    evalPoint->SetLineStyle(2); 
    evalPoint->SetLineWidth(2); 
-
-   // fixed probe data
-   // char fxpr_path[200]; 
-   // sprintf(fxpr_path,"./input/probe-lists/fxpr-list_set-%d.csv",fxprSet); 
-   // std::string fxprPath = fxpr_path;
-   // std::vector<int> fxprList;
-   // gm2fieldUtil::Import::ImportData1<int>(fxprPath,"csv",fxprList);
-
-   // std::vector<gm2field::fixedProbeFrequency_t> fxprData;
-   // rc = gm2fieldUtil::RootHelper::GetFPFrequencies(midasRun,fxprData);
-   // if(rc!=0){
-   //    std::cout << "No data!" << std::endl;
-   //    return 1;
-   // }
-
-   // const int NN = fxprData.size();
-   // const int NFP = fxprList.size();
-   // unsigned long long t0     = 0;
-   // unsigned long long tStart = fxprData[0].GpsTimeStamp[fxprList[0]];
-   // unsigned long long tStop  = fxprData[NN-1].GpsTimeStamp[fxprList[NFP-1]];
-   // unsigned long long tStep  = 1E+9;
-
-   // std::vector<fixedProbeEvent_t> fxprDataAvg;
-   // GetAverageFXPRVectorsNew(method,t0,tStart,tStop,tStep,fxprList,fxprData,fxprDataAvg);
 
    // Plunging probe plots 
    TGraphErrors *g = GetPPTGraphErrors2(Axis.c_str(),"freq",ppEvent);

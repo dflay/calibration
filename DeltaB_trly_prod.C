@@ -22,6 +22,7 @@
 #include "gm2fieldRootHelper.h"
 #include "gm2fieldUnits.h"
 #include "TemperatureSensor.h"
+#include "MovingAverage.h"
 #include "Blinder.h"
 
 #include "./include/date.h"
@@ -31,17 +32,17 @@
 #include "./include/plungingProbeAnaEvent.h"
 #include "./include/trolleyAnaEvent.h"
 
-#include "./src/BlindFuncs.C"
-#include "./src/InputManager.C"
-#include "./src/FitFuncs.C"
-#include "./src/TRLYFuncs.C"
 #include "./src/CustomUtilities.C"
 #include "./src/CustomMath.C"
 #include "./src/CustomAlgorithms.C"
 #include "./src/CustomImport.C"
 #include "./src/CustomExport.C"
 #include "./src/CustomGraph.C"
-#include "./src/DeltaBFuncs.C"
+#include "./src/OscFuncs.C"
+#include "./src/BlindFuncs.C"
+#include "./src/InputManager.C"
+#include "./src/FitFuncs.C"
+#include "./src/TRLYFuncs.C"
 
 int DeltaB_trly_prod(std::string configFile){
 
@@ -202,10 +203,12 @@ int DeltaB_trly_prod(std::string configFile){
    std::vector<averageFixedProbeEvent_t> fxprData;
    bool subtractDrift = true;
    int period = inputMgr->GetNumEventsTimeWindow();
-   rc = GetFixedProbeData_avg(run,method,fxprList,fxprData,prodVersion,subtractDrift,period,0);
-   if(rc!=0){
-      std::cout << "No data!" << std::endl;
-      return 1;
+   for(int i=0;i<NRUN;i++){
+      rc = GetFixedProbeData_avg(run[i],method,fxprList,fxprData,prodVersion,subtractDrift,period,0);
+      if(rc!=0){
+	 std::cout << "No data!" << std::endl;
+	 return 1;
+      }
    }
 
    std::vector<double> X; 
@@ -328,12 +331,10 @@ int DeltaB_trly_prod(std::string configFile){
 
    std::cout << Form("====================== RESULTS FOR PROBE %02d ======================",probeNumber) << std::endl;
    std::cout << "Raw results: " << std::endl;
-   std::cout << Form("dB (%s): %.3lf +/- %.3lf Hz (%.3lf +/- %.3lf ppb)",gradName.c_str(),
-                     dB[0],dB_err[0],dB[0]/0.06179,dB_err[0]/0.06179) << std::endl;
+   std::cout << Form("dB (%s): %.3lf +/- %.3lf Hz",gradName.c_str(),dB[0],dB_err[0]) << std::endl;
    std::cout << "-----------------------------------------------------" << std::endl; 
    std::cout << "Drift corrected [ABA]: " << std::endl;
-   std::cout << Form("dB (%s): %.3lf +/- %.3lf Hz (%.3lf +/- %.3lf ppb)",gradName.c_str(),
-                     dB[1],dB_err[1],dB[1]/0.06179,dB_err[1]/0.06179) << std::endl;
+   std::cout << Form("dB (%s): %.3lf +/- %.3lf Hz",gradName.c_str(),dB[1],dB_err[1]) << std::endl;
 
    rc = PrintToFile(outpath,gradName,dB,dB_err,drift,drift_err); 
 

@@ -15,7 +15,9 @@ typedef struct perturbaton{
    double delta_eps;            // shape asymmetry 
    double delta_eps_err;
    double delta_mag;            // magnetic image effect  
-   double delta_mag_err;        
+   double delta_mag_err;       
+   double delta_t;              // material + images + shape asymmetry 
+   double delta_t_err;         
 } perturbation_t; 
 
 #endif 

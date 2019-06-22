@@ -71,18 +71,24 @@ def writeConfigFileProd_trlyDB(data,tag,keyList,axis,fitData,trlyProbe,outpath):
          runList.append(data[tag][key])   
          labelList.append(key) 
    outData = {} 
-   outData['type']                 = data['type'] 
-   outData['date']                 = data['date']
-   outData['blinding']             = data['blinding'] 
-   outData['run-period']           = data['run-period'] 
-   outData['prod-tag']             = data['prod-tag'] 
-   outData['nmr-ana-tag']          = data['nmr-ana-tag'] 
-   outData['trly-probe']           = int(trlyProbe) 
-   outData['fxpr-set']             = data['fxpr-set']
-   outData['free-proton-cor']      = data['free-proton-cor'] 
-   outData['load-trly-swap-times'] = data['load-trly-swap-times'] 
-   outData['use-aba-time-weight']  = data['use-aba-time-weight']
-   outData['use-trly-temp-cor']    = data['use-trly-temp-cor'] 
+   # config file data 
+   outData['type']                   = confData['type'] 
+   outData['blinding']               = confData['blinding'] 
+   outData['run-period']             = confData['run-period'] 
+   outData['prod-tag']               = confData['prod-tag'] 
+   outData['nmr-ana-tag']            = confData['nmr-ana-tag']
+   outData['fxpr-set']               = confData['fxpr-set']
+   outData['free-proton-cor']        = confData['free-proton-cor'] 
+   outData['load-trly-swap-times']   = confData['load-trly-swap-times'] 
+   outData['use-aba-time-weight']    = confData['use-aba-time-weight']
+   outData['use-trly-temp-cor']      = confData['use-trly-temp-cor'] 
+   outData['cut-file']               = confData['cut-file'] 
+   outData['num-events-to-avg']      = confData['num-events-to-avg']  
+   outData['num-events-time-window'] = confData['num-events-time-window']  
+    
+   # probe-specific data  
+   outData['date']                   = data['date']
+   outData['trly-probe']             = int(trlyProbe) 
 
    if(fitData): 
       outData['fit'] = data[tag]['fit']  
@@ -155,19 +161,24 @@ def writeConfigFileProd_ShimScan(data,confData,tag,keyList,axis,fitData,outpath)
  
    # save to output json object  
    outData = {} 
-   outData['type']                 = data['type'] 
+   # config file data 
+   outData['type']                   = confData['type'] 
+   outData['blinding']               = confData['blinding'] 
+   outData['run-period']             = confData['run-period'] 
+   outData['prod-tag']               = confData['prod-tag'] 
+   outData['nmr-ana-tag']            = confData['nmr-ana-tag']
+   outData['fxpr-set']               = confData['fxpr-set']
+   outData['free-proton-cor']        = confData['free-proton-cor'] 
+   outData['load-trly-swap-times']   = confData['load-trly-swap-times'] 
+   outData['use-aba-time-weight']    = confData['use-aba-time-weight']
+   outData['use-trly-temp-cor']      = confData['use-trly-temp-cor'] 
+   outData['cut-file']               = confData['cut-file'] 
+   outData['num-events-to-avg']      = confData['num-events-to-avg']  
+   outData['num-events-time-window'] = confData['num-events-time-window']  
+    
+   # probe-specific data  
    outData['date']                 = data['date']
-   outData['blinding']             = confData['blinding'] 
-   outData['run-period']           = confData['run-period'] 
-   outData['prod-tag']             = confData['prod-tag'] 
-   outData['nmr-ana-tag']          = confData['nmr-ana-tag'] 
    outData['trly-probe']           = data['trly-probe'] 
-   outData['fxpr-set']             = data['fxpr-set']
-   outData['free-proton-cor']      = data['free-proton-cor'] 
-   outData['load-trly-swap-times'] = data['load-trly-swap-times'] 
-   outData['use-aba-time-weight']  = data['use-aba-time-weight']
-   outData['use-trly-temp-cor']    = data['use-trly-temp-cor']
-   outData['cut-file']             = confData['cut-file']  
 
    if(axis==0): 
       outData['load-pp-scc-times']   = data['dB-pp_x']['load-times']
@@ -214,20 +225,26 @@ def writeConfigFileProd(data,confData,tag,keyList,axis,fitData,outpath):
          # single MIDAS runs 
          runList.append(data[tag][key])   
          labelList.append(key) 
-   outData = {} 
-   outData['type']                 = data['type'] 
+   # now to build the output json object 
+   outData = {}
+   # config file data 
+   outData['type']                   = confData['type'] 
+   outData['blinding']               = confData['blinding'] 
+   outData['run-period']             = confData['run-period'] 
+   outData['prod-tag']               = confData['prod-tag'] 
+   outData['nmr-ana-tag']            = confData['nmr-ana-tag']
+   outData['fxpr-set']               = confData['fxpr-set']
+   outData['free-proton-cor']        = confData['free-proton-cor'] 
+   outData['load-trly-swap-times']   = confData['load-trly-swap-times'] 
+   outData['use-aba-time-weight']    = confData['use-aba-time-weight']
+   outData['use-trly-temp-cor']      = confData['use-trly-temp-cor'] 
+   outData['cut-file']               = confData['cut-file'] 
+   outData['num-events-to-avg']      = confData['num-events-to-avg']  
+   outData['num-events-time-window'] = confData['num-events-time-window']  
+    
+   # probe-specific data  
    outData['date']                 = data['date']
-   outData['blinding']             = confData['blinding'] 
-   outData['run-period']           = confData['run-period'] 
-   outData['prod-tag']             = confData['prod-tag'] 
-   outData['nmr-ana-tag']          = confData['nmr-ana-tag'] 
    outData['trly-probe']           = data['trly-probe'] 
-   outData['fxpr-set']             = data['fxpr-set']
-   outData['free-proton-cor']      = data['free-proton-cor'] 
-   outData['load-trly-swap-times'] = data['load-trly-swap-times'] 
-   outData['use-aba-time-weight']  = data['use-aba-time-weight']
-   outData['use-trly-temp-cor']    = data['use-trly-temp-cor'] 
-   outData['cut-file']             = confData['cut-file']  
 
    if(axis==0): 
       outData['load-pp-scc-times']   = data['dB-pp_x']['load-times']

@@ -31,10 +31,6 @@
 #include "./include/trolleyAnaEvent.h"
 #include "./include/sccEvent.h" 
 
-#include "./src/BlindFuncs.C"
-#include "./src/InputManager.C"
-#include "./src/FitFuncs.C"
-#include "./src/TRLYFuncs.C"
 #include "./src/CustomUtilities.C"
 #include "./src/CustomImport.C"
 #include "./src/CustomExport.C"
@@ -42,6 +38,10 @@
 #include "./src/CustomGraph.C"
 #include "./src/CustomAlgorithms.C"
 #include "./src/OscFuncs.C"
+#include "./src/BlindFuncs.C"
+#include "./src/InputManager.C"
+#include "./src/FitFuncs.C"
+#include "./src/TRLYFuncs.C"
 
 double gMarkerSize = 0.8; 
 
@@ -122,10 +122,12 @@ int Process_trly_prod(std::string configFile){
    std::vector<averageFixedProbeEvent_t> fxprData;  
    bool subtractDrift = true;
    int period = inputMgr->GetNumEventsTimeWindow();
-   rc = GetFixedProbeData_avg(run,method,fxprList,fxprData,prodVersion,subtractDrift,period,0);
-   if(rc!=0){
-      std::cout << "No data!" << std::endl;
-      return 1;
+   for(int i=0;i<NRUNS;i++){
+      rc = GetFixedProbeData_avg(run[i],method,fxprList,fxprData,prodVersion,subtractDrift,period,0);
+      if(rc!=0){
+	 std::cout << "No data!" << std::endl;
+	 return 1;
+      }
    }
 
    // TGraph *gSig  = GetTRLYVelocityTGraph(probeNumber-1,"GpsTimeStamp","vSig" ,trlyGalil,trlyData);
@@ -177,7 +179,7 @@ int Process_trly_prod(std::string configFile){
 
    TGraph **gFreq = new TGraph*[NL]; 
    TGraph **gTemp = new TGraph*[NL];
-   rc = GetTRLYSwapPlots(useOscCor,probeNumber-1,nev,time,fxpr,trlyData,gFreq,gTemp); 
+   rc = GetTRLYSwapPlots(useOscCor,probeNumber-1,nev,time,fxprData,trlyData,gFreq,gTemp); 
 
    TMultiGraph *mgf = new TMultiGraph();
    TMultiGraph *mgt = new TMultiGraph();
@@ -347,7 +349,7 @@ int GetTRLYSwapData(bool useOscCor,int probe,int nev,double time,
    std::vector<double> tt;
    tt.push_back(time); 
    std::vector<double> trFreq,trFreq_cor;
-   int rc = CorrectOscillation_trly(probe,nev,tt,fxpr,Data,TIME,trFreq,trFreq_cor);
+   rc = CorrectOscillation_trly(probe,nev,tt,fxpr,Data,TIME,trFreq,trFreq_cor);
    int M = TIME.size(); 
    for(int i=0;i<M;i++){
       if(useOscCor){

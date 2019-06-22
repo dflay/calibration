@@ -2,9 +2,12 @@
 //______________________________________________________________________________
 int GetOmegaP_err(perturbation_t pert,double &err){
    // error on delta_t  
-   double err_sq = pert.sigma_err*pert.sigma_err     + pert.chi_err*pert.chi_err 
-                 + pert.delta_m_err*pert.delta_m_err + pert.delta_eps_err*pert.delta_eps_err 
-                 + pert.delta_mag_err*pert.delta_mag_err;
+   // double err_sq = pert.sigma_err*pert.sigma_err     + pert.chi_err*pert.chi_err 
+   //               + pert.delta_m_err*pert.delta_m_err + pert.delta_eps_err*pert.delta_eps_err 
+   //               + pert.delta_mag_err*pert.delta_mag_err;
+   // UPDATE: accounts for rad damping, rotational effects, sag, oxygen, etc 
+   double err_sq = pert.sigma_err*pert.sigma_err + pert.chi_err*pert.chi_err 
+                 + pert.delta_t_err*pert.delta_t_err;
    err = TMath::Sqrt(err_sq)*0.06179;  // convert to Hz
    return 0;
 }
@@ -19,12 +22,12 @@ int GetOmegaP_free(perturbation_t pert,double freq,double freqErr,double temp,do
    // magnetic sucseptibility  
    double chi=0;
    GetMagneticSusceptibility(pert.chi,temp,chi);
-   double delta_t  = GetDeltaTerm(sigma,pert.delta_m,chi,eps,pert.delta_eps,pert.delta_mag); 
+   double delta_tot  = GetDeltaTerm(sigma,pert.delta_m,chi,eps,pert.delta_eps,pert.delta_mag); 
    // error on delta_t 
    double err=0;
    int rc = GetOmegaP_err(pert,err);  
    // calculate omega_p_free  
-   freqFree    = freq/(1.-delta_t);
+   freqFree    = freq/(1.-delta_tot);
    freqFreeErr = 0; // don't add in systematic uncertainties yet! TMath::Sqrt(err*err + freqErr*freqErr); 
    return 0;
 }

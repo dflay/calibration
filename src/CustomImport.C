@@ -114,7 +114,7 @@ int GetFixedProbeData_avg(int run,int method,std::vector<int> probe,
 
    averageFixedProbeEvent_t dataPt; 
    const int NPR = probe.size();
-   std::cout << "--> Using " << NPR << " probes" << std::endl;
+   std::cout << "[GetFixedProbeData_avg]: Using " << NPR << " probes" << std::endl;
 
    unsigned long long arg_t=0;
    double t0d = t0/1E+9; 
@@ -1294,7 +1294,9 @@ int LoadPerturbationData_json(const char *inpath,perturbation_t &pert){
       pert.delta_eps     = obj["delta-eps"];  
       pert.delta_eps_err = obj["delta-eps-err"];  
       pert.delta_mag     = obj["delta-mag"];  
-      pert.delta_mag_err = obj["delta-mag-err"]; 
+      pert.delta_mag_err = obj["delta-mag-err"];
+      pert.delta_t       = obj["delta-t"];  
+      pert.delta_t_err   = obj["delta-t-err"];  
    } 
    return 0;
 }

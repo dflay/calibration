@@ -33,16 +33,17 @@
 #include "./include/results.h"
 #include "./include/perturbation.h" 
 
-#include "./src/InputManager.C"
-#include "./src/FitFuncs.C"
-#include "./src/TRLYFuncs.C"
-#include "./src/CalibFuncs.C"
 #include "./src/CustomUtilities.C"
 #include "./src/CustomMath.C"
 #include "./src/CustomImport.C"
 #include "./src/CustomExport.C"
 #include "./src/CustomAlgorithms.C"
 #include "./src/CustomGraph.C"
+#include "./src/OscFuncs.C"
+#include "./src/InputManager.C"
+#include "./src/FitFuncs.C"
+#include "./src/TRLYFuncs.C"
+#include "./src/CalibFuncs.C"
 
 double gMarkerSize = 0.8;
 double gXSize      = 0.05;  

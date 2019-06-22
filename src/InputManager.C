@@ -242,6 +242,7 @@ int InputManager::Print(){
    std::cout << "Blind label:        " << fBlindLabel      << std::endl;
    std::cout << "Production tag:     " << fProdTag         << std::endl; 
    std::cout << "NMR-ANA tag:        " << fNMRANATag       << std::endl; 
+   std::cout << "Oscillation cor:    " << fUseOscCor       << std::endl;
    if(fType.compare("calib-prod")==0){
          std::cout << "Run period:         " << fRunPeriod    << std::endl;
 	 std::cout << "Axis:               " << fAxis << " (" << axis << ")" << std::endl;
