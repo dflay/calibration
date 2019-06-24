@@ -7,6 +7,7 @@
 #include <algorithm>  
 #include <cmath> 
 
+#include "TStyle.h"
 #include "TString.h"
 #include "TCanvas.h"
 #include "TLegend.h"
@@ -31,47 +32,34 @@
 #include "./src/CustomExport.C"
 #include "./src/CustomAlgorithms.C"
 #include "./src/CustomGraph.C"
+#include "./src/InputManager.C"
 #include "./src/OscFuncs.C"
 #include "./src/FitFuncs.C"
 #include "./src/TRLYFuncs.C"
 
+int PrintToFile(const char *outpath,std::vector<double> x,std::vector<double> dx); 
 int GetData(char axis,int i,std::vector< std::vector<double> > dB,std::vector< std::vector<double> > dB_err, 
-            std::vector<double> &v,std::vector<double> &w,std::vector<double> &ew); 
+            std::vector<int> &PR,std::vector<double> &v,std::vector<double> &w,std::vector<double> &ew); 
 
-int GetSlope(char axis,std::vector<int> probe,std::vector<double> dB,std::vector<double> dB_err,double &slope,double &err); 
-int GetStats(int probe,int nev,std::vector<double> time,std::vector<trolleyAnaEvent_t> Data,
-             std::vector<double> &MEAN,std::vector<double> &STDEV);
+int ImposedGrad_xy_prod(std::string configFile){
+  
+   std::cout << "------------------------------------" << std::endl;
+   std::cout << "GET IMPOSED GRADIENT (USING TRLY DELTA-B VALUES)" << std::endl;
 
-int CalculateDiff(std::vector<double> mu1,std::vector<double> sig1,
-                  std::vector<double> mu2,std::vector<double> sig2,
-                  std::vector<double> &DIFF,std::vector<double> &ERR);
+   InputManager *inputMgr = new InputManager();
+   inputMgr->UseAxis();         // need to grab the axis data in the JSON file 
+   inputMgr->Load(configFile);
+   inputMgr->Print();
 
-int ImposedGrad_xy_prod(){
-   
-   int M=0;  
+   std::string blindLabel    = inputMgr->GetBlindLabel();
 
-   int runPeriod=0;
-   std::cout << "Enter run period: ";
-   std::cin  >> runPeriod;
-
-   json jConfig;
-   char inpath[200];
-   sprintf(inpath,"./input/json/run-%d/config.json",runPeriod); 
-   std::string inpath_str = inpath; 
-   int rc = gm2fieldUtil::Import::ImportJSON(inpath_str,jConfig); 
-
-   std::string blindLabel  = jConfig["blinding"]["label"]; 
-   std::string prodVersion = jConfig["prod-tag"]; 
-   int nev                 = (int)jConfig["num-events-to-avg"]; 
-   int fxprSet             = (int)jConfig["fxpr-set"]; 
-   bool useOscCor          = (bool)( (int)jConfig["use-osc-cor"] );
-   bool isBlind            = (bool)( (int)jConfig["blinding"]["enable"] ); 
-
-   if(useOscCor) std::cout << "[ImposedGrad]: Using oscillation correction" << std::endl; 
+   bool isBlind              = inputMgr->IsBlind();
+   int runPeriod             = inputMgr->GetRunPeriod();
 
    date_t theDate; 
    GetDate(theDate); 
 
+   std::string plotDir = GetPath("plots" ,isBlind,blindLabel,theDate.getDateString());
    std::string outDir  = GetPath("output",isBlind,blindLabel,theDate.getDateString());
 
    std::vector<double> db,db_err;
@@ -83,6 +71,8 @@ int ImposedGrad_xy_prod(){
 
    const int NG = gradName.size(); 
 
+   char inpath[200]; 
+   std::cout << "TRLY DELTA-B VALUES: " << std::endl; 
    std::vector<deltab_t> trly;
    for(int i=0;i<17;i++){
       for(int j=0;j<NG;j++){
@@ -102,50 +92,139 @@ int ImposedGrad_xy_prod(){
    }
 
    // use all probes in a specific height or radius
-   int MM=0;
+   int npar=0,MM=0,rc=0;
+   const int NP = 5;
    std::vector<double> X,Y,EY; 
-   double intercept=0,r=0,sum_sq=0,SLOPE=0;
-   double slope[5] = {0,0,0,0,0}; 
-   double err[5]   = {0,0,0,0,0};
-   double pos[5] = {30.3,17.5,0,-17.5,-30.3};
- 
+   double intercept=0,r=0,sum_sq=0,SLOPE=0,err=0;
+   double pos[NP] = {30.3,17.5,0,-17.5,-30.3};
+
+   TCanvas *c1 = new TCanvas("c1","Radial Gradients",1200,600); 
+   c1->Divide(2,3); 
+  
+   TGraphErrors **gx = new TGraphErrors*[NP];  
+
+   std::string fitFunc;
+   std::vector<int> PR;
+   std::vector<double> xpar,xparErr; 
    std::vector<double> VER,RG,ERG; 
    std::cout << "RADIAL GRADIENT vs HEIGHT" << std::endl;
-   for(int i=0;i<5;i++){
-      GetData('x',i+1,dB,dB_err,X,Y,EY); 
-      rc = gm2fieldUtil::Math::LeastSquaresFitting(X,Y,intercept,SLOPE,r);
-      slope[i] = SLOPE; 
+   for(int i=0;i<NP;i++){
+      // grab data from dB vector   
+      GetData('x',i+1,dB,dB_err,PR,X,Y,EY);
       MM = X.size(); 
+      std::cout << "----------------------------------------------------------" << std::endl; 
+      std::cout << Form("DATA for h = %.3lf mm: ",pos[i]) << std::endl;
+      for(int j=0;j<MM;j++) std::cout << Form("probe %02d, x = %.3lf, dBx = %.3lf +/- %.3lf",PR[j],X[j],Y[j],EY[j]) << std::endl; 
+      // make a TGraph 
+      gx[i] = gm2fieldUtil::Graph::GetTGraphErrors(X,Y,EY);
+      gm2fieldUtil::Graph::SetGraphParameters(gx[i],20,i+1);
+      c1->cd(i+1);
+      gStyle->SetOptFit(111); 
+      gx[i]->Draw("alp"); 
+      gm2fieldUtil::Graph::SetGraphLabels(gx[i],Form("h = %.3lf mm",pos[i]),"Radius (mm)","dB_{x} (Hz)"); 
+      gm2fieldUtil::Graph::SetGraphLabelSizes(gx[i],0.05,0.06); 
+      gx[i]->Draw("alp");
+      if(MM<=2){
+	 fitFunc = "pol1"; 
+      }else{
+	 fitFunc = "pol2"; 
+      }
+      TFitResultPtr fitResult = gx[i]->Fit(fitFunc.c_str(),"QS"); 
+      TF1 *myFit = gx[i]->GetFunction(fitFunc.c_str());
+      npar = myFit->GetNpar();
+      for(int j=0;j<npar;j++){
+	 xpar.push_back( myFit->GetParameter(j) ); 
+	 xparErr.push_back( myFit->GetParError(j) ); 
+      }
+      c1->Update();
+      // linear fit  
+      rc = gm2fieldUtil::Math::LeastSquaresFitting(X,Y,intercept,SLOPE,r);
+      // compute errors 
       for(int j=0;j<MM;j++) sum_sq += EY[j]*EY[j]; 
-      err[i] = sqrt(sum_sq)/fabs(X[0]-X[MM-1]); // error estimate 
-      std::cout << Form("pos = %.3lf mm, grad = %.3lf Hz/mm, err = %.3lf Hz/mm",pos[i],slope[i],err[i]) << std::endl; 
+      err = sqrt(sum_sq)/fabs(X[0]-X[MM-1]); // error estimate 
+      // store results and print to screen
       VER.push_back(pos[i]);  
-      RG.push_back(slope[i]);  
-      ERG.push_back(err[i]);  
+      RG.push_back(SLOPE);  
+      ERG.push_back(err); 
+      std::cout << Form("least squares:") << std::endl;
+      std::cout << Form("pos = %.3lf mm, grad = %.3lf Hz/mm, err = %.3lf Hz/mm",VER[i],SLOPE,err) << std::endl;
+      std::cout << Form("ROOT fit") << std::endl;
+      std::cout << Form("pos = %.3lf mm, grad = %.3lf Hz/mm, err = %.3lf Hz/mm",VER[i],xpar[1],xparErr[1]) << std::endl;
       // clean up
+      sum_sq = 0;
+      PR.clear();
       X.clear();
       Y.clear();
       EY.clear();
-   } 
+      xpar.clear();
+      xparErr.clear();
+   }
 
+   c1->cd(); 
+   TString plotPath = Form("%s/rad-grad-plots.png",plotDir.c_str());
+   c1->Print(plotPath); 
+
+   TCanvas *c2 = new TCanvas("c2","Vertical Gradients",1200,600); 
+   c2->Divide(2,3); 
+  
+   TGraphErrors **gy = new TGraphErrors*[NP];  
+
+   std::vector<double> ypar,yparErr;
    std::vector<double> RAD,VG,EVG; 
    std::cout << "VERTICAL GRADIENT vs RADIUS" << std::endl;
-   for(int i=0;i<5;i++){
-      GetData('y',i+1,dB,dB_err,X,Y,EY); 
+   for(int i=0;i<NP;i++){
+      // grab data from dB vector 
+      GetData('y',i+1,dB,dB_err,PR,X,Y,EY);
+      MM = X.size();
+      std::cout << "----------------------------------------------------------" << std::endl; 
+      std::cout << Form("DATA for r = %.3lf mm: ",pos[i]) << std::endl;
+      for(int j=0;j<MM;j++) std::cout << Form("probe %02d, y = %.3lf, dBy = %.3lf +/- %.3lf",PR[j],X[j],Y[j],EY[j]) << std::endl; 
+      // make a TGraph and fit  
+      gy[i] = gm2fieldUtil::Graph::GetTGraphErrors(X,Y,EY);
+      gm2fieldUtil::Graph::SetGraphParameters(gy[i],20,i+1);
+      c2->cd(i+1);
+      gStyle->SetOptFit(111); 
+      gy[i]->Draw("alp"); 
+      gm2fieldUtil::Graph::SetGraphLabels(gy[i],Form("r = %.3lf mm",pos[i]),"Height (mm)","dB_{y} (Hz)"); 
+      gm2fieldUtil::Graph::SetGraphLabelSizes(gy[i],0.05,0.06); 
+      gy[i]->Draw("alp");
+      if(MM<=2){
+	 fitFunc = "pol1"; 
+      }else{
+	 fitFunc = "pol2"; 
+      }
+      TFitResultPtr fitResult = gy[i]->Fit(fitFunc.c_str(),"QS"); 
+      TF1 *myFit = gy[i]->GetFunction(fitFunc.c_str());
+      npar = myFit->GetNpar();
+      for(int j=0;j<npar;j++){
+	 ypar.push_back( myFit->GetParameter(j) ); 
+	 yparErr.push_back( myFit->GetParError(j) ); 
+      }
+      c2->Update();
+      // linear fit  
       rc = gm2fieldUtil::Math::LeastSquaresFitting(X,Y,intercept,SLOPE,r);
-      slope[i] = SLOPE; 
-      MM = X.size(); 
       for(int j=0;j<MM;j++) sum_sq += EY[j]*EY[j]; 
-      err[i] = sqrt(sum_sq)/fabs(X[0]-X[MM-1]); // error estimate 
-      std::cout << Form("pos = %.3lf mm, grad = %.3lf Hz/mm, err = %.3lf Hz/mm",pos[i],slope[i],err[i]) << std::endl;
+      err = sqrt(sum_sq)/fabs(X[0]-X[MM-1]); // error estimate 
       RAD.push_back(pos[i]);  
-      VG.push_back(slope[i]);  
-      EVG.push_back(err[i]);  
+      VG.push_back(SLOPE);  
+      EVG.push_back(err); 
+      std::cout << Form("least squares:") << std::endl; 
+      std::cout << Form("pos = %.3lf mm, grad = %.3lf Hz/mm, err = %.3lf Hz/mm",RAD[i],SLOPE,err) << std::endl;
+      std::cout << Form("ROOT fit") << std::endl;
+      std::cout << Form("pos = %.3lf mm, grad = %.3lf Hz/mm, err = %.3lf Hz/mm",RAD[i],ypar[1],yparErr[1]) << std::endl;
       // clean up
+      sum_sq = 0;
+      PR.clear();
       X.clear();
       Y.clear();
       EY.clear();
-   } 
+      ypar.clear();
+      yparErr.clear();
+   }
+
+   c2->cd(); 
+   plotPath = Form("%s/vert-grad-plots.png",plotDir.c_str());
+   c2->Print(plotPath); 
 
    TGraphErrors *gRadGrad_vs_Height  = gm2fieldUtil::Graph::GetTGraphErrors(VER,RG,ERG);
    gm2fieldUtil::Graph::SetGraphParameters(gRadGrad_vs_Height,20,kBlack); 
@@ -156,35 +235,84 @@ int ImposedGrad_xy_prod(){
    TString TitleRvH = Form("Radial Gradient vs Height");
    TString TitleVvR = Form("Vertical vs Radius");
 
-   TCanvas *c1 = new TCanvas("c1","Transverse Gradients",1200,600);
-   c1->Divide(1,2);
+   TCanvas *c3 = new TCanvas("c3","Transverse Gradients",1200,600);
+   c3->Divide(1,2);
  
-   c1->cd(1); 
-   gRadGrad_vs_Height->Draw("alp");
+   c3->cd(1); 
+   gRadGrad_vs_Height->Draw("ap");
    gm2fieldUtil::Graph::SetGraphLabels(gRadGrad_vs_Height,TitleRvH,"Height Above Midplane (mm)","Gradient (Hz/mm)"); 
    gm2fieldUtil::Graph::SetGraphLabelSizes(gRadGrad_vs_Height,0.05,0.06); 
-   gRadGrad_vs_Height->Draw("alp");
-   c1->Update(); 
+   gRadGrad_vs_Height->Draw("ap");
+   TFitResultPtr fitResult_rg = gRadGrad_vs_Height->Fit("pol2","QS"); 
+   TF1 *myFit_rg = gRadGrad_vs_Height->GetFunction("pol2");
+   c3->Update(); 
 
-   c1->cd(2); 
-   gVertGrad_vs_Radius->Draw("alp");
+   c3->cd(2); 
+   gVertGrad_vs_Radius->Draw("ap");
    gm2fieldUtil::Graph::SetGraphLabels(gVertGrad_vs_Radius,TitleVvR,"Radius (mm)","Gradient (Hz/mm)"); 
    gm2fieldUtil::Graph::SetGraphLabelSizes(gVertGrad_vs_Radius,0.05,0.06); 
-   gVertGrad_vs_Radius->Draw("alp");
-   c1->Update(); 
+   gVertGrad_vs_Radius->Draw("ap");
+   TFitResultPtr fitResult_vg = gVertGrad_vs_Radius->Fit("pol2","QS"); 
+   TF1 *myFit_vg = gVertGrad_vs_Radius->GetFunction("pol2");
+   c3->Update(); 
 
-   // print to file 
+   c3->cd(); 
+   plotPath = Form("%s/imposed-grad_xy-plots.png",plotDir.c_str());
+   c3->Print(plotPath); 
 
-   return 0;
+   // get fit parameters 
+   npar = myFit_rg->GetNpar();
+   std::vector<double> par_rg,parErr_rg; 
+   for(int i=0;i<npar;i++){
+      par_rg.push_back( myFit_rg->GetParameter(i) ); 
+      parErr_rg.push_back( myFit_rg->GetParError(i) ); 
+   }
+
+   npar = myFit_vg->GetNpar();
+   std::vector<double> par_vg,parErr_vg; 
+   for(int i=0;i<npar;i++){
+      par_vg.push_back( myFit_vg->GetParameter(i) ); 
+      parErr_vg.push_back( myFit_vg->GetParError(i) ); 
+   }
+
+   // print to file
+   char outpath_rad[200],outpath_vert[200]; 
+   sprintf(outpath_rad ,"%s/imposed-grad-x_fit-pars.csv",outDir.c_str()); 
+   sprintf(outpath_vert,"%s/imposed-grad-y_fit-pars.csv",outDir.c_str()); 
+
+   rc = PrintToFile(outpath_rad,par_rg,parErr_rg); 
+   rc = PrintToFile(outpath_rad,par_vg,parErr_vg); 
+
+   return rc;
+}
+//______________________________________________________________________________
+int PrintToFile(const char *outpath,std::vector<double> x,std::vector<double> dx){
+   char header[200],outStr[200]; 
+   sprintf(header,"#par,par-err"); 
+   const int N = x.size();
+   std::ofstream outfile; 
+   outfile.open(outpath); 
+
+   if( outfile.fail() ){
+      std::cout << "[ImposedGrad_xy_prod]: Cannot open the file: " << outpath << std::endl;
+      return 1;
+   }else{
+      outfile << header << std::endl;
+      for(int i=0;i<N;i++){
+	 sprintf(outStr,"%.3lf,%.3lf",x[i],dx[i]);
+	 outfile << outStr << std::endl; 
+      }
+      outfile.close();
+   }
+   return 0; 
 }
 //______________________________________________________________________________
 int GetData(char axis,int i,std::vector< std::vector<double> > dB,std::vector< std::vector<double> > dB_err, 
-            std::vector<double> &v,std::vector<double> &w,std::vector<double> &ew){
+            std::vector<int> &PR,std::vector<double> &v,std::vector<double> &w,std::vector<double> &ew){
 
    // axis = x, y 
    // i    = coordinate index
 
-   std::vector<int> PR; 
    if(axis=='x'){
       if(i==1){
 	 // highest vertical spot
@@ -261,101 +389,5 @@ int GetData(char axis,int i,std::vector< std::vector<double> > dB,std::vector< s
 
    return 0; 
 
-}
-//______________________________________________________________________________
-int GetSlope(char axis,std::vector<int> probe,std::vector<double> dB,std::vector<double> dB_err,double &slope,double &err){
-   // get the slope across the dB values 
-   // choose the probes according to the input list 
-   const int N = dB.size();
-   const int M = probe.size(); 
-
-   trolleyProbePosition_t trlyPos; 
-   int rc = GetTrolleyProbePositions(trlyPos); 
-
-   double thePos=0;
-   std::vector<double> pos,v,ev;
-   for(int i=0;i<M;i++){
-      for(int j=0;j<N;j++){
-	 if(probe[i]==j){ // found the probe of interest 
-	    if(axis=='x') thePos = trlyPos.r[probe[i]];   
-	    if(axis=='y') thePos = trlyPos.y[probe[i]];  
-            pos.push_back(thePos);
-	    v.push_back(dB[j]); 
-	    ev.push_back(dB_err[j]);
-	    std::cout << Form("MATCH probe %d, pos = %.3lf mm, dB = %.3lf +/- %.3lf Hz",probe[i],thePos,dB[j],dB_err[j]) << std::endl; 
-	 }
-      }
-   }
-
-   int MM = ev.size();
-   if(MM!=M){
-      std::cout << "Data set doesn't match expectation!  M = " << M << " MM = " << MM << std::endl;
-      return 1;
-   }
-
-   double intercept=0,r=0;
-   rc = gm2fieldUtil::Math::LeastSquaresFitting(pos,v,intercept,slope,r); 
-  
-   double sum_sq=0;
-   for(int i=0;i<MM;i++) sum_sq += ev[i]*ev[i]; 
-   err = sqrt(sum_sq)/fabs(pos[0]-pos[MM-1]); // error estimate 
-
-   return 0; 
-
-}
-//______________________________________________________________________________
-int CalculateDiff(std::vector<double> mu1,std::vector<double> sig1,
-                  std::vector<double> mu2,std::vector<double> sig2,
-                  std::vector<double> &DIFF,std::vector<double> &ERR){
-   // compute shift in field
-   // mu1,sig1 = mean and stdev for SCC on 
-   // mu2,sig2 = mean and stdev for SCC off  
-   const int N1 = mu1.size();
-   const int N2 = mu2.size();
-   if(N1!=N2){
-      std::cout << "[CalculateDiff]: Error!  Vector sizes don't match! " << std::endl;
-      return 1;
-   }
-   double diff=0,err=0;
-   for(int i=0;i<N1;i++){
-      diff = mu1[i] - mu2[i];
-      err  = TMath::Sqrt( sig1[i]*sig1[i] + sig2[i]*sig2[i] );
-      DIFF.push_back(diff); 
-      ERR.push_back(err); 
-   }
-   return 0;
-} 
-//______________________________________________________________________________
-int GetStats(int probe,int nev,std::vector<double> time,std::vector<trolleyAnaEvent_t> Data,
-             std::vector<double> &MEAN,std::vector<double> &STDEV){
-
-   const int N = time.size();
-   int M=0,rc=0;
-   double mean=0,stdev=0;
-   std::vector<double> freq;
-   std::vector<trolleyAnaEvent_t> Event; 
-   for(int i=0;i<N;i++){
-      // std::cout << "Looking for time " << gm2fieldUtil::GetStringTimeStampFromUTC(time[i]) << std::endl;
-      // find events 
-      rc = FilterSingle("freq",probe,nev,time[i],Data,freq); 
-      // now get mean of events 
-      mean  = gm2fieldUtil::Math::GetMean<double>(freq); 
-      stdev = gm2fieldUtil::Math::GetStandardDeviation<double>(freq);  
-      // store result
-      MEAN.push_back(mean); 
-      STDEV.push_back(stdev); 
-      // set up for next time 
-      freq.clear(); 
-   }
-  
-   // now restrict to less than 20 results if necessary 
-   int cntr = MEAN.size();
-   while(cntr>20){
-      MEAN.pop_back();
-      STDEV.pop_back();
-      cntr = MEAN.size();
-   }
-
-   return 0;
 }
 

@@ -55,6 +55,9 @@ int PrintToFile(std::string outpath,std::vector<calibSwap_t> data);
 
 int Process_pp_prod(std::string configFile){
 
+   std::cout << "------------------------------------" << std::endl;
+   std::cout << "GET PP SWAPPING DATA" << std::endl;
+
    int rc=0;
    int prMethod = gm2fieldUtil::Constants::kPhaseDerivative;
    int ppMethod = plungingProbeAnalysis::kLeastSquaresPhase;

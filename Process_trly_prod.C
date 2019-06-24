@@ -62,6 +62,9 @@ int PrintToFile(std::string outpath,std::vector<calibSwap_t> Event);
 
 int Process_trly_prod(std::string configFile){
 
+   std::cout << "------------------------------------" << std::endl;
+   std::cout << "GET TRLY SWAPPING DATA" << std::endl;
+
    int rc=0;
    int method = gm2fieldUtil::Constants::kPhaseDerivative;
 

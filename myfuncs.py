@@ -204,6 +204,30 @@ def writeConfigFileProd_ShimScan(data,confData,tag,keyList,axis,fitData,outpath)
    json.dump(outData,outfile)
    outfile.close()
 #_______________________________________________________________________________
+def writeConfigFileProd_imposedGrad(confData,tag,keyList,axis,fitData,outpath): 
+   # write a JSON file for the ROOT script defined by tag 
+   # build the output json object 
+   outData = {}
+   # config file data 
+   outData['type']                   = confData['type'] 
+   outData['blinding']               = confData['blinding'] 
+   outData['run-period']             = confData['run-period'] 
+   # outData['prod-tag']               = confData['prod-tag'] 
+   # outData['nmr-ana-tag']            = confData['nmr-ana-tag']
+   # outData['fxpr-set']               = confData['fxpr-set']
+   # outData['free-proton-cor']        = confData['free-proton-cor'] 
+   # outData['load-trly-swap-times']   = confData['load-trly-swap-times'] 
+   # outData['use-aba-time-weight']    = confData['use-aba-time-weight']
+   # outData['use-trly-temp-cor']      = confData['use-trly-temp-cor'] 
+   # outData['cut-file']               = confData['cut-file'] 
+   # outData['num-events-to-avg']      = confData['num-events-to-avg']  
+   # outData['num-events-time-window'] = confData['num-events-time-window']  
+
+   # print("{0}".format(outData) )
+   outfile = open(outpath,'w')
+   json.dump(outData,outfile)
+   outfile.close()
+#_______________________________________________________________________________
 def writeConfigFileProd(data,confData,tag,keyList,axis,fitData,outpath): 
    # write a JSON file for the ROOT script defined by tag 
    # get the run list 
