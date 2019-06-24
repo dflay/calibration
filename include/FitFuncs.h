@@ -31,6 +31,7 @@
 
 TGraphErrors *GetFitErrorBand(std::vector<double> x,TF1 *fit,std::vector< std::vector<double> > eps,double sf=1);
 
+double MyFitFunc_pol2_simple(double *x,double *par); 
 double MyFitFunc_pol2(double *x,double *par); 
 double MyFitFunc_pol3(double *x,double *par); 
 double MyFitFunc_pol4(double *x,double *par); 

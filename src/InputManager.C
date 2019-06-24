@@ -22,7 +22,9 @@ int InputManager::Init(){
    fUseTempCor      = false;
    fUseOscCor       = false; 
    fNumEventsToAvg  =  0;  
-   fNumEventsTimeWindow =  0;  
+   fNumEventsTimeWindow =  0; 
+   fTrolleyAngle    = 0; 
+   fDBZCurrent      = 0; 
    fTrolleyProbe    = -1; 
    fAxis            = -1;
    fFXPRListTag     = -1;
@@ -155,7 +157,9 @@ int InputManager::Parse(){
    bool nmrAnaStatus = DoesKeyExist("nmr-ana-tag"); 
    bool cutStatus    = DoesKeyExist("cut-file"); 
    bool nevStatus    = DoesKeyExist("num-events-to-avg");  
-   bool twStatus     = DoesKeyExist("num-events-time-window");  
+   bool twStatus     = DoesKeyExist("num-events-time-window"); 
+   bool angleStatus  = DoesKeyExist("trly_azi-angle"); 
+   bool curStatus    = DoesKeyExist("dBz-current"); 
 
    // parameters common to all 
    std::string unitStr="";
@@ -199,7 +203,9 @@ int InputManager::Parse(){
       if(oscStatus)  fUseOscCor      = (bool)( (int)fParams["use-osc-cor"] ); 
       if(cutStatus)  fCutFile        = fParams["cut-file"];
       if(nevStatus)  fNumEventsToAvg = (int)fParams["num-events-to-avg"];  
-      if(twStatus )  fNumEventsTimeWindow = (int)fParams["num-events-time-window"];  
+      if(twStatus )  fNumEventsTimeWindow = (int)fParams["num-events-time-window"]; 
+      if(angleStatus) fTrolleyAngle  = (double)fParams["trly_azi-angle"]; 
+      if(curStatus)   fDBZCurrent    = (double)fParams["dBz-current"]; 
    }
 
    // trolley Delta-B measurements
@@ -243,6 +249,8 @@ int InputManager::Print(){
    std::cout << "Production tag:     " << fProdTag         << std::endl; 
    std::cout << "NMR-ANA tag:        " << fNMRANATag       << std::endl; 
    std::cout << "Oscillation cor:    " << fUseOscCor       << std::endl;
+   std::cout << "Trolley angle:      " << fTrolleyAngle    << std::endl; 
+   std::cout << "dBz current:        " << fDBZCurrent      << std::endl; 
    if(fType.compare("calib-prod")==0){
          std::cout << "Run period:         " << fRunPeriod    << std::endl;
 	 std::cout << "Axis:               " << fAxis << " (" << axis << ")" << std::endl;

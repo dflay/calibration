@@ -626,6 +626,36 @@ int LoadImageParameters(std::string inpath,std::string type,std::vector<imagePar
    return rc;
 }
 //______________________________________________________________________________
+int LoadScanTimes(int runNumber,int runPeriod,std::string prodVersion,std::vector<double> &time){
+   // load in the by-hand determined swap times 
+   std::vector<std::string> stime;
+   unsigned long int aTime;
+   std::string st;
+   char inpath[200];
+   sprintf(inpath,"./input/scan-times/run-%d/%s/run-%d.txt",runPeriod,prodVersion.c_str(),runNumber);
+   std::ifstream infile;
+   infile.open(inpath);
+   if( infile.fail() ){
+      std::cout << "Cannot open the file: " << inpath << std::endl;
+      return 1;
+   }else{
+      while( !infile.eof() ){
+         std::getline(infile,st);
+         aTime = gm2fieldUtil::GetUTCTimeStampFromString(st,true);
+         stime.push_back(st);
+         time.push_back(aTime);
+      }
+      time.pop_back();
+      infile.close();
+   }
+
+   std::cout << "Time stamps from run " << runNumber << ":" << std::endl;
+   const int N = time.size();
+   for(int i=0;i<N;i++) std::cout << Form("%s (%.0lf)",stime[i].c_str(),time[i]) << std::endl;
+
+   return 0;
+}
+//______________________________________________________________________________
 int LoadTimes(int probe,int runPeriod,std::string prodVersion,std::string type,std::string dev,std::vector<double> &time){
    // load in the by-hand determined swap times 
    std::vector<std::string> stime;
@@ -996,6 +1026,36 @@ int LoadImposedAziGradData(const char *inpath,int probe,double &dBdz,double &dBd
       infile.close();
    }
 
+   return 0;
+}
+//______________________________________________________________________________
+int LoadFitPars(const char *inpath,std::vector<double> &x,std::vector<double> &dx){
+
+   double ix,idx;
+   const int NLines = 1;
+   const int SIZE = 2048; 
+   char buf[SIZE];  
+   std::string sx,sdx;    
+
+   ifstream infile;
+   infile.open(inpath);
+   if( infile.fail() ){
+      cout << "Cannot open the file: " << inpath << endl;
+      return 1;
+   }else{
+      for(int i=0;i<NLines;i++) infile.getline(buf,SIZE); 
+      while( !infile.eof() ){
+         std::getline(infile,sx,',');
+         std::getline(infile,sdx);
+	 ix  = std::atof( sx.c_str() ); 
+	 idx = std::atof( sdx.c_str() ); 
+	 x.push_back(ix); 
+	 dx.push_back(idx); 
+      }
+      x.pop_back(); 
+      dx.pop_back(); 
+      infile.close();
+   }
    return 0;
 }
 //______________________________________________________________________________

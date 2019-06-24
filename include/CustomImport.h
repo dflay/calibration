@@ -47,7 +47,8 @@ int GetFixedProbeData_avg(int run,int method,std::vector<int> probe,
 int GetSurfaceCoilData(int run,std::vector<surfaceCoilEvent_t> &data,std::string version);  
 
 // Everything else 
-int SetDataFileParameters(std::string version,std::string &fileName,std::string &dataPath); 
+int SetDataFileParameters(std::string version,std::string &fileName,std::string &dataPath);
+int LoadFitPars(const char *inpath,std::vector<double> &x,std::vector<double> &dx); 
 int LoadImageResults(std::string inpath,std::vector<imageResult_t> &data); 
 int LoadIMGTimes(std::string type,int trial,std::vector<double> &time); 
 int LoadImageParameters(std::string inpath,std::string type,std::vector<imageParameter_t> &data);
@@ -63,6 +64,7 @@ int LoadImagesData(const char *inpath,int probe,double &image,double &image_err)
 
 int LoadTimes(int probe,int runPeriod,std::string prodVersion,std::string type,std::string dev,std::vector<double> &time); 
 int LoadSCCTimes(int probe,int runPeriod,std::string prodVersion,std::string dev,std::vector<double> &sccOff,std::vector<double> &sccOn);
+int LoadScanTimes(int runNumber,int runPeriod,std::string prodVersion,std::vector<double> &time);
 
 int LoadResultsProdData(const char *inpath,result_prod_t &data); 
 int LoadResultsProdFinalData(const char *inpath,result_prod_t &data); 

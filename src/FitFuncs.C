@@ -257,6 +257,12 @@ TGraphErrors *GetFitErrorBand(std::vector<double> x,TF1 *fit,std::vector< std::v
    return g;
 }
 //______________________________________________________________________________
+double MyFitFunc_pol2_simple(double *x,double *par){
+   double X = x[0];
+   double f = par[0] + par[1]*X + par[2]*X*X;
+   return f;
+}
+//______________________________________________________________________________
 double MyFitFunc_pol2(double *x,double *par){
    double X = x[0]-par[0];
    double f = par[1] + par[2]*X + par[3]*X*X;

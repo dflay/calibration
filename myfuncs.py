@@ -179,6 +179,8 @@ def writeConfigFileProd_ShimScan(data,confData,tag,keyList,axis,fitData,outpath)
    # probe-specific data  
    outData['date']                 = data['date']
    outData['trly-probe']           = data['trly-probe'] 
+   outData['trly_azi-angle']       = data['trly_azi-angle'] 
+   outData['dBz-current']          = data['dBz-current'] 
 
    if(axis==0): 
       outData['load-pp-scc-times']   = data['dB-pp_x']['load-times']
@@ -211,7 +213,7 @@ def writeConfigFileProd_imposedGrad(confData,tag,keyList,axis,fitData,outpath):
    # config file data 
    outData['type']                   = confData['type'] 
    outData['blinding']               = confData['blinding'] 
-   outData['run-period']             = confData['run-period'] 
+   outData['run-period']             = confData['run-period']
    # outData['prod-tag']               = confData['prod-tag'] 
    # outData['nmr-ana-tag']            = confData['nmr-ana-tag']
    # outData['fxpr-set']               = confData['fxpr-set']
@@ -268,7 +270,9 @@ def writeConfigFileProd(data,confData,tag,keyList,axis,fitData,outpath):
     
    # probe-specific data  
    outData['date']                 = data['date']
-   outData['trly-probe']           = data['trly-probe'] 
+   outData['trly-probe']           = data['trly-probe']
+   outData['trly_azi-angle']       = data['trly_azi-angle'] 
+   outData['dBz-current']          = data['dBz-current'] 
 
    if(axis==0): 
       outData['load-pp-scc-times']   = data['dB-pp_x']['load-times']

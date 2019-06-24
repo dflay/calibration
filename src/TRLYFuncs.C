@@ -250,6 +250,7 @@ int GetTRLYStatsAtTime(bool UseTempCor,bool UseOscCor,int probe,int nev,double f
 	    freq.push_back(arg_freq); 
 	 }
       }
+      // std::cout << "SWAP " << i+1 << ": GATHERED " << freq.size() << " EVENTS" << std::endl;
       // gather all other variables
       rc = FilterSingle("temp",probe,nev,time[i],Data,temp);
       rc = FilterSingle("r"   ,probe,nev,time[i],Data,x);

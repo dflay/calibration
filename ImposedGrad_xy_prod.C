@@ -98,8 +98,8 @@ int ImposedGrad_xy_prod(std::string configFile){
    double intercept=0,r=0,sum_sq=0,SLOPE=0,err=0;
    double pos[NP] = {30.3,17.5,0,-17.5,-30.3};
 
-   TCanvas *c1 = new TCanvas("c1","Radial Gradients",1200,600); 
-   c1->Divide(2,3); 
+   TCanvas *c1 = new TCanvas("c1","Radial Gradients",600,1200); 
+   c1->Divide(1,5); 
   
    TGraphErrors **gx = new TGraphErrors*[NP];  
 
@@ -164,8 +164,8 @@ int ImposedGrad_xy_prod(std::string configFile){
    TString plotPath = Form("%s/rad-grad-plots.png",plotDir.c_str());
    c1->Print(plotPath); 
 
-   TCanvas *c2 = new TCanvas("c2","Vertical Gradients",1200,600); 
-   c2->Divide(2,3); 
+   TCanvas *c2 = new TCanvas("c2","Vertical Gradients",600,1200); 
+   c2->Divide(1,5); 
   
    TGraphErrors **gy = new TGraphErrors*[NP];  
 
@@ -280,8 +280,8 @@ int ImposedGrad_xy_prod(std::string configFile){
    sprintf(outpath_rad ,"%s/imposed-grad-x_fit-pars.csv",outDir.c_str()); 
    sprintf(outpath_vert,"%s/imposed-grad-y_fit-pars.csv",outDir.c_str()); 
 
-   rc = PrintToFile(outpath_rad,par_rg,parErr_rg); 
-   rc = PrintToFile(outpath_rad,par_vg,parErr_vg); 
+   rc = PrintToFile(outpath_rad ,par_rg,parErr_rg); 
+   rc = PrintToFile(outpath_vert,par_vg,parErr_vg); 
 
    return rc;
 }
