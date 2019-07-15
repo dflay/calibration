@@ -1,5 +1,16 @@
 #include "../include/CustomMath.h" 
 //______________________________________________________________________________
+int GetMinMax_fxpr(std::vector<averageFixedProbeEvent_t> data,double &min,double &max){
+   min =  100E+3;
+   max = -100E+3;
+   const int N = data.size();
+   for(int i=0;i<N;i++){
+      if(data[i].freq<min) min = data[i].freq;  
+      if(data[i].freq>max) max = data[i].freq;  
+   } 
+   return 0; 
+}
+//______________________________________________________________________________
 int GetStats_vec(int lo,int hi,std::vector<double> x,double &mean,double &stdev){
    const int N = x.size();
    int start=0,stop=hi;

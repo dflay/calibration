@@ -11,6 +11,7 @@
 #include "gm2fieldFunc.h"
 #include "gm2fieldImport.h"
 #include "gm2fieldRootHelper.h"
+#include "MovingAverage.h"
 
 #include "sccEvent.h"
 #include "runSummary.h"
@@ -74,7 +75,8 @@ int LoadCalibSwapData(const char *inpath,std::vector<calibSwap_t> &data);
 
 int LoadImposedGradientData(const char *inpath,imposed_gradient_t &data); 
 int LoadImposedGradientData(const char *inpath,std::vector<imposed_gradient_t> &data);
-int LoadImposedAziGradData(const char *inpath,int probe,double &dBdz,double &dBdz_err); 
+int LoadImposedAziGradData(const char *inpath,double &dBdz,double &dBdz_err); 
+int LoadImposedAziGradData_old(const char *inpath,int probe,double &dBdz,double &dBdz_err); 
 int LoadImposedAziGradData_bak(const char *inpath,int probe,double &dBdz); 
 
 int LoadTrolleyDeltaBData(const char *inpath,trolleyDeltaB_t &data); 

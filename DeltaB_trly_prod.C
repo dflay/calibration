@@ -70,7 +70,7 @@ int DeltaB_trly_prod(std::string configFile){
    int runPeriod           = inputMgr->GetRunPeriod();
 
    // update the analysis method according to Ran's guidance 
-   if(prodVersion.compare("v9_21_01")==0) method = gm2fieldUtil::Constants::kHilbertPhaseLinear; 
+   if(prodVersion.compare("v9_21_01")==0) method = gm2fieldUtil::Constants::kHilbertPhaseLinear;
 
    date_t theDate; 
    GetDate(theDate);

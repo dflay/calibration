@@ -156,11 +156,12 @@ int LocalScanGrad_pp_prod(std::string configFile){
    std::vector<int> fxprList;
    inputMgr->GetFXPRList(fxprList);
 
-   std::vector<averageFixedProbeEvent_t> fxprData;
+   unsigned long long t0 = ppData[0].time[0]; // we may have some huge field oscillation before the scan, which will affect drift 
    bool subtractDrift = true;
    int period = inputMgr->GetNumEventsTimeWindow(); // 10;
+   std::vector<averageFixedProbeEvent_t> fxprData;
    for(int i=0;i<NRUN;i++){
-      rc = GetFixedProbeData_avg(run[i],prMethod,fxprList,fxprData,prodVersion,subtractDrift,period,0);
+      rc = GetFixedProbeData_avg(run[i],prMethod,fxprList,fxprData,prodVersion,subtractDrift,period,t0);
       if(rc!=0){
          std::cout << "No data!" << std::endl;
          return 1;

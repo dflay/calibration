@@ -95,6 +95,8 @@ int FilterSingle(std::string var,int probe,int nev,double T,std::vector<trolleyA
    std::vector<double> tt;
    const int N = in.size();
    for(int i=0;i<N;i++) tt.push_back(in[i].time[probe]/1E+9);
+   
+   // std::cout << "[FilterSingle]: Looking for variable " << var << std::endl;
 
    int lo=0,hi=0,start=0,end=0;
    if(nev<0){
@@ -106,6 +108,24 @@ int FilterSingle(std::string var,int probe,int nev,double T,std::vector<trolleyA
       start = end-nev;
    }
 
+   // have to adjust entries if we pick up the start of the data set  
+   if(lo==0){
+      start = 0;
+      end   = nev; 
+   }
+
+   // if the number of events is LARGER than the lowest index found 
+   if(lo>0 && lo<nev){
+      start = 0; // just lose the extra events we'd want  
+      end   = lo; 
+   }
+
+   // if( var.compare("time")==0 ) { 
+   //    std::cout << "[FilterSingle]: The KEY is " << gm2fieldUtil::GetStringTimeStampFromUTC(T) << std::endl;
+   //    std::cout << "[FilterSingle]: lo index = " << lo << " hi index = " << hi << std::endl;
+   //    std::cout << "[FilterSingle]: start index = " << start << " end index = " << end << std::endl;
+   // }
+
    for(int i=start;i<end;i++){
       if( var.compare("time")==0 ) x.push_back(in[i].time[probe]/1E+9); 
       if( var.compare("freq")==0 ) x.push_back(in[i].freq[probe]     );
@@ -114,6 +134,14 @@ int FilterSingle(std::string var,int probe,int nev,double T,std::vector<trolleyA
       if( var.compare("y")==0    ) x.push_back(in[i].y[probe]        );
       if( var.compare("phi")==0  ) x.push_back(in[i].phi[probe]      );
    }
+
+   // const int NX = x.size();
+   // if( var.compare("time")==0 ) { 
+   //    std::cout << "[FilterSingle]: Accumulated events: " << NX << std::endl;
+   //    for(int i=0;i<NX;i++){
+   //       std::cout << Form("--> event %03d, %s",i,gm2fieldUtil::GetStringTimeStampFromUTC(x[i]).c_str()) << std::endl;
+   //    }
+   // }
 
    return 0;
 }
@@ -217,6 +245,8 @@ int GetTRLYStatsAtTime(bool UseTempCor,bool UseOscCor,int probe,int nev,double f
    // do oscillation correction and obtain ALL data associated with toggle times in time vector 
    std::vector<double> trTime,trFreq,trFreq_cor; 
    int rc = CorrectOscillation_trly(probe,nev,time,fxpr,Data,trTime,trFreq,trFreq_cor);
+   
+   if(UseOscCor) std::cout << "[GetTRLYStatsAtTime]: USING OSCILLATION CORRECTION" << std::endl;
 
    // now need to average over each toggle 
 
@@ -352,7 +382,7 @@ int GetTRLYStats_sccToggle(bool useOscCor,int probe,int nev,std::vector<double> 
    std::vector<double> trTime,trFreq,trFreq_cor; 
    int rc = CorrectOscillation_trly(probe,nev,time,fxpr,Data,trTime,trFreq,trFreq_cor);
 
-   // if(useOscCor) std::cout << "[GetTRLYStats_sccToggle]: USING OSCILLATION CORRECTION" << std::endl;
+   if(useOscCor) std::cout << "[GetTRLYStats_sccToggle]: USING OSCILLATION CORRECTION" << std::endl;
    // std::cout << "nev = " << nev << std::endl;
 
    // now need to average over each toggle 

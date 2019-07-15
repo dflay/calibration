@@ -35,7 +35,7 @@ int CompareResults(){
 
    bool isBlind = (bool)input["blinding"]["enable"]; 
    std::string blindLabel = input["blinding"]["label"]; 
-   std::string date       = input["date"];  
+   std::string date       = input["date"]; 
 
    std::string prefix; 
    if(isBlind){
@@ -44,9 +44,9 @@ int CompareResults(){
       prefix = "./output/"; 
    }
 
-   std::string xAxis    = "probe"; 
-   std::string yAxis    = "calibCoeff_aba"; 
-   std::string yAxisErr = "calibCoeffErr_aba"; 
+   std::string xAxis    = "probe";
+   std::string yAxis    = input["y-axis"]; 
+   std::string yAxisErr = input["y-axis-err"]; 
 
    TString Title      = Form("Calibration Results"); 
    TString xAxisTitle = Form("%s",xAxis.c_str());
@@ -67,7 +67,7 @@ int CompareResults(){
       color++;
       label  = input["ana-set"][i]; 
       inpath = prefix + label + "/calibData_" + date + ".json"; 
-      std::cout << "Processing " << label << std::endl; 
+      std::cout << "Processing data set: " << label << std::endl; 
       rc = gm2fieldUtil::Import::ImportJSON(inpath,result);
       AddToMultiGraph(color,label,xAxis,yAxis,yAxisErr,result,mg,L);
       // also gather all data we care about into three doubly-indexed vectors.  

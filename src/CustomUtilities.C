@@ -67,3 +67,15 @@ std::string GetPath(std::string base,bool isBlind,std::string blindLabel,std::st
 
    return THE_DIR;
 }
+//______________________________________________________________________________
+TLine **GetLines(int color,double min,double max,std::vector<double> x){
+   const int N = x.size();
+   TLine **L = new TLine*[N];
+   for(int i=0;i<N;i++){
+      L[i] = new TLine(x[i],min,x[i],max);
+      L[i]->SetLineWidth(2);
+      L[i]->SetLineStyle(2);
+      L[i]->SetLineColor(color);
+   }
+   return L;
+}

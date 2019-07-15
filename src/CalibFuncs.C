@@ -57,13 +57,17 @@ int GetOmegaP_free(nmr_meas_t pp,perturbation_t pert,double *freq_free,double *f
 }
 //______________________________________________________________________________
 double GetDeltaTerm(double sigma,double delta_m,double chi,double eps,double delta_eps,double delta_mag){
-   // compute the delta_t term.   
-   // in the published formula, these signs are all positive 
-   // input file carries the sign of the perturbation as measured (delta_m, delta_eps, delta_mag).  
-   // if these delta terms are negative, minus sign in GetOmegaP_free corrects that. 
-   // the factor of 1E-9 converts to 'absolute' scale, since the input is in ppb.
-   double delta_t = 1E-9*(sigma + delta_m + (eps-4.*TMath::Pi()/3.)*chi + delta_eps + delta_mag);
-   return delta_t;
+  // Compute the delta_t term.   
+  // - Input file carries the sign of the perturbation as measured (delta_m, delta_eps, delta_mag).  
+  // - The factor of 1E-9 converts to 'absolute' scale, since the input is in ppb
+  // - Must flip the sign on delta_m and delta_eps.  if these are negative, we need to INCREASE 
+  //   the field.  Since we divide by (1-delta_tot), we need to ensure the field goes UP 
+  //   because of this negative perturbation.  The situation is reversed for positive perturbations.
+  double DELTA_M   = (-1.)*delta_m;    // material
+  double DELTA_EPS = (-1.)*delta_eps;  // asymmetry 
+  double DELTA_MAG = (-1.)*delta_mag;  // magnetic image 
+  double delta_t = 1E-9*(sigma + DELTA_M + (eps-4.*TMath::Pi()/3.)*chi + DELTA_EPS + DELTA_MAG);
+  return delta_t;
 }
 //______________________________________________________________________________
 int GetDiamagneticShielding(double sigma,double dsigma,double T,double &SIG,double &ERR){

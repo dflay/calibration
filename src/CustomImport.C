@@ -1002,7 +1002,7 @@ int LoadImposedAziGradData_bak(const char *inpath,int probe,double &dBdz){
    return 0;
 }
 //______________________________________________________________________________
-int LoadImposedAziGradData(const char *inpath,int probe,double &dBdz,double &dBdz_err){
+int LoadImposedAziGradData_old(const char *inpath,int probe,double &dBdz,double &dBdz_err){
 
    int ipr=0;
    std::string stp,sgr,sgr_err;  // probe, imposed gradient @ 0.82 A (Hz/mm)  
@@ -1025,6 +1025,39 @@ int LoadImposedAziGradData(const char *inpath,int probe,double &dBdz,double &dBd
       }
       infile.close();
    }
+
+   return 0;
+}
+//______________________________________________________________________________
+int LoadImposedAziGradData(const char *inpath,double &dBdz,double &dBdz_err){
+
+   const int NLines = 1;
+   const int SIZE = 2048; 
+   char buf[SIZE]; 
+
+   int cntr=0;
+   std::string sgr,sgr_err;  // imposed gradient @ 0.82 A (Hz/mm)  
+
+   ifstream infile;
+   infile.open(inpath);
+   if( infile.fail() ){
+      cout << "Cannot open the file: " << inpath << endl;
+      return 1;
+   }else{
+      for(int i=0;i<NLines;i++) infile.getline(buf,SIZE); 
+      while( !infile.eof() ){
+         std::getline(infile,sgr,',');
+	 std::getline(infile,sgr_err);
+	 cntr++;
+	 if(cntr==1){
+	    dBdz     = std::atof( sgr.c_str() ); 
+	    dBdz_err = std::atof( sgr_err.c_str() );
+	 } 
+      }
+      infile.close();
+   }
+
+   std::cout << "[LoadImposedAziGradData]: dBdz = " << dBdz << " dBdz_err = " << dBdz_err << std::endl;
 
    return 0;
 }

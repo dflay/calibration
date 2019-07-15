@@ -62,7 +62,7 @@ int ImposedGrad_z_prod(std::string configFile){
    bool isBlind              = inputMgr->IsBlind();
    bool useOscCor            = inputMgr->GetOscCorStatus();
    int runPeriod             = inputMgr->GetRunPeriod();
-   int nev                   = -1; // inputMgr->GetNumEventsToAvg(); 
+   int nev                   = 10; // inputMgr->GetNumEventsToAvg(); 
    int probeNumber           = inputMgr->GetTrolleyProbe(); 
 
    date_t theDate;
@@ -128,25 +128,34 @@ int ImposedGrad_z_prod(std::string configFile){
    rc = LoadScanTimes(run[0],runPeriod,prodVersion,time1);
    rc = LoadScanTimes(run[1],runPeriod,prodVersion,time2);
 
+   // std::cout << run[0] << " TIMES" << std::endl;
+   // for(int i=0;i<time1.size();i++) std::cout << gm2fieldUtil::GetStringTimeStampFromUTC(time1[i]) << std::endl; 
+   // std::cout << run[1] << " TIMES" << std::endl;
+   // for(int i=0;i<time2.size();i++) std::cout << gm2fieldUtil::GetStringTimeStampFromUTC(time2[i]) << std::endl; 
+
    // apply oscillation correction 
    int NTR1 = trlyData1.size(); 
-   double lastTime = trlyData1[NTR1-1].time[probeNumber-1]/1E+9; 
+   // double lastTime = trlyData1[NTR1-1].time[probeNumber-1]/1E+9; 
    std::vector<double> trTime1,trPhi1,trFreq1,trFreq1_cor;
-   time.push_back(lastTime); // want all events so we use the last trolley event   
-   rc = CorrectOscillation_trly(probeNumber-1,nev,time,fxprData1,trlyData1,trTime1,trFreq1,trFreq1_cor);
+   // time.push_back(lastTime); // want all events so we use the last trolley event   
+   rc = CorrectOscillation_trly(probeNumber-1,nev,time1,fxprData1,trlyData1,trTime1,trFreq1,trFreq1_cor);
+   std::cout << "-------------" << std::endl;
    trFreq1.clear();
    trFreq1_cor.clear();
-   rc = CorrectOscillation_trly(probeNumber-1,nev,time,fxprData1,trlyData1,trPhi1 ,trFreq1,trFreq1_cor,"phi");
+   rc = CorrectOscillation_trly(probeNumber-1,nev,time1,fxprData1,trlyData1,trPhi1 ,trFreq1,trFreq1_cor,"phi");
+   std::cout << "-------------" << std::endl;
 
    int NTR2 = trlyData2.size(); 
-   lastTime = trlyData2[NTR2-1].time[probeNumber-1]/1E+9;
-   time.clear(); 
-   time.push_back(lastTime); // want all events so we use the last trolley event   
+   // lastTime = trlyData2[NTR2-1].time[probeNumber-1]/1E+9;
+   // time.clear(); 
+   // time.push_back(lastTime); // want all events so we use the last trolley event   
    std::vector<double> trTime2,trPhi2,trFreq2,trFreq2_cor;
-   rc = CorrectOscillation_trly(probeNumber-1,nev,time,fxprData2,trlyData2,trTime2,trFreq2,trFreq2_cor);
+   rc = CorrectOscillation_trly(probeNumber-1,nev,time2,fxprData2,trlyData2,trTime2,trFreq2,trFreq2_cor);
+   std::cout << "-------------" << std::endl;
    trFreq2.clear();
    trFreq2_cor.clear();
-   rc = CorrectOscillation_trly(probeNumber-1,nev,time,fxprData2,trlyData2,trPhi2 ,trFreq2,trFreq2_cor,"phi");
+   rc = CorrectOscillation_trly(probeNumber-1,nev,time2,fxprData2,trlyData2,trPhi2 ,trFreq2,trFreq2_cor,"phi");
+   std::cout << "-------------" << std::endl;
 
    TString xAxis = Form("phi");
    TString yAxis = Form("freq");
@@ -159,7 +168,7 @@ int ImposedGrad_z_prod(std::string configFile){
       }else{
 	 FREQ1.push_back(trFreq1[i]); 
       }
-      // std::cout << gm2fieldUtil::GetStringTimeStampFromUTC(trTime1[i]) << " " << FREQ1[i] << std::endl;
+      std::cout << Form("%s: %.3lf, %.3lf",gm2fieldUtil::GetStringTimeStampFromUTC(trTime1[i]).c_str(),trPhi1[i],FREQ1[i]) << std::endl;
    }
 
    NTR2 = trFreq2.size();

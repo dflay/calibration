@@ -31,7 +31,7 @@ bool Cut::CheckEvent_nmrAna(int run,int trace,int nzc,double ampl,double freq){
 
    bool goodEvent = false; 
 
-   // check for analysis characteristics 
+   // check analysis parameters  
    if( (freq>freq_min) && (ampl>ampl_min && ampl<ampl_max) && (nzc>nzc_min) ){
       goodEvent = true;
    }else{
@@ -52,8 +52,8 @@ bool Cut::CheckEvent_nmrAna(int run,int trace,int nzc,double ampl,double freq){
    }
 
    if(!goodEvent){
-      std::cout << "[Cut]: Run " << run << " trace " << trace << " rejected! " << std::endl;
-      std::cout << "       ampl = " << ampl << " nzc = " << nzc << " freq = " << freq << std::endl;
+      std::cout << "[Cut]: Run " << run << " trace " << trace << " rejected! ";
+      std::cout << "ampl = " << ampl << " nzc = " << nzc << " freq = " << freq << std::endl;
    }
 
    return goodEvent;

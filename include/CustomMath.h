@@ -36,7 +36,9 @@ int GetStats_vec(int lo,int hi,std::vector<double> x,double &mean,double &stdev)
 int GetStats(std::vector<double> x,double &mean,double &stdev); 
 int GetStats(int probeNumber,int method,std::vector<gm2field::fixedProbeFrequency_t> Data,double &mean,double &stdev); 
 int GetStats(int probeNumber,int method,std::vector<gm2field::trolleyProbeFrequency_t> Data,double &mean,double &stdev); 
-int GetStats(TString axis,std::vector<gm2field::psFeedback_t> Data,double &mean,double &stdev); 
+int GetStats(TString axis,std::vector<gm2field::psFeedback_t> Data,double &mean,double &stdev);
+
+int GetMinMax_fxpr(std::vector<averageFixedProbeEvent_t> data,double &min,double &max); 
 
 double MultipoleFitFunc(double *x,double *par); 
 

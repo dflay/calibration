@@ -10,6 +10,8 @@
 #include <string>
 // #include <boost/filesystem.hpp>  
 
+#include "TLine.h"
+
 #include "date.h" 
 
 // void mkdirTree(string sub, string dir);
@@ -19,5 +21,7 @@ int GetDate(date_t &aDate);
 int MakeDirectory(const char *path);
 
 std::string GetPath(std::string base,bool isBlind,std::string blindLabel,std::string date); 
+
+TLine **GetLines(int color,double min,double max,std::vector<double> x); 
 
 #endif 
