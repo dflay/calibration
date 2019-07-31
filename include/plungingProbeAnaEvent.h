@@ -18,11 +18,13 @@ typedef struct plungingProbeAnaEvent{
    double freq_err[PP_MAX_EVENTS];             // frequency uncertainty (Hz)
    double freq_LO[PP_MAX_EVENTS];              // local oscillator (Hz) 
    double freq_RF[PP_MAX_EVENTS];              // pi/2 frequency (Hz)
-   double t2Time[PP_MAX_EVENTS];               // T2 time 
+   double t2Time[PP_MAX_EVENTS];               // T2 time (sec) 
    int run;                                    // NMR-DAQ run   
+   int midasRun;                               // MIDAS run    
    int numTraces;                              // number of traces for the run 
    int nzc[PP_MAX_EVENTS];                     // number of zero crossings  
    int traceNumber[PP_MAX_EVENTS];             // signal trace number   
+   int channelNumber[PP_MAX_EVENTS];           // signal channel number   
 } plungingProbeAnaEvent_t;  
 
 #endif  

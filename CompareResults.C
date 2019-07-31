@@ -1,4 +1,4 @@
-// compare calibration analysis results based on production tags 
+// compare calibration analysis results based on various settings  
 
 #include <cstdlib> 
 #include <iostream>
@@ -41,12 +41,22 @@ int CompareResults(){
    if(isBlind){
       prefix = "./output/blinded/" + blindLabel + "/" + date + "/"; 
    }else{
-      prefix = "./output/"; 
+      prefix = "./output/unblinded/" + date + "/"; 
    }
 
    std::string xAxis    = "probe";
    std::string yAxis    = input["y-axis"]; 
    std::string yAxisErr = input["y-axis-err"]; 
+
+   // load simulation data 
+   std::vector<double> sx,sy,sye;
+   std::string inpath_sim = "./output/simulation/osc-change.csv"; 
+   rc = gm2fieldUtil::Import::ImportData2<double,double>(inpath_sim,"csv",sy,sye);
+   const int NS = sy.size();
+   for(int i=0;i<NS;i++) sx.push_back(i+1);
+
+   TGraphErrors *gSim = gm2fieldUtil::Graph::GetTGraphErrors(sx,sy,sye);
+   gm2fieldUtil::Graph::SetGraphParameters(gSim,21,kGreen+2); 
 
    TString Title      = Form("Calibration Results"); 
    TString xAxisTitle = Form("%s",xAxis.c_str());
@@ -85,7 +95,11 @@ int CompareResults(){
    }   
 
    double sf = 1; 
-   TMultiGraph *mgDiff = GetTMultiGraph_diff(X,Y,EY,sf); 
+   TMultiGraph *mgDiff = GetTMultiGraph_diff(X,Y,EY,sf);
+   mgDiff->Add(gSim,"lp");  
+   
+   TLegend *LD = new TLegend(0.6,0.6,0.8,0.8); 
+   LD->AddEntry(gSim,"Simulation"); 
 
    TCanvas *c1 = new TCanvas("c1","Calibration Comparison",1200,600);
    c1->Divide(1,2); 
@@ -104,6 +118,7 @@ int CompareResults(){
    gm2fieldUtil::Graph::SetGraphLabelSizes(mgDiff,0.05,0.06); 
    mgDiff->GetYaxis()->SetRangeUser(-10,10);  
    mgDiff->Draw("a");
+   LD->Draw("same"); 
    c1->Update(); 
 
    return 0;
@@ -113,7 +128,7 @@ TMultiGraph *GetTMultiGraph_diff(std::vector< std::vector<double> > X,
                                  std::vector< std::vector<double> > Y,std::vector< std::vector<double> > EY,
                                  double sf){
 
-    TMultiGraph *mg = new TMultiGraph(); 
+   TMultiGraph *mg = new TMultiGraph(); 
 
    // now get differences
    const int N = X.size(); 

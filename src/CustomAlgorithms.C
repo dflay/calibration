@@ -22,22 +22,27 @@ int CopyTrolleyProbe(std::vector<trolleyAnaEvent_t> x,std::vector<trolleyAnaEven
    return 0;
 }
 //______________________________________________________________________________
-int CopyPlungingProbe(plungingProbeAnaEvent_t x,plungingProbeAnaEvent_t &y){
-   // copy a plunging probe vector to a new one 
-   int M = x.numTraces;
+int CopyPlungingProbe(plungingProbeAnaEvent_t data,plungingProbeAnaEvent_t &y){
+   // copy a plunging probe struct to a new one 
+   int M = data.numTraces;
    y.numTraces = M;
-   y.run = x.run;
+   y.run       = data.run;
+   y.midasRun  = data.midasRun;
    for(int i=0;i<M;i++){
-      y.time[i]     = x.time[i];
-      y.freq_LO[i]  = x.freq_LO[i];
-      y.freq_RF[i]  = x.freq_RF[i];
-      y.freq[i]     = x.freq[i];
-      y.freq_err[i] = x.freq_err[i];
-      y.r[i]        = x.r[i];
-      y.y[i]        = x.y[i];
-      y.phi[i]      = x.phi[i];
-      y.temp[i]     = x.temp[i];
-      y.temp_err[i] = x.temp_err[i];
+      y.time[i]          = data.time[i];
+      y.t2Time[i]        = data.t2Time[i];
+      y.nzc[i]           = data.nzc[i];
+      y.traceNumber[i]   = data.traceNumber[i];
+      y.channelNumber[i] = data.channelNumber[i];
+      y.freq_LO[i]       = data.freq_LO[i];
+      y.freq_RF[i]       = data.freq_RF[i];
+      y.freq[i]          = data.freq[i];
+      y.freq_err[i]      = data.freq_err[i];
+      y.r[i]             = data.r[i];
+      y.y[i]             = data.y[i];
+      y.phi[i]           = data.phi[i];
+      y.temp[i]          = data.temp[i];
+      y.temp_err[i]      = data.temp_err[i];
    }
    return 0;
 }
@@ -51,23 +56,38 @@ int CopyPlungingProbe(std::vector<plungingProbeAnaEvent_t> x,std::vector<plungin
       std::cout << "[CopyPlungingProbe]: No data!" << std::endl;
       return 1;
    }
+
    for(int i=0;i<N;i++){
-      M = x[i].numTraces;
-      data.numTraces = M;
-      data.run = x[i].run;
-      for(int j=0;j<M;j++){
-         data.time[j]     = x[i].time[j];
-         data.freq_LO[j]  = x[i].freq_LO[j];
-         data.freq_RF[j]  = x[i].freq_RF[j];
-         data.freq[j]     = x[i].freq[j];
-         data.freq_err[j] = x[i].freq_err[j];
-         data.r[j]        = x[i].r[j];
-         data.y[j]        = x[i].y[j];
-         data.phi[j]      = x[i].phi[j];
-         data.temp[j]     = x[i].temp[j];
-         data.temp_err[j] = x[i].temp_err[j];
-      }
+      CopyPlungingProbe(x[i],data);
       y.push_back(data);
+   }
+
+   return 0;
+}
+//______________________________________________________________________________
+int CopyPlungingProbe_nmrAna_to_ppAna(int method,std::vector<nmrAnaEvent_t> data,plungingProbeAnaEvent_t &y){
+   // copy a plunging probe nmrAnaEvent_t vector to a plungingProbeAnaEvent_t struct
+   // note that the vector does NOT have a MIDAS run attached to it necessarily, 
+   // and that the index moves from the that of the VECTOR to that of the data MEMBERS 
+   int M = data.size();
+   y.run       = data[0].run;
+   y.numTraces = M;
+   y.midasRun  = 0;
+   for(int i=0;i<M;i++){
+      y.time[i]          = data[i].time;
+      y.t2Time[i]        = data[i].t2;
+      y.nzc[i]           = data[i].zc;
+      y.traceNumber[i]   = data[i].pulse;
+      y.channelNumber[i] = data[i].ch;
+      y.freq_LO[i]       = data[i].freq_LO;
+      y.freq_RF[i]       = data[i].freq_pi2;
+      y.freq[i]          = data[i].freq[method];
+      y.freq_err[i]      = 0;
+      y.r[i]             = 0;
+      y.y[i]             = 0;
+      y.phi[i]           = 0;
+      y.temp[i]          = data[i].temp;
+      y.temp_err[i]      = 0;
    }
    return 0;
 }
@@ -99,7 +119,11 @@ int GetWeightedAverageStats(std::vector<double> x,std::vector<double> dx,double 
    const int N = x.size();
    std::vector<double> weight;
    for(int i=0;i<N;i++){
-      arg = 1./( dx[i]*dx[i] );
+      if(dx[i]!=0){
+	 arg = 1./( dx[i]*dx[i] );
+      }else{
+	 arg = 1.;
+      }
       weight.push_back(arg);
    }
 

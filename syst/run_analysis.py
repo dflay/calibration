@@ -25,7 +25,7 @@ full_path  = "./input/json/" + configFile
 inData   = json.loads(open(full_path).read())
 
 NUM_EPOCH = inData["num-iter"]
-scriptName = "TestCalib_batch.C"
+scriptName = "TestCalib_batch_fxpr.C"
 for i in xrange(1,NUM_EPOCH+1): 
    cmd = "root -q -b -l '{0}+({1},\"{2}\")'".format(scriptName,i,full_path)
    if(debug):  print(cmd)

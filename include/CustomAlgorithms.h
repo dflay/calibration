@@ -24,6 +24,7 @@
 
 #include "Constants.h"
 #include "drift.h"
+#include "nmrAnaEvent.h"
 #include "plungingProbeAnaEvent.h"
 #include "trolleyAnaEvent.h"
 // #include "fixedProbeEvent.h"
@@ -55,6 +56,7 @@ int CalculateTRLYAvg_Stationary(int probeNumber,std::vector<trolleyAnaEvent_t> E
 // copy functions
 int CopyPlungingProbe(plungingProbeAnaEvent_t x,plungingProbeAnaEvent_t &y);
 int CopyPlungingProbe(std::vector<plungingProbeAnaEvent_t> x,std::vector<plungingProbeAnaEvent_t> &y);
+int CopyPlungingProbe_nmrAna_to_ppAna(int method,std::vector<nmrAnaEvent_t> data,plungingProbeAnaEvent_t &y);
 int CopyTrolleyProbe(std::vector<trolleyAnaEvent_t> x,std::vector<trolleyAnaEvent_t> &y);
 int FilterPlungingProbeData(std::vector<int> subRun,
                             std::vector<plungingProbeAnaEvent_t> x,

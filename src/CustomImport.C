@@ -369,7 +369,7 @@ int GetPlungingProbeData(int run,int prMethod,int ppMethod,std::vector<plungingP
 
    std::string timeStamp;
 
-   int theRun=0,NZero=0;
+   int theRun=0,NZero=0,theCh=0;
    double theAmpl=0,theTemp=0,theR=0,theY=0,thePhi=0,theFreq=0,theLO=0,theRF=0;
    unsigned long long theTime=0;
 
@@ -405,18 +405,20 @@ int GetPlungingProbeData(int run,int prMethod,int ppMethod,std::vector<plungingP
       // std::cout << "EVENT " << i << " TIME " << timeStamp << " RUN " << theRun << std::endl;
       if(theRun==lastRun){
          // gather frequencies and temperatures for each NMR-DAQ run to average over 
-         subRun.run               = theRun;
-	 subRun.traceNumber[cntr] = cntr+1;  
-         subRun.time[cntr]        = theTime;
-         subRun.r[cntr]           = theR;
-         subRun.y[cntr]           = theY;
-         subRun.phi[cntr]         = thePhi;
-         subRun.temp[cntr]        = theTemp;
-         subRun.freq[cntr]        = theFreq;
-         subRun.freq_LO[cntr]     = theLO;
-         subRun.freq_RF[cntr]     = theRF;
-         subRun.nzc[cntr]         = NZero; 
-         subRun.ampl[cntr]        = theAmpl; 
+         subRun.run                 = theRun;
+         subRun.midasRun            = run; 
+	 subRun.traceNumber[cntr]   = cntr+1;  
+	 subRun.channelNumber[cntr] = theCh;  
+         subRun.time[cntr]          = theTime;
+         subRun.r[cntr]             = theR;
+         subRun.y[cntr]             = theY;
+         subRun.phi[cntr]           = thePhi;
+         subRun.temp[cntr]          = theTemp;
+         subRun.freq[cntr]          = theFreq;
+         subRun.freq_LO[cntr]       = theLO;
+         subRun.freq_RF[cntr]       = theRF;
+         subRun.nzc[cntr]           = NZero; 
+         subRun.ampl[cntr]          = theAmpl; 
          cntr++;
       }else{
          // done gathering, push back on the vector  
@@ -436,18 +438,20 @@ int GetPlungingProbeData(int run,int prMethod,int ppMethod,std::vector<plungingP
          // reset the counter 
          cntr = 0;
          // fill the data struct for this "event" since it's good for the next run 
-         subRun.run               = theRun; 
-	 subRun.traceNumber[cntr] = cntr+1;  
-         subRun.time[cntr]        = theTime;
-         subRun.r[cntr]           = theR;
-         subRun.y[cntr]           = theY;  
-         subRun.phi[cntr]         = thePhi; 
-         subRun.temp[cntr]        = theTemp;
-	 subRun.freq[cntr]        = theFreq;
-	 subRun.freq_LO[cntr]     = theLO; 
-	 subRun.freq_RF[cntr]     = theRF;
-         subRun.nzc[cntr]         = NZero; 
-         subRun.ampl[cntr]        = theAmpl; 
+         subRun.run                 = theRun; 
+         subRun.midasRun            = run; 
+	 subRun.traceNumber[cntr]   = cntr+1;  
+	 subRun.channelNumber[cntr] = theCh;  
+         subRun.time[cntr]          = theTime;
+         subRun.r[cntr]             = theR;
+         subRun.y[cntr]             = theY;  
+         subRun.phi[cntr]           = thePhi; 
+         subRun.temp[cntr]          = theTemp;
+	 subRun.freq[cntr]          = theFreq;
+	 subRun.freq_LO[cntr]       = theLO; 
+	 subRun.freq_RF[cntr]       = theRF;
+         subRun.nzc[cntr]           = NZero; 
+         subRun.ampl[cntr]          = theAmpl; 
          cntr++;
       }
       lastRun = theRun;
@@ -1217,6 +1221,87 @@ int ImportNMRANAData(const char *inpath,std::vector<nmrAnaEvent_t> &Data,std::st
    delete myCuts; 
    
    return 0;
+}
+//______________________________________________________________________________
+int ImportNMRANAData_new(int run,std::string version,std::vector<nmrAnaEvent_t> &data,std::string cutFile){
+  // a new way to load NMR-ANA results
+  // need the temperature sensor 
+  // ppRunSummary_t myRunSummary;
+  gm2fieldUtil::Temperature::Sensor *tempSensor = new gm2fieldUtil::Temperature::Sensor("PT1000");
+  tempSensor->SetDataPath(TEMP_DIR);
+  // cut data 
+  Cut *myCut = new Cut(cutFile);
+
+  nmrAnaEvent_t inData;
+
+  bool goodEvent = false;
+  int tr=0,zc=0;
+  double ampl=0,freq=0,res=0;
+  std::string sp,sch,stime,szc,snc,sampl,snoise,st2,stemp,slo,srf;
+  std::string sfmid,sflin,sflsq,sfmid_ph,sflin_ph,sflsq_ph;
+
+  char inpath[512];
+  sprintf(inpath,"./input/NMR-ANA/%s/run-%05d/results.csv",version.c_str(),run);
+  std::ifstream infile;
+  infile.open(inpath);
+  if( infile.fail() ){
+    std::cout << "Cannot open the file: " << inpath << std::endl;
+    return 1;
+  }else{
+    while( !infile.eof() ){
+      std::getline(infile,sp      ,',');
+      std::getline(infile,sch     ,',');
+      std::getline(infile,stime   ,',');
+      std::getline(infile,szc     ,',');
+      std::getline(infile,snc     ,',');
+      std::getline(infile,sampl   ,',');
+      std::getline(infile,snoise  ,',');
+      std::getline(infile,st2     ,',');
+      std::getline(infile,stemp   ,',');
+      std::getline(infile,slo     ,',');
+      std::getline(infile,srf     ,',');
+      std::getline(infile,sfmid   ,',');
+      std::getline(infile,sflin   ,',');
+      std::getline(infile,sflsq   ,',');
+      std::getline(infile,sfmid_ph,',');
+      std::getline(infile,sflin_ph,',');
+      std::getline(infile,sflsq_ph);
+      // check the event
+      try{
+        tr   = std::atoi( sp.c_str()  );
+        zc   = std::atoi( szc.c_str() );
+        ampl = std::atof( sampl.c_str() );
+        freq = std::atof( sflsq_ph.c_str() );
+        res  = std::atof( stemp.c_str() );
+      }catch(const std::invalid_argument &ia){
+        std::cout << "[LoadNMRANAData]: Error: " << ia.what() << ".  Maybe EOF?" << std::endl;
+      }
+      goodEvent = myCut->CheckEvent_nmrAna(run,tr,zc,ampl,freq);
+      if(goodEvent){
+        inData.time     = std::stoull( stime.c_str() );
+        inData.temp     = tempSensor->GetTemperature(res);
+        inData.freq_LO  = std::atof( slo.c_str() );
+        inData.freq_pi2 = std::atof( srf.c_str() );
+        inData.ampl     = ampl;
+        inData.noise    = std::atof( snoise.c_str() );
+        inData.t2       = std::atof( st2.c_str() );
+        inData.freq[0]  = std::atof( sfmid.c_str() );
+        inData.freq[1]  = std::atof( sflin.c_str() );
+        inData.freq[2]  = std::atof( sflsq.c_str() );
+        inData.freq[3]  = std::atof( sfmid_ph.c_str() );
+        inData.freq[4]  = std::atof( sflin_ph.c_str() );
+        inData.freq[5]  = std::atof( sflsq_ph.c_str() );
+        inData.nc       = std::atof( snc.c_str() );
+        inData.pulse    = tr;
+        inData.run      = run;
+        data.push_back(inData);
+      }
+    }
+    infile.close();
+    data.pop_back();
+  }
+  delete tempSensor;
+  return 0;
 }
 //______________________________________________________________________________
 int LoadRunSummaryData(const char *inpath,runSummary_t &x){

@@ -23,6 +23,7 @@
 
 #include "Constants.h"
 #include "plungingProbeAnaEvent.h"
+#include "fixedProbeEvent.h"
 #include "trolleyAnaEvent.h"
 #include "results.h"
 #include "nmr_meas.h"

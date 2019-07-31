@@ -27,6 +27,7 @@
 #include "./include/drift.h"
 #include "./include/plungingProbeAnaEvent.h"
 #include "./include/trolleyAnaEvent.h"
+#include "./include/fixedProbeEvent.h"
 
 #include "./src/CustomMath.C"
 #include "./src/CustomImport.C"

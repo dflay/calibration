@@ -57,6 +57,7 @@ int LoadImageParameters(std::string inpath,std::string type,std::vector<imagePar
 int LoadRunSummaryData(const char *inpath,runSummary_t &x); 
 int LoadNMRDAQEventData(const char *inpath,std::vector<NMRDAQEvent_t> &event); 
 int ImportNMRANAData(const char *inpath,std::vector<nmrAnaEvent_t> &Data,std::string cutFile);
+int ImportNMRANAData_new(int run,std::string version,std::vector<nmrAnaEvent_t> &data,std::string cutFile); 
 int ImportDeltaBFileList_csv(const char *inpath,
                     std::vector<int> &x1,std::vector<std::string> &x2,
                     std::vector<double> &x3); 

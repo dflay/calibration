@@ -118,13 +118,18 @@ int LocalScanGrad_pp_prod(std::string configFile){
 
    // find the trolley run
    int midasRun=0; 
+   std::vector<int> mRun; 
    for(int i=0;i<NRUN;i++){
       if(label[i].compare("midas-run")==0){
-	 midasRun = run[i]; 
+	 midasRun = run[i];
+	 mRun.push_back(run[i]);  
       }else{
 	 subRun.push_back(run[i]);
       }
    }
+
+   int MR = mRun.size();
+   std::cout << "Found " << MR << " MIDAS runs" << std::endl; 
 
    double ZERO[3] = {0,0,0}; 
 
@@ -145,7 +150,7 @@ int LocalScanGrad_pp_prod(std::string configFile){
    // PP data 
    std::vector<plungingProbeAnaEvent_t> ppData,ppEvent,ppInput; 
    std::cout << "Getting PP data for run " << midasRun << "..." << std::endl; 
-   rc = GetPlungingProbeData(midasRun,prMethod,ppMethod,ppInput,prodVersion,nmrAnaVersion,cutPath);
+   for(int i=0;i<MR;i++) rc = GetPlungingProbeData(mRun[i],prMethod,ppMethod,ppInput,prodVersion,nmrAnaVersion,cutPath);
    if(rc!=0){
       std::cout << "No data!" << std::endl;
       return 1;
@@ -156,12 +161,12 @@ int LocalScanGrad_pp_prod(std::string configFile){
    std::vector<int> fxprList;
    inputMgr->GetFXPRList(fxprList);
 
-   unsigned long long t0 = ppData[0].time[0]; // we may have some huge field oscillation before the scan, which will affect drift 
+   unsigned long long t0 = ppInput[0].time[0]; // we may have some huge field oscillation before the scan, which will affect drift 
    bool subtractDrift = true;
    int period = inputMgr->GetNumEventsTimeWindow(); // 10;
    std::vector<averageFixedProbeEvent_t> fxprData;
-   for(int i=0;i<NRUN;i++){
-      rc = GetFixedProbeData_avg(run[i],prMethod,fxprList,fxprData,prodVersion,subtractDrift,period,t0);
+   for(int i=0;i<MR;i++){
+      rc = GetFixedProbeData_avg(mRun[i],prMethod,fxprList,fxprData,prodVersion,subtractDrift,period,t0);
       if(rc!=0){
          std::cout << "No data!" << std::endl;
          return 1;
@@ -186,19 +191,29 @@ int LocalScanGrad_pp_prod(std::string configFile){
    std::cout << "Filtered PP data to use NMR-DAQ runs: " << std::endl;
    int M=0;
    const int NPP = ppEvent.size();
-   double mean=0,stdev=0,max=0,min=50E+3;
-   std::vector<double> F;
+   double mean_x=0,mean_y=0,mean_z=0,mean=0,stdev=0,max=0,min=50E+3;
+   std::vector<double> xx,yy,zz,F;
    for(int i=0;i<NPP;i++){
       M = ppEvent[i].numTraces; 
-      for(int j=0;j<M;j++) F.push_back(ppEvent[i].freq[j]); 
-      mean  = gm2fieldUtil::Math::GetMean<double>(F); 
-      stdev = gm2fieldUtil::Math::GetStandardDeviation<double>(F);
+      for(int j=0;j<M;j++){
+	 xx.push_back(ppEvent[i].r[j]);
+	 yy.push_back(ppEvent[i].y[j]);
+	 zz.push_back(ppEvent[i].phi[j]);
+	 F.push_back(ppEvent[i].freq[j]);
+      } 
+      mean_x  = gm2fieldUtil::Math::GetMean<double>(xx); 
+      mean_y  = gm2fieldUtil::Math::GetMean<double>(yy); 
+      mean_z  = gm2fieldUtil::Math::GetMean<double>(zz); 
+      mean    = gm2fieldUtil::Math::GetMean<double>(F); 
+      stdev   = gm2fieldUtil::Math::GetStandardDeviation<double>(F);
       if(max<mean) max = mean;  
       if(min>mean) min = mean;  
       std::cout << Form("%d: x = %.3lf mm, y = %.3lf mm, z = %.3lf mm, F = %.3lf +/- %.3lf Hz",
-                        ppEvent[i].run,ppEvent[i].r[0],ppEvent[i].y[0],ppEvent[i].phi[0],
-                        mean,stdev) << std::endl;
+                        ppEvent[i].run,mean_x,mean_y,mean_z,mean,stdev) << std::endl;
       // clean up for next event 
+      xx.clear();
+      yy.clear();
+      zz.clear();
       F.clear();
    } 
 
@@ -246,8 +261,8 @@ int LocalScanGrad_pp_prod(std::string configFile){
    gm2fieldUtil::Graph::SetGraphParameters(g,20,kBlack);
 
    // Fixed probe plot 
-   // TGraph *gFXPR = GetTGraphNew(fxprDataAvg);
-   // gm2fieldUtil::Graph::SetGraphParameters(gFXPR,20,kBlack);  
+   TGraph *gFXPR = GetFXPRTGraph_avg("GpsTimeStamp","freq","NONE",fxprData);
+   gm2fieldUtil::Graph::SetGraphParameters(gFXPR,20,kBlack);  
 
    TString xAxisLabel;
    if(ppCoord[axis]>=0){
@@ -271,27 +286,29 @@ int LocalScanGrad_pp_prod(std::string configFile){
    c1->cd();
    c1->Print(plotPath); 
 
-   // TCanvas *c2 = new TCanvas("c2","FXPR Data",1200,600);
+   TCanvas *c2 = new TCanvas("c2","FXPR Data",1200,600);
 
-   // c2->cd(); 
-   // gFXPR->Draw("alp");
-   // gm2fieldUtil::Graph::SetGraphLabels(gFXPR,"Fixed Probe Average","","Frequency (Hz)"); 
-   // gm2fieldUtil::Graph::UseTimeDisplay(gFXPR);  
-   // gFXPR->Draw("alp");
-   // c2->Update(); 
+   c2->cd(); 
+   gFXPR->Draw("alp");
+   gm2fieldUtil::Graph::SetGraphLabels(gFXPR,"Fixed Probe Average","","Frequency (Hz)"); 
+   gm2fieldUtil::Graph::UseTimeDisplay(gFXPR);  
+   gFXPR->Draw("alp");
+   c2->Update(); 
 
-   // plotPath = Form("%s/pp-shimmed-scan_fxpr-avg_pr-%02d.png",plotDir.c_str(),probeNumber); 
-   // c2->cd();
-   // c2->Print(plotPath);
+   plotPath = Form("%s/pp-shimmed-scan-%s_fxpr-avg_pr-%02d.png",plotDir.c_str(),Axis.c_str(),probeNumber); 
+   c2->cd();
+   c2->Print(plotPath);
 
    // get fit info 
    TF1 *myFit = g->GetFunction(fitFunc.c_str()); 
 
+   std::cout << "Fit Parameters: " << std::endl;
    const int NPAR = myFit->GetNpar();
    double par[NPAR],parErr[NPAR]; 
    for(int i=0;i<NPAR;i++){
       par[i]       = myFit->GetParameter(i); 
-      parErr[i]    = myFit->GetParError(i); 
+      parErr[i]    = myFit->GetParError(i);
+      std::cout << Form("p[%d] = %.3lf +/- %.3lf",i,par[i],parErr[i]) << std::endl; 
    }
 
    // get gradient based on fit type and which trolley probe we're looking at  
