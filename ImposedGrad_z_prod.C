@@ -39,6 +39,8 @@
 #include "./src/BlindFuncs.C"
 #include "./src/OscFuncs.C"
 #include "./src/FitFuncs.C"
+#include "./src/MyFits.C"
+#include "./src/FitErr.C"
 #include "./src/TRLYFuncs.C"
 
 double fitFunc(double *x,double *p); 
@@ -110,7 +112,7 @@ int ImposedGrad_z_prod(std::string configFile){
    inputMgr->GetFXPRList(fxprList);
 
    std::vector<averageFixedProbeEvent_t> fxprData1,fxprData2;
-   bool subtractDrift = true;
+   bool subtractDrift = inputMgr->GetFXPRDriftStatus();  
    int period = inputMgr->GetNumEventsToAvg(); 
    rc = GetFixedProbeData_avg(run[0],method,fxprList,fxprData1,prodVersion,subtractDrift,period,0);
    if(rc!=0){
@@ -246,29 +248,35 @@ int ImposedGrad_z_prod(std::string configFile){
    gm2fieldUtil::Graph::SetGraphLabels(gDiff,"Azi - Bare","","Frequency (Hz)");
    gm2fieldUtil::Graph::SetGraphLabelSizes(gDiff,0.05,0.06); 
    gDiff->Draw("alp");
-   gDiff->Fit(fitName,"RQS");
+   TFitResultPtr fitResult = gDiff->Fit(fitName,"RQS");
    aLine->Draw("same"); 
    c1->Update();
 
    c1->cd();
    c1->Print(plotPath); 
 
-   TF1 *fitResult = gDiff->GetFunction(fitName); 
+   TF1 *theFit = gDiff->GetFunction(fitName); 
    for(int i=0;i<npar;i++){
-      par[i]    = fitResult->GetParameter(i); 
-      parErr[i] = fitResult->GetParError(i); 
+      par[i]    = theFit->GetParameter(i); 
+      parErr[i] = theFit->GetParError(i); 
       // std::cout << Form("p[%d] = %.3lf ",i,par[i]) << std::endl;
    }
 
    std::cout << "FITTED RESULTS" << std::endl;
-   double dB_fitted    = fitResult->Eval(angle); 
-   double dB_fittedErr = parErr[0]; 
+   double XX[3] = {angle,0.,0.}; 
+   double dB_fitted    = theFit->Eval(XX[0]); 
+   double dB_fittedErr = parErr[0]; // GetFitError(myFit,fitResult,MyPolyFitFuncDerivative,XX); 
    std::cout << Form("dB = %.3lf +/- %.3lf Hz",dB_fitted,dB_fittedErr) << std::endl; 
 
-   // std::cout << "IMPOSED GRADIENT" << std::endl;
+   std::cout << "IMPOSED GRADIENT" << std::endl;
    // divide by current as well!  
-   double dBdz     = par[1]/124./current;     // convert from Hz/deg -> Hz/mm 
-   double dBdz_err = parErr[1]/124./current;  // convert from Hz/deg -> Hz/mm 
+   // double dBdz     = par[1]/124./current;     // convert from Hz/deg -> Hz/mm 
+   // double dBdz_err = parErr[1]/124./current;  // convert from Hz/deg -> Hz/mm 
+   // std::cout << Form("dB/dz = %.3lf +/- %.3lf Hz/mm",dBdz,dBdz_err) << std::endl; 
+
+   double sf       = 1./124./current; 
+   double dBdz     = sf*theFit->Derivative(XX[0]);  
+   double dBdz_err = sf*GetFitError(theFit,fitResult,MyPolyFitFuncDerivative_impGradZ,XX);  
    std::cout << Form("dB/dz = %.3lf +/- %.3lf Hz/mm",dBdz,dBdz_err) << std::endl; 
 
    char outpath[200];
@@ -364,7 +372,7 @@ int PrintToFile_trlyDBz(const char *outpath,double dB,double dB_err){
    char outStr[200]; 
 
    std::ofstream outfile;
-   outfile.open(outpath,std::ios::app);
+   outfile.open(outpath);
    if( outfile.fail() ){
       std::cout << "Cannot open the file: " << outpath << std::endl;
       return 1;

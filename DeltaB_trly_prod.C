@@ -201,7 +201,7 @@ int DeltaB_trly_prod(std::string configFile){
    inputMgr->GetFXPRList(fxprList);
 
    std::vector<averageFixedProbeEvent_t> fxprData;
-   bool subtractDrift = true;
+   bool subtractDrift = inputMgr->GetFXPRDriftStatus();  
    int period = inputMgr->GetNumEventsTimeWindow();
    for(int i=0;i<NRUN;i++){
       rc = GetFixedProbeData_avg(run[i],method,fxprList,fxprData,prodVersion,subtractDrift,period,0);

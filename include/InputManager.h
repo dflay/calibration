@@ -16,7 +16,7 @@ class InputManager{
       json fParams; 
       bool fIsSimple,fIsFullAnalysis,fIsBlind,fUseP2PFit,fIsFinalLocation;
       bool fUseAxis,fIsFreeProton,fLoadSwapTime,fLoadSCCTime,fUseTimeWeight,fUseTempCor;
-      bool fUseOscCor; 
+      bool fUseOscCor,fRemoveFXPRDrift,fUseMisalignCor; 
       int fTrolleyProbe,fAxis,fFXPRListTag,fBlindUnits,fRunPeriod,fNumEventsToAvg,fNumEventsTimeWindow; 
       double fBlindScale,fTrolleyAngle,fDBZCurrent; 
       std::string fType,fDevice,fRunDate,fFitFunc,fBlindLabel,fProdTag,fNMRANATag,fCutFile;
@@ -52,7 +52,9 @@ class InputManager{
       bool GetSCCTimeStatus()        const { return fLoadSCCTime;     }  
       bool GetTimeWeightStatus()     const { return fUseTimeWeight;   } 
       bool GetTempCorStatus()        const { return fUseTempCor;      } 
-      bool GetOscCorStatus()         const { return fUseOscCor;       }  
+      bool GetOscCorStatus()         const { return fUseOscCor;       } 
+      bool GetFXPRDriftStatus()      const { return fRemoveFXPRDrift; }  
+      bool GetMisalignCorStatus()    const { return fUseMisalignCor;  }  
      
       int GetTrolleyProbe()          const { return fTrolleyProbe;    } 
       int GetAxis()                  const { return fAxis;            }

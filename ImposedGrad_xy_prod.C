@@ -34,7 +34,9 @@
 #include "./src/CustomGraph.C"
 #include "./src/InputManager.C"
 #include "./src/OscFuncs.C"
+#include "./src/MyFits.C"
 #include "./src/FitFuncs.C"
+#include "./src/FitErr.C"
 #include "./src/TRLYFuncs.C"
 
 int PrintToFile(const char *outpath,std::vector<double> x,std::vector<double> dx); 
@@ -275,6 +277,26 @@ int ImposedGrad_xy_prod(std::string configFile){
       parErr_vg.push_back( myFit_vg->GetParError(i) ); 
    }
 
+   // determine fit error at each location
+   // radial gradient as a function of height 
+   double arg=0; 
+   double XX[3] = {0,0,0}; 
+   const int NVER = VER.size();
+   std::vector<double> radGrad_err; 
+   for(int i=0;i<NVER;i++){
+      XX[0] = VER[i]; 
+      arg   = GetFitError(myFit_rg,fitResult_rg,MyPolyFitFuncDerivative,XX); 
+      radGrad_err.push_back(arg); 
+   }
+   // vertical gradient as a function of radius 
+   const int NRAD = RAD.size(); 
+   std::vector<double> vertGrad_err; 
+   for(int i=0;i<NRAD;i++){
+      XX[0] = RAD[i]; 
+      arg   = GetFitError(myFit_vg,fitResult_vg,MyPolyFitFuncDerivative,XX); 
+      vertGrad_err.push_back(arg); 
+   }
+ 
    // print to file
    char outpath_rad[200],outpath_vert[200]; 
    sprintf(outpath_rad ,"%s/imposed-grad-x_fit-pars.csv",outDir.c_str()); 
@@ -282,6 +304,13 @@ int ImposedGrad_xy_prod(std::string configFile){
 
    rc = PrintToFile(outpath_rad ,par_rg,parErr_rg); 
    rc = PrintToFile(outpath_vert,par_vg,parErr_vg); 
+
+   // fit errors 
+   sprintf(outpath_rad ,"%s/imposed-grad-x_fit-err.csv",outDir.c_str()); 
+   sprintf(outpath_vert,"%s/imposed-grad-y_fit-err.csv",outDir.c_str()); 
+
+   rc = PrintToFile(outpath_rad ,VER,radGrad_err); 
+   rc = PrintToFile(outpath_vert,RAD,vertGrad_err); 
 
    return rc;
 }

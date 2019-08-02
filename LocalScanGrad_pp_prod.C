@@ -162,7 +162,7 @@ int LocalScanGrad_pp_prod(std::string configFile){
    inputMgr->GetFXPRList(fxprList);
 
    unsigned long long t0 = ppInput[0].time[0]; // we may have some huge field oscillation before the scan, which will affect drift 
-   bool subtractDrift = true;
+   bool subtractDrift = inputMgr->GetFXPRDriftStatus();  
    int period = inputMgr->GetNumEventsTimeWindow(); // 10;
    std::vector<averageFixedProbeEvent_t> fxprData;
    for(int i=0;i<MR;i++){

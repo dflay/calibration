@@ -85,7 +85,9 @@ def writeConfigFileProd_trlyDB(data,tag,keyList,axis,fitData,trlyProbe,outpath):
    outData['use-osc-cor']            = confData['use-osc-cor'] 
    outData['cut-file']               = confData['cut-file'] 
    outData['num-events-to-avg']      = confData['num-events-to-avg']  
-   outData['num-events-time-window'] = confData['num-events-time-window']  
+   outData['num-events-time-window'] = confData['num-events-time-window'] 
+   outData['fxpr-remove-drift']      = confData['fxpr-remove-drift']  
+   outData['use-misalign-cor']       = confData['use-misalign-cor']  
     
    # probe-specific data  
    outData['date']                   = data['date']
@@ -177,6 +179,8 @@ def writeConfigFileProd_ShimScan(data,confData,tag,keyList,axis,fitData,outpath)
    outData['cut-file']               = confData['cut-file'] 
    outData['num-events-to-avg']      = confData['num-events-to-avg']  
    outData['num-events-time-window'] = confData['num-events-time-window']  
+   outData['fxpr-remove-drift']      = confData['fxpr-remove-drift']  
+   outData['use-misalign-cor']       = confData['use-misalign-cor']  
     
    # probe-specific data  
    outData['date']                 = data['date']
@@ -227,6 +231,8 @@ def writeConfigFileProd_imposedGrad(confData,tag,keyList,axis,fitData,outpath):
    # outData['cut-file']               = confData['cut-file'] 
    # outData['num-events-to-avg']      = confData['num-events-to-avg']  
    # outData['num-events-time-window'] = confData['num-events-time-window']  
+   # outData['fxpr-remove-drift']      = confData['fxpr-remove-drift']  
+   # outData['use-misalign-cor']       = confData['use-misalign-cor']  
 
    # print("{0}".format(outData) )
    outfile = open(outpath,'w')
@@ -271,6 +277,8 @@ def writeConfigFileProd(data,confData,tag,keyList,axis,fitData,outpath):
    outData['cut-file']               = confData['cut-file'] 
    outData['num-events-to-avg']      = confData['num-events-to-avg']  
    outData['num-events-time-window'] = confData['num-events-time-window']  
+   outData['fxpr-remove-drift']      = confData['fxpr-remove-drift']  
+   outData['use-misalign-cor']       = confData['use-misalign-cor']  
     
    # probe-specific data  
    outData['date']                 = data['date']

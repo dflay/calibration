@@ -73,7 +73,7 @@ int Process_pp_prod(std::string configFile){
    std::string cutFile       = inputMgr->GetCutFile(); 
  
    bool isBlind              = inputMgr->IsBlind();
-   bool useOscCor            = inputMgr->GetOscCorStatus(); 
+   bool useOscCor            = inputMgr->GetOscCorStatus();
    int probeNumber           = inputMgr->GetTrolleyProbe();
    int runPeriod             = inputMgr->GetRunPeriod();  
 
@@ -112,8 +112,8 @@ int Process_pp_prod(std::string configFile){
    std::vector<int> fxprList; 
    inputMgr->GetFXPRList(fxprList);
 
+   bool subtractDrift = inputMgr->GetFXPRDriftStatus();  
    std::vector<averageFixedProbeEvent_t> fxprData;
-   bool subtractDrift = true;
    int period = inputMgr->GetNumEventsTimeWindow(); // 10;
    for(int i=0;i<NRUNS;i++){
       rc = GetFixedProbeData_avg(run[i],prMethod,fxprList,fxprData,prodVersion,subtractDrift,period,0);

@@ -122,8 +122,8 @@ int Process_trly_prod(std::string configFile){
    std::vector<int> fxprList;
    inputMgr->GetFXPRList(fxprList);
 
+   bool subtractDrift = inputMgr->GetFXPRDriftStatus();  
    std::vector<averageFixedProbeEvent_t> fxprData;  
-   bool subtractDrift = true;
    int period = inputMgr->GetNumEventsTimeWindow();
    for(int i=0;i<NRUNS;i++){
       rc = GetFixedProbeData_avg(run[i],method,fxprList,fxprData,prodVersion,subtractDrift,period,0);

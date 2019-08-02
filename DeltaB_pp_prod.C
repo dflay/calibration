@@ -161,7 +161,7 @@ int DeltaB_pp_prod(std::string configFile){
    inputMgr->GetFXPRList(fxprList);
 
    std::vector<averageFixedProbeEvent_t> fxprData;
-   bool subtractDrift = true;
+   bool subtractDrift = inputMgr->GetFXPRDriftStatus();  
    int period = inputMgr->GetNumEventsTimeWindow(); // 10;
    for(int i=0;i<NRUN;i++){
       rc = GetFixedProbeData_avg(run[i],prMethod,fxprList,fxprData,prodVersion,subtractDrift,period,0);

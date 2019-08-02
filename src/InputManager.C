@@ -21,6 +21,8 @@ int InputManager::Init(){
    fUseTimeWeight   = false; 
    fUseTempCor      = false;
    fUseOscCor       = false; 
+   fRemoveFXPRDrift = false;
+   fUseMisalignCor  = false;  
    fNumEventsToAvg  =  0;  
    fNumEventsTimeWindow =  0; 
    fTrolleyAngle    = 0; 
@@ -159,7 +161,9 @@ int InputManager::Parse(){
    bool nevStatus    = DoesKeyExist("num-events-to-avg");  
    bool twStatus     = DoesKeyExist("num-events-time-window"); 
    bool angleStatus  = DoesKeyExist("trly_azi-angle"); 
-   bool curStatus    = DoesKeyExist("dBz-current"); 
+   bool curStatus    = DoesKeyExist("dBz-current");
+   bool fxprdStatus  = DoesKeyExist("fxpr-remove-drift"); 
+   bool mcorStatus   = DoesKeyExist("use-misalign-cor");  
 
    // parameters common to all 
    std::string unitStr="";
@@ -186,8 +190,12 @@ int InputManager::Parse(){
 
    if(fxprStatus){
       fFXPRListTag = (int)fParams["fxpr-set"]; 
-      LoadFXPRList(); 
+      LoadFXPRList();
    } 
+      
+   if(fxprdStatus) fRemoveFXPRDrift = (bool)( (int)fParams["fxpr-remove-drift"] );
+
+   if(mcorStatus)  fUseMisalignCor  = (bool)( (int)fParams["use-misalign-cor"] );  
    
    // calibration: production 
    if( fType.compare("calib-prod")==0 ){
@@ -249,6 +257,7 @@ int InputManager::Print(){
    std::cout << "Production tag:     " << fProdTag         << std::endl; 
    std::cout << "NMR-ANA tag:        " << fNMRANATag       << std::endl; 
    std::cout << "Oscillation cor:    " << fUseOscCor       << std::endl;
+   std::cout << "Misalignment cor:   " << fUseMisalignCor  << std::endl; 
    std::cout << "Trolley angle:      " << fTrolleyAngle    << std::endl; 
    std::cout << "dBz current:        " << fDBZCurrent      << std::endl; 
    if(fType.compare("calib-prod")==0){
