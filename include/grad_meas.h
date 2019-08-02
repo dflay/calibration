@@ -27,4 +27,14 @@ typedef struct imposed_gradient{
    double grad_err;
 } imposed_gradient_t; 
 
+// generic gradient 
+
+typedef struct gradMeas {
+   std::string name;
+   double val;
+   double val_err;
+   double val_drift_cor; 
+   double val_drift_cor_err; 
+} gradMeas_t; 
+
 #endif  

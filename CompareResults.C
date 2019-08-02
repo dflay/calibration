@@ -16,7 +16,7 @@
 TGraphErrors *GetTGraphErrors(std::string xAxis,std::string yAxis,std::string yAxisErr,json data);
 
 TMultiGraph *GetTMultiGraph_diff(std::vector< std::vector<double> > X,
-                                 std::vector< std::vector<double> > Y,std::vector< std::vector<double> > EY,double sf=1.); 
+                                 std::vector< std::vector<double> > Y,std::vector< std::vector<double> > EY,double sf=1.,double rho=0.); 
 
 int PrintToFile_csv(const char *outpath,std::string xAxis,std::string yAxis,std::string yAxisErr,json data); 
 
@@ -46,7 +46,7 @@ int CompareResults(){
 
    std::string xAxis    = "probe";
    std::string yAxis    = input["y-axis"]; 
-   std::string yAxisErr = input["y-axis-err"]; 
+   std::string yAxisErr = input["y-axis-err"];
 
    // load simulation data 
    std::vector<double> sx,sy,sye;
@@ -94,8 +94,9 @@ int CompareResults(){
       ey.clear();
    }   
 
-   double sf = 1; 
-   TMultiGraph *mgDiff = GetTMultiGraph_diff(X,Y,EY,sf);
+   double sf  = 1.; 
+   double rho = input["correlation"];  
+   TMultiGraph *mgDiff = GetTMultiGraph_diff(X,Y,EY,sf,rho);
    mgDiff->Add(gSim,"lp");  
    
    TLegend *LD = new TLegend(0.6,0.6,0.8,0.8); 
@@ -126,7 +127,7 @@ int CompareResults(){
 //______________________________________________________________________________
 TMultiGraph *GetTMultiGraph_diff(std::vector< std::vector<double> > X,
                                  std::vector< std::vector<double> > Y,std::vector< std::vector<double> > EY,
-                                 double sf){
+                                 double sf,double rho){
 
    TMultiGraph *mg = new TMultiGraph(); 
 
@@ -140,8 +141,9 @@ TMultiGraph *GetTMultiGraph_diff(std::vector< std::vector<double> > X,
       M = X[0].size();
       for(int j=0;j<M;j++){
 	 arg     = (Y[i][j] - Y[0][j])/sf; 
+         arg_err = TMath::Sqrt( EY[i][j]*EY[i][j] + EY[0][j]*EY[0][j] - 2.*rho*EY[i][j]*EY[0][j])/sf; // estimate
          // arg_err = TMath::Sqrt( EY[i][j]*EY[i][j] + EY[0][j]*EY[0][j] )/sf; // estimate
-         arg_err = 0.5*( EY[i][j] + EY[0][j] )/sf; // estimate.  This seems more realistic
+         // arg_err = 0.5*( EY[i][j] + EY[0][j] )/sf; // estimate.  This seems more realistic
 	 // std::cout << X[0][j] << " " << arg << " " << arg_err << std::endl;
 	 x.push_back(X[0][j]);  
          diff.push_back(arg); 
