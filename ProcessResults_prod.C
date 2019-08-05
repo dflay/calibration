@@ -60,6 +60,7 @@ int ProcessResults_prod(std::string configFile){
    std::string anaDate    = inputMgr->GetAnalysisDate();
    std::string blindLabel = inputMgr->GetBlindLabel();
    bool isBlind           = inputMgr->IsBlind();
+   bool isMisalignCor     = inputMgr->GetMisalignCorStatus(); 
    int probeNumber        = inputMgr->GetTrolleyProbe(); 
    int runPeriod          = inputMgr->GetRunPeriod(); 
 
@@ -83,9 +84,11 @@ int ProcessResults_prod(std::string configFile){
 
    double shot_err     = result.diffErr; 
    double shot_err_aba = result.diffErr_aba; 
+   double shot_err_opt = result.diffErr_aba;            // opt err is aba here -- opt only differs for misalignment   
 
    double shot_err_free     = result_free.diffErr; 
    double shot_err_free_aba = result_free.diffErr_aba; 
+   double shot_err_free_opt = result_free.diffErr_aba;  // opt err is aba here  
 
    // misalignments 
    char outPath_misalign[500]; 
@@ -97,6 +100,19 @@ int ProcessResults_prod(std::string configFile){
 
    double tot_misalign_err     = TMath::Sqrt(mErr.dB_x*mErr.dB_x + mErr.dB_y*mErr.dB_y + mErr.dB_z*mErr.dB_z);
    double tot_misalign_err_aba = TMath::Sqrt(mErr.dB_x_aba*mErr.dB_x_aba + mErr.dB_y_aba*mErr.dB_y_aba + mErr.dB_z_aba*mErr.dB_z_aba);
+   double tot_misalign_err_opt = TMath::Sqrt(mErr.dB_x_opt*mErr.dB_x_opt + mErr.dB_y_opt*mErr.dB_y_opt + mErr.dB_z_opt*mErr.dB_z_opt);
+
+   // misalignment correction
+   // index 0 = raw, 1 = ABA, 2 = opt 
+   std::vector<misalignCor_t> mCor;  
+   sprintf(outPath_misalign,"%s/misalign-cor_pr-%02d.csv",outDir.c_str(),probeNumber);
+   if(isMisalignCor) rc = LoadMisalignmentCorData(outPath_misalign,mCor);
+
+   if(isMisalignCor){
+      tot_misalign_err     = mCor[0].err;
+      tot_misalign_err_aba = mCor[1].err;
+      tot_misalign_err_opt = mCor[2].err;
+   } 
 
    // load in perturbation data (just in case we need it) 
    char inpath_pert[200];
@@ -108,31 +124,39 @@ int ProcessResults_prod(std::string configFile){
    double freeProtErr=0;
    rc = GetOmegaP_err(ppPert,freeProtErr);
 
-   char errStr[200],errStr_aba[200];
+   char errStr[200],errStr_aba[200],errStr_opt[200];
    sprintf(errStr    ,"%.3lf +/- %.3lf",shot_err    ,tot_misalign_err); 
    sprintf(errStr_aba,"%.3lf +/- %.3lf",shot_err_aba,tot_misalign_err_aba); 
+   sprintf(errStr_opt,"%.3lf +/- %.3lf",shot_err_opt,tot_misalign_err_opt); 
 
-   char errStr_free[200],errStr_free_aba[200];
-   sprintf(errStr_free    ,"%.3lf +/- %.3lf +/- %.3lf",shot_err_free    ,tot_misalign_err,freeProtErr); 
+   char errStr_free[200],errStr_free_aba[200],errStr_free_opt[200];
+   sprintf(errStr_free    ,"%.3lf +/- %.3lf +/- %.3lf",shot_err_free    ,tot_misalign_err    ,freeProtErr); 
    sprintf(errStr_free_aba,"%.3lf +/- %.3lf +/- %.3lf",shot_err_free_aba,tot_misalign_err_aba,freeProtErr); 
+   sprintf(errStr_free_opt,"%.3lf +/- %.3lf +/- %.3lf",shot_err_free_opt,tot_misalign_err_opt,freeProtErr); 
 
    result.mErr     = tot_misalign_err; 
    result.mErr_aba = tot_misalign_err_aba; 
+   result.mErr_opt = tot_misalign_err_opt; 
    result.pErr     = 0.; 
    result.pErr_aba = 0.; 
+   result.pErr_opt = 0.; 
 
    result_free.mErr     = tot_misalign_err; 
    result_free.mErr_aba = tot_misalign_err_aba; 
+   result_free.mErr_opt = tot_misalign_err_opt; 
    result_free.pErr     = freeProtErr; 
    result_free.pErr_aba = freeProtErr; 
+   result_free.pErr_opt = freeProtErr; 
   
-   std::cout << Form("======================= PROBE %02d RESULTS =======================",probeNumber) << std::endl;
+   std::cout << Form("*********************** PROBE %02d RESULTS ***********************",probeNumber) << std::endl;
    std::cout << "Bare" << std::endl;
    std::cout << Form("[RAW]: %.3lf +/- %s",result.diff    ,errStr)     << std::endl;
    std::cout << Form("[ABA]: %.3lf +/- %s",result.diff_aba,errStr_aba) << std::endl;
+   std::cout << Form("[opt]: %.3lf +/- %s",result.diff_opt,errStr_opt) << std::endl;
    std::cout << "Free proton" << std::endl;
    std::cout << Form("[RAW]: %.3lf +/- %s",result_free.diff    ,errStr_free)     << std::endl;
    std::cout << Form("[ABA]: %.3lf +/- %s",result_free.diff_aba,errStr_free_aba) << std::endl;
+   std::cout << Form("[opt]: %.3lf +/- %s",result_free.diff_opt,errStr_free_opt) << std::endl;
 
    // results  
    char outPath_final[500]; 
@@ -157,6 +181,8 @@ int PrintResults(std::string outpath,result_prod_t result){
    sprintf(myStr    ,"raw,%.3lf,%.3lf,%.3lf,%.3lf",result.diff,result.diffErr,result.mErr,result.pErr); 
    char myStr_aba[1000]; 
    sprintf(myStr_aba,"ABA,%.3lf,%.3lf,%.3lf,%.3lf",result.diff_aba,result.diffErr_aba,result.mErr_aba,result.pErr_aba); 
+   char myStr_opt[1000]; 
+   sprintf(myStr_opt,"opt,%.3lf,%.3lf,%.3lf,%.3lf",result.diff_opt,result.diffErr_opt,result.mErr_opt,result.pErr_opt); 
 
    std::ofstream outfile;
    outfile.open(outpath.c_str());
@@ -167,6 +193,7 @@ int PrintResults(std::string outpath,result_prod_t result){
       outfile << header    << std::endl; 
       outfile << myStr     << std::endl;
       outfile << myStr_aba << std::endl;
+      outfile << myStr_opt << std::endl;
       std::cout << "The data has been written to file: " << outpath << std::endl;
       outfile.close(); 
    }  

@@ -753,9 +753,9 @@ int LoadResultsProdFinalData(const char *inpath,result_prod_t &data){
    }else{
       for(int i=0;i<NLines;i++) infile.getline(buf,SIZE); 
       while( !infile.eof() ){
-         std::getline(infile,stype,',');
-         std::getline(infile,sx,','); 
-         std::getline(infile,sShot,',');
+         std::getline(infile,stype    ,',');
+         std::getline(infile,sx       ,','); 
+         std::getline(infile,sShot    ,',');
          std::getline(infile,sMisalign,',');
          std::getline(infile,sFree);
 	 cntr++;
@@ -769,6 +769,11 @@ int LoadResultsProdFinalData(const char *inpath,result_prod_t &data){
 	    data.diffErr_aba = std::atof( sShot.c_str() );
 	    data.mErr_aba    = std::atof( sMisalign.c_str() );
 	    data.pErr_aba    = std::atof( sFree.c_str() );
+         }else if(cntr==3){
+	    data.diff_opt    = std::atof( sx.c_str() ); 
+	    data.diffErr_opt = std::atof( sShot.c_str() );
+	    data.mErr_opt    = std::atof( sMisalign.c_str() );
+	    data.pErr_opt    = std::atof( sFree.c_str() );
          } 
       }
       infile.close();
@@ -830,6 +835,9 @@ int LoadResultsProdData(const char *inpath,result_prod_t &data){
          }else if(cntr==2){
 	    data.diff_aba    = std::atof( sx.c_str() ); 
 	    data.diffErr_aba = std::atof( sdx.c_str() );
+         }else if(cntr==3){
+	    data.diff_opt    = std::atof( sx.c_str() ); 
+	    data.diffErr_opt = std::atof( sdx.c_str() );
          } 
       }
       infile.close();
@@ -843,7 +851,7 @@ int LoadResultsProdData(const char *inpath,result_prod_t &data){
 //______________________________________________________________________________
 int LoadMisalignmentData(const char *inpath,misalignment_t &data){
 
-   std::string sname,sdq,sdB_q,sdq_aba,sdB_q_aba;
+   std::string sname,sdq,sdB_q,sdq_aba,sdB_q_aba,sdq_opt,sdB_q_opt;
 
    ifstream infile;
    infile.open(inpath);
@@ -852,28 +860,63 @@ int LoadMisalignmentData(const char *inpath,misalignment_t &data){
       return 1;
    }else{
       while( !infile.eof() ){
-         std::getline(infile,sname  ,',');
-         std::getline(infile,sdq    ,',');
-         std::getline(infile,sdB_q  ,',');
-         std::getline(infile,sdq_aba,',');
-         std::getline(infile,sdB_q_aba);
+         std::getline(infile,sname    ,',');
+         std::getline(infile,sdq      ,',');
+         std::getline(infile,sdB_q    ,',');
+         std::getline(infile,sdq_aba  ,',');
+         std::getline(infile,sdB_q_aba,',');
+         std::getline(infile,sdq_opt  ,',');
+         std::getline(infile,sdB_q_opt);
          if( sname.compare("r")==0 ){
 	    data.dx       = std::atof( sdq.c_str()       );
 	    data.dB_x     = std::atof( sdB_q.c_str()     );
 	    data.dx_aba   = std::atof( sdq_aba.c_str()   );
 	    data.dB_x_aba = std::atof( sdB_q_aba.c_str() );
+	    data.dx_opt   = std::atof( sdq_opt.c_str()   );
+	    data.dB_x_opt = std::atof( sdB_q_opt.c_str() );
          }else if( sname.compare("y")==0 ) {
 	    data.dy       = std::atof( sdq.c_str()       );
 	    data.dB_y     = std::atof( sdB_q.c_str()     );
 	    data.dy_aba   = std::atof( sdq_aba.c_str()   );
 	    data.dB_y_aba = std::atof( sdB_q_aba.c_str() );
+	    data.dy_opt   = std::atof( sdq_opt.c_str()   );
+	    data.dB_y_opt = std::atof( sdB_q_opt.c_str() );
 	 }else if( sname.compare("z")==0 ){
 	    data.dz       = std::atof( sdq.c_str()       );
 	    data.dB_z     = std::atof( sdB_q.c_str()     );
 	    data.dz_aba   = std::atof( sdq_aba.c_str()   );
 	    data.dB_z_aba = std::atof( sdB_q_aba.c_str() );
+	    data.dz_opt   = std::atof( sdq_opt.c_str()   );
+	    data.dB_z_opt = std::atof( sdB_q_opt.c_str() );
 	 }
       }
+      infile.close();
+   }
+
+   return 0;
+}
+//______________________________________________________________________________
+int LoadMisalignmentCorData(const char *inpath,std::vector<misalignCor_t> &data){
+
+   misalignCor_t dataPt; 
+   std::string sname,sv,se;
+
+   ifstream infile;
+   infile.open(inpath);
+   if( infile.fail() ){
+      cout << "Cannot open the file: " << inpath << endl;
+      return 1;
+   }else{
+      while( !infile.eof() ){
+         std::getline(infile,sname,',');
+         std::getline(infile,sv   ,',');
+         std::getline(infile,se);
+	 dataPt.label = sname;
+         dataPt.val   = std::atof( sv.c_str() ); 
+         dataPt.err   = std::atof( se.c_str() ); 
+	 data.push_back(dataPt); 
+      }
+      data.pop_back();
       infile.close();
    }
 

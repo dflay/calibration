@@ -42,23 +42,36 @@ typedef struct result{
 } result_t; 
 
 typedef struct result_prod{
+   // raw 
    double diff;
    double diffFree;
    double diffErr;         // shot error 
    double mErr;            // misalignment error 
-   double pErr;            // free-proton error  
+   double pErr;            // free-proton error 
+   // ABA 
    double diff_aba;
    double diffFree_aba;
    double diffErr_aba;
    double mErr_aba;
-   double pErr_aba;       
+   double pErr_aba;      
+   // optimized (mix of raw and ABA for Delta-B values; affects misalignment error)  
+   double diff_opt;
+   double diffFree_opt;
+   double diffErr_opt;
+   double mErr_opt;
+   double pErr_opt;       
 } result_prod_t; 
 
 // fill this struct and write to a ROOT file; 
 // this is for a single trolley probe. 
 // after reading in from the ROOT file,
 // we should have a vector of size 17 
-// all values are necessarily stored in Hz 
+// all values are necessarily stored in Hz
+// types of results 
+// raw: straight difference of values for swaps or Delta-B 
+// ABA: use ABA algorithm to remove drift 
+// opt: combination of raw and ABA for if/when ABA is missing 
+//      - Always use opt for Delta-B, misalignment results! (opt = ABA if ABA is available) 
 typedef struct calib_result { 
    double calibCoeff;             // [raw] calibration coefficient (PP-TRLY) 
    double calibCoeffErr;          // [raw] shot uncertainty for calib coeff 
@@ -71,6 +84,7 @@ typedef struct calib_result {
    double calibCoeffFreeErr_aba;  // [ABA] shot uncertainty  
    double freeErr;                // error from proton corrections (added in quadrature)  
 
+   // these will always be opt results 
    double misCor_x;               // misalignment correction along x axis in Hz        
    double misCor_y;               // misalignment correction along y axis in Hz 
    double misCor_z;               // misalignment correction along z axis in Hz

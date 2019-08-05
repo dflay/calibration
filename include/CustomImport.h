@@ -71,6 +71,7 @@ int LoadScanTimes(int runNumber,int runPeriod,std::string prodVersion,std::vecto
 int LoadResultsProdData(const char *inpath,result_prod_t &data); 
 int LoadResultsProdFinalData(const char *inpath,result_prod_t &data); 
 
+int LoadMisalignmentCorData(const char *inpath,std::vector<misalignCor_t> &data); 
 int LoadMisalignmentData(const char *inpath,misalignment_t &data); 
 int LoadCalibSwapData(const char *inpath,std::vector<calibSwap_t> &data);
 
