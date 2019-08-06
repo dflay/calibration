@@ -2129,3 +2129,41 @@ int ImportResults(std::string inpath,result_t &data){
 
    return 0;
 }
+//______________________________________________________________________________
+int LoadDeltaB_opt(const char *inpath,deltab_prod_t &pp,deltab_prod_t &tr){
+
+   std::string sa,spp,sppe,str,stre;
+
+   std::ifstream infile; 
+   infile.open(inpath); 
+   if( infile.fail() ){
+      std::cout << "[LoadDeltaB_opt]: Cannot open the file: " << inpath << std::endl;
+      return 1; 
+   }else{
+      while( !infile.eof() ){
+	 std::getline(infile,sa  ,','); 
+	 std::getline(infile,spp ,','); 
+	 std::getline(infile,sppe,','); 
+	 std::getline(infile,str ,','); 
+	 std::getline(infile,stre);
+	 if( sa.compare("r")==0 ){ 
+	    pp.dB_opt[0]     = std::atof( spp.c_str() );  
+	    pp.dB_opt_err[0] = std::atof( sppe.c_str() );  
+	    tr.dB_opt[0]     = std::atof( str.c_str() );  
+	    tr.dB_opt_err[0] = std::atof( stre.c_str() ); 
+	 }else if( sa.compare("y")==0 ){
+	    pp.dB_opt[1]     = std::atof( spp.c_str() );  
+	    pp.dB_opt_err[1] = std::atof( sppe.c_str() );  
+	    tr.dB_opt[1]     = std::atof( str.c_str() );  
+	    tr.dB_opt_err[1] = std::atof( stre.c_str() ); 
+	 }else if( sa.compare("z")==0 ){
+	    pp.dB_opt[2]     = std::atof( spp.c_str() );  
+	    pp.dB_opt_err[2] = std::atof( sppe.c_str() );  
+	    tr.dB_opt[2]     = std::atof( str.c_str() );  
+	    tr.dB_opt_err[2] = std::atof( stre.c_str() ); 
+         } 
+      }
+      infile.close();
+   }
+   return 0;
+}

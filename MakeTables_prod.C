@@ -1,4 +1,5 @@
-// Make tables of all results    
+// Make tables of all results   
+// TODO: Remove need to update shimmed gradient numbers with estimates    
 
 #include <cstdlib> 
 #include <iostream>
@@ -72,24 +73,28 @@ int PrintResults(const char *outpath,std::vector<calib_result_t> data,bool toROO
 
 int PrintToFile_json(const char *outpath,std::vector<calib_result_t> data); 
 int GetJSONObject(std::vector<calib_result_t> data,json &jData);
- 
+
 int CollectData(std::vector<result_prod_t> r,std::vector<result_prod_t> rFree,
                 std::vector<std::vector<imposed_gradient_t>> ig,std::vector<std::vector<grad_meas_t> > mg,
-                std::vector<std::vector<deltab_t>> dB_pp,std::vector<std::vector<deltab_t>> dB_tr,
-                std::vector<misalignment_t> mis,std::vector<calib_result_t> &data); 
+                std::vector<deltab_prod_t> dB_pp,std::vector<deltab_prod_t> dB_tr,
+                std::vector<misalignment_t> mis,std::vector< std::vector<misalignCor_t> > mCor,std::vector<calib_result_t> &data); 
 
-
-int MakeTables_prod(int runPeriod,bool isBlind,std::string blindLabel,std::string theDate){
+// int MakeTables_prod(int runPeriod,bool isBlind,std::string blindLabel,std::string theDate){
+int MakeTables_prod(int runPeriod,std::string theDate){
 
    int rc=0;
-   int method = gm2fieldUtil::Constants::kPhaseDerivative;
 
    json configData; 
    char inpath_config[200];
    sprintf(inpath_config,"./input/json/run-%d/config.json",runPeriod); 
    std::string cPath = inpath_config; 
    rc = gm2fieldUtil::Import::ImportJSON(cPath,configData);
+
+   // config data 
    std::string prodVersion = configData["prod-tag"]; 
+   std::string blindLabel  = configData["blinding"]["label"]; 
+   bool isBlind            = configData["blinding"]["enable"];  
+   bool isMisCor           = (bool)( (int)configData["use-misalign-cor"] );
 
    char outDir[200];
    if(isBlind)  sprintf(outDir,"./output/blinded/%s",blindLabel.c_str());
@@ -105,15 +110,17 @@ int MakeTables_prod(int runPeriod,bool isBlind,std::string blindLabel,std::strin
    std::vector<imposed_gradient_t> ig;   
    std::vector< std::vector<imposed_gradient_t> > impGrad;   
 
-   // deltab_prod_t DB; 
-   std::vector<deltab_t> db; 
-   std::vector< std::vector<deltab_t> > deltaB_pp,deltaB_trly; 
+   deltab_prod_t dbPP,dbTR;  
+   std::vector<deltab_prod_t> deltaB_pp,deltaB_trly;
 
    std::vector<grad_meas_t> grad; 
    std::vector< std::vector<grad_meas_t> > shimGrad;
 
    misalignment_t m; 
    std::vector<misalignment_t> misalign;
+
+   std::vector<misalignCor_t> mc; 
+   std::vector< std::vector<misalignCor_t> > mCor; 
 
    char inpath[500]; 
 
@@ -146,42 +153,11 @@ int MakeTables_prod(int runPeriod,bool isBlind,std::string blindLabel,std::strin
       sprintf(inpath,"%s/results_final_free-prot_pr-%02d.csv",outDir,probeNumber);
       rc = LoadResultsProdFinalData(inpath,result);
       resFree.push_back(result); 
-      // load PP Delta-B  
-      for(int j=0;j<3;j++){
-	 sprintf(inpath,"%s/dB-pp_final-location_%s-grad_pr-%02d.csv",outDir,gradName[j].c_str(),probeNumber); 
-	 rc = LoadDeltaBData(inpath,db);
-	 if(db[j].dB_fxpr==0){
-	    std::cout << Form("--> No PP ABA data for probe %02d, axis %d.  Using raw data",probeNumber,j) << std::endl; 
-	    std::cout << db[j].dB << " " << db[j].dB_err << std::endl;
-	    db[j].dB_fxpr     = db[j].dB;
-	    db[j].dB_fxpr_err = db[j].dB_err;
-	    update = true;
-         }
-      }
-      // clean up the PP delta B container, and store in new vector 
-      deltaB_pp.push_back(db);
-      db.clear();
-      // load TRLY Delta-B values [NEARLINE] 
-      // rad and vert already computed offline
-      // sprintf(inpath,"./input/delta-b/trly_xy_run-%d.csv",runPeriod);
-      // LoadDeltaBData_trlyXY(inpath,probeNumber,db);
-      // z axis 
-      for(int j=0;j<3;j++){ 
-	 sprintf(inpath,"%s/dB-trly_final-location_%s-grad_pr-%02d.csv",outDir,gradName[j].c_str(),probeNumber);
-	 LoadDeltaBData(inpath,db); 
-      } 
-      for(int j=0;j<3;j++){
-	 if(db[j].dB_fxpr==0){
-	    std::cout << Form("--> No TRLY ABA data for probe %02d, axis %d.  Using raw data",probeNumber,j) << std::endl; 
-	    std::cout << db[j].dB << " " << db[j].dB_err << std::endl;
-	    db[j].dB_fxpr     = db[j].dB;
-	    db[j].dB_fxpr_err = db[j].dB_err;
-	    update = true;
-         }
-      }
-      // clean up the TRLY delta B container, and store in new vector  
-      deltaB_trly.push_back(db);
-      db.clear(); 
+      // load OPTIMIZED Delta-B numbers
+      sprintf(inpath,"%s/delta-b-opt_pr-%02d.csv",outDir,probeNumber); 
+      rc = LoadDeltaB_opt(inpath,dbPP,dbTR);
+      deltaB_pp.push_back(dbPP);
+      deltaB_trly.push_back(dbTR); 
       // load shimmed gradients 
       rc = GetShimmedGradients(outDir,probeNumber,prodVersion,gradName,grad); 
       shimGrad.push_back(grad);
@@ -199,35 +175,13 @@ int MakeTables_prod(int runPeriod,bool isBlind,std::string blindLabel,std::strin
       rc = LoadMisalignmentData(inpath,m);
       if(rc!=0) return 1;
       misalign.push_back(m);
-      // std::cout << misalign.size() << std::endl;
-      if(update){
-	 // need to recompute misalignment numbers
-	 misalign[k].dx_aba   = (deltaB_pp[k][0].dB_fxpr-deltaB_trly[k][0].dB_fxpr)/impGrad[k][0].grad; 
-	 misalign[k].dy_aba   = (deltaB_pp[k][1].dB_fxpr-deltaB_trly[k][1].dB_fxpr)/impGrad[k][1].grad; 
-	 misalign[k].dz_aba   = (deltaB_pp[k][2].dB_fxpr-deltaB_trly[k][2].dB_fxpr)/impGrad[k][2].grad; 
-	 misalign[k].dB_x_aba = misalign[k].dx_aba*shimGrad[k][0].grad; 
-	 misalign[k].dB_y_aba = misalign[k].dy_aba*shimGrad[k][1].grad; 
-	 misalign[k].dB_z_aba = misalign[k].dz_aba*shimGrad[k][2].grad;
-         std::cout << Form("dx = %.3lf mm, dBs/dx = %.3lf Hz/mm, dx*dBs/dx = %.3lf Hz",
-                           misalign[k].dx_aba,shimGrad[k][0].grad,misalign[k].dB_x_aba) << std::endl; 
-         std::cout << Form("dy = %.3lf mm, dBs/dy = %.3lf Hz/mm, dy*dBs/dy = %.3lf Hz",
-                           misalign[k].dy_aba,shimGrad[k][1].grad,misalign[k].dB_y_aba) << std::endl; 
-         std::cout << Form("dz = %.3lf mm, dBs/dz = %.3lf Hz/mm, dz*dBs/dz = %.3lf Hz",
-                           misalign[k].dz_aba,shimGrad[k][2].grad,misalign[k].dB_z_aba) << std::endl; 
-         // now propagate to the PP-TRLY difference 
-         sum_sq               = TMath::Power(misalign[k].dB_x_aba,2.) + TMath::Power(misalign[k].dB_y_aba,2.)
-                              + TMath::Power(misalign[k].dB_z_aba,2.); 
-	 res[i].mErr_aba = TMath::Sqrt(sum_sq);
-	 std::cout << Form("PROBE %d THE MISALIGNMENT ERROR IS NOW %.3lf Hz",i+1,res[i].mErr_aba) << std::endl;
-	 std::cout << "--> Misalignments recalculated." << std::endl;
-      }
-      // reset 
-      update = false; 
-      k++;
+      // load misalignment CORRECTION data 
+      sprintf(inpath,"%s/misalign-cor_pr-%02d.csv",outDir,probeNumber); 
+      rc = LoadMisalignmentCorData(inpath,mc); 
+      mCor.push_back(mc);
+      // clean up 
+      mc.clear(); 
    }
-
-   std::cout << "MISALIGNMENT ERRORS" << std::endl;
-   for(int i=0;i<17;i++) std::cout << Form("probe %02d: %.3lf Hz",i+1,res[i].mErr_aba) << std::endl;
 
    // now make tables
 
@@ -255,46 +209,52 @@ int MakeTables_prod(int runPeriod,bool isBlind,std::string blindLabel,std::strin
    // PP-TRLY 
    std::cout << "===================================== PP-TRLY =====================================" << std::endl;
    for(int i=0;i<NPROBES;i++){
-      sum_sq   = res[i].diffErr_aba*res[i].diffErr_aba + res[i].mErr_aba*res[i].mErr_aba;
+      sum_sq   = res[i].diffErr_aba*res[i].diffErr_aba + res[i].mErr_opt*res[i].mErr_opt;
       sum      = TMath::Sqrt(sum_sq);  
-      sum_sq   = resFree[i].diffErr_aba*resFree[i].diffErr_aba + res[i].mErr_aba*res[i].mErr_aba + resFree[i].pErr*resFree[i].pErr;
+      sum_sq   = resFree[i].diffErr_aba*resFree[i].diffErr_aba + res[i].mErr_opt*res[i].mErr_opt + resFree[i].pErr*resFree[i].pErr;
       sumf     = TMath::Sqrt(sum_sq); 
       sumf_ppb = sumf/0.06179;  
-      sum_sq   = resFree[i].diffErr_aba*resFree[i].diffErr_aba + res[i].mErr_aba*res[i].mErr_aba;
+      sum_sq   = resFree[i].diffErr_aba*resFree[i].diffErr_aba + res[i].mErr_opt*res[i].mErr_opt;
       sum_sf   = TMath::Sqrt(sum_sq);  
       std::cout << Form("%02d,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf",
                         probe[i],res[i].diff_aba,resFree[i].diff_aba,res[i].diffErr_aba,
-                        resFree[i].diffErr_aba,res[i].mErr_aba,resFree[i].pErr,sum,sum_sf,sumf_ppb) << std::endl;
+                        resFree[i].diffErr_aba,res[i].mErr_opt,resFree[i].pErr,sum,sum_sf,sumf_ppb) << std::endl;
       rc = PrintTableOfResults(outpath_res,probe[i],res[i].diff_aba,resFree[i].diff_aba,res[i].diffErr_aba,res[i].mErr,resFree[i].pErr);
    }
 
    std::cout << "===================================== DELTA B =====================================" << std::endl;
    for(int i=0;i<NPROBES;i++){
       std::cout << Form("%02d,%.3lf ± %.3lf,%.3lf ± %.3lf,%.3lf ± %.3lf,%.3lf ± %.3lf,%.3lf ± %.3lf,%.3lf ± %.3lf",probe[i],
-                        deltaB_pp[i][0].dB_fxpr,deltaB_pp[i][0].dB_fxpr_err,deltaB_trly[i][0].dB_fxpr,deltaB_trly[i][0].dB_fxpr_err,
-                        deltaB_pp[i][1].dB_fxpr,deltaB_pp[i][1].dB_fxpr_err,deltaB_trly[i][1].dB_fxpr,deltaB_trly[i][1].dB_fxpr_err,
-                        deltaB_pp[i][2].dB_fxpr,deltaB_pp[i][2].dB_fxpr_err,deltaB_trly[i][2].dB_fxpr,deltaB_trly[i][2].dB_fxpr_err) << std::endl;
+                        deltaB_pp[i].dB_opt[0],deltaB_pp[i].dB_opt_err[0],deltaB_trly[i].dB_opt[0],deltaB_trly[i].dB_opt_err[0],
+                        deltaB_pp[i].dB_opt[1],deltaB_pp[i].dB_opt_err[1],deltaB_trly[i].dB_opt[1],deltaB_trly[i].dB_opt_err[1],
+                        deltaB_pp[i].dB_opt[2],deltaB_pp[i].dB_opt_err[2],deltaB_trly[i].dB_opt[2],deltaB_trly[i].dB_opt_err[2]) << std::endl;
 
    rc = PrintTableOfResults_db(outpath_db,probe[i],
-                               deltaB_pp[i][0].dB_fxpr,deltaB_pp[i][0].dB_fxpr_err,deltaB_trly[i][0].dB_fxpr,deltaB_trly[i][0].dB_fxpr_err,
-                               deltaB_pp[i][1].dB_fxpr,deltaB_pp[i][1].dB_fxpr_err,deltaB_trly[i][1].dB_fxpr,deltaB_trly[i][1].dB_fxpr_err,
-                               deltaB_pp[i][2].dB_fxpr,deltaB_pp[i][2].dB_fxpr_err,deltaB_trly[i][2].dB_fxpr,deltaB_trly[i][2].dB_fxpr_err);
+                               deltaB_pp[i].dB_opt[0],deltaB_pp[i].dB_opt_err[0],deltaB_trly[i].dB_opt[0],deltaB_trly[i].dB_opt_err[0],
+                               deltaB_pp[i].dB_opt[1],deltaB_pp[i].dB_opt_err[1],deltaB_trly[i].dB_opt[1],deltaB_trly[i].dB_opt_err[1],
+                               deltaB_pp[i].dB_opt[2],deltaB_pp[i].dB_opt_err[2],deltaB_trly[i].dB_opt[2],deltaB_trly[i].dB_opt_err[2]);
    }
 
    std::cout << "===================================== MISALIGNMENTS =====================================" << std::endl;
    for(int i=0;i<NPROBES;i++){
-      sum_sq = misalign[i].dB_x_aba*misalign[i].dB_x_aba + misalign[i].dB_y_aba*misalign[i].dB_y_aba + misalign[i].dB_z_aba*misalign[i].dB_z_aba;
+      sum_sq = misalign[i].dB_x_opt*misalign[i].dB_x_opt + misalign[i].dB_y_opt*misalign[i].dB_y_opt + misalign[i].dB_z_opt*misalign[i].dB_z_opt;
       sum    = TMath::Sqrt(sum_sq); 
       std::cout << Form("%02d,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf",probe[i],
-                        misalign[i].dx_aba,misalign[i].dB_x_aba,
-                        misalign[i].dy_aba,misalign[i].dB_y_aba,
-                        misalign[i].dz_aba,misalign[i].dB_z_aba,
+                        misalign[i].dx_opt,misalign[i].dB_x_opt,
+                        misalign[i].dy_opt,misalign[i].dB_y_opt,
+                        misalign[i].dz_opt,misalign[i].dB_z_opt,
                         sum) << std::endl;
 
       rc = PrintTableOfResults_mis(outpath_mis,probe[i],
-                                   misalign[i].dx_aba,misalign[i].dB_x_aba,
-                                   misalign[i].dy_aba,misalign[i].dB_y_aba,
-                                   misalign[i].dz_aba,misalign[i].dB_z_aba);
+                                   misalign[i].dx_opt,misalign[i].dB_x_opt,
+                                   misalign[i].dy_opt,misalign[i].dB_y_opt,
+                                   misalign[i].dz_opt,misalign[i].dB_z_opt);
+   }
+   
+   std::cout << "===================================== MISALIGNMENT CORRECTION =====================================" << std::endl;
+   // note: we're printing the opt result! 
+   for(int i=0;i<NPROBES;i++){
+      std::cout << Form("%02d,%.3lf ± %.3lf",i+1,mCor[i][2].val,mCor[i][2].err) << std::endl;
    }
    
    std::cout << "===================================== SHIMMED GRADIENTS =====================================" << std::endl;
@@ -320,7 +280,7 @@ int MakeTables_prod(int runPeriod,bool isBlind,std::string blindLabel,std::strin
    }
 
    std::vector<calib_result_t> data; 
-   rc = CollectData(res,resFree,impGrad,shimGrad,deltaB_pp,deltaB_trly,misalign,data); 
+   rc = CollectData(res,resFree,impGrad,shimGrad,deltaB_pp,deltaB_trly,misalign,mCor,data); 
 
    rc = PrintResults(outPath,data); 
 
@@ -329,8 +289,8 @@ int MakeTables_prod(int runPeriod,bool isBlind,std::string blindLabel,std::strin
 //______________________________________________________________________________
 int CollectData(std::vector<result_prod_t> r,std::vector<result_prod_t> rFree,
                 std::vector<std::vector<imposed_gradient_t>> ig,std::vector<std::vector<grad_meas_t> > mg,
-                std::vector<std::vector<deltab_t>> dB_pp,std::vector<std::vector<deltab_t>> dB_tr,
-                std::vector<misalignment_t> mis,std::vector<calib_result_t> &data){
+                std::vector<deltab_prod_t> dB_pp,std::vector<deltab_prod_t> dB_tr,
+                std::vector<misalignment_t> mis,std::vector< std::vector<misalignCor_t> > mCor,std::vector<calib_result_t> &data){
 
    // print the results to a ROOT file
    calib_result_t dataPt; 
@@ -362,23 +322,26 @@ int CollectData(std::vector<result_prod_t> r,std::vector<result_prod_t> rFree,
       dataPt.dBdy_shimErr          = mg[i][1].grad_err;
       dataPt.dBdz_shimErr          = mg[i][2].grad_err; 
       // delta-B data  
-      dataPt.deltaB_pp_x           = dB_pp[i][0].dB_fxpr; 
-      dataPt.deltaB_pp_y           = dB_pp[i][1].dB_fxpr; 
-      dataPt.deltaB_pp_z           = dB_pp[i][2].dB_fxpr; 
-      dataPt.deltaB_pp_xErr        = dB_pp[i][0].dB_fxpr_err; 
-      dataPt.deltaB_pp_yErr        = dB_pp[i][1].dB_fxpr_err; 
-      dataPt.deltaB_pp_zErr        = dB_pp[i][2].dB_fxpr_err; 
-      dataPt.deltaB_tr_x           = dB_tr[i][0].dB_fxpr; 
-      dataPt.deltaB_tr_y           = dB_tr[i][1].dB_fxpr; 
-      dataPt.deltaB_tr_z           = dB_tr[i][2].dB_fxpr; 
-      dataPt.deltaB_tr_xErr        = dB_tr[i][0].dB_fxpr_err; 
-      dataPt.deltaB_tr_yErr        = dB_tr[i][1].dB_fxpr_err; 
-      dataPt.deltaB_tr_zErr        = dB_tr[i][2].dB_fxpr_err;
+      dataPt.deltaB_pp_x           = dB_pp[i].dB_opt[0]; 
+      dataPt.deltaB_pp_y           = dB_pp[i].dB_opt[1]; 
+      dataPt.deltaB_pp_z           = dB_pp[i].dB_opt[2]; 
+      dataPt.deltaB_pp_xErr        = dB_pp[i].dB_opt_err[0]; 
+      dataPt.deltaB_pp_yErr        = dB_pp[i].dB_opt_err[1]; 
+      dataPt.deltaB_pp_zErr        = dB_pp[i].dB_opt_err[2]; 
+      dataPt.deltaB_tr_x           = dB_tr[i].dB_opt[0]; 
+      dataPt.deltaB_tr_y           = dB_tr[i].dB_opt[1]; 
+      dataPt.deltaB_tr_z           = dB_tr[i].dB_opt[2]; 
+      dataPt.deltaB_tr_xErr        = dB_tr[i].dB_opt_err[0]; 
+      dataPt.deltaB_tr_yErr        = dB_tr[i].dB_opt_err[1]; 
+      dataPt.deltaB_tr_zErr        = dB_tr[i].dB_opt_err[2];
       // misalignment data.  note that this is in Hz 
-      dataPt.dx                    = mis[i].dB_x_aba; 
-      dataPt.dy                    = mis[i].dB_y_aba; 
-      dataPt.dz                    = mis[i].dB_z_aba;
-      dataPt.dr                    = TMath::Sqrt( dataPt.dx*dataPt.dx + dataPt.dy*dataPt.dy + dataPt.dz*dataPt.dz );  
+      dataPt.dx                    = mis[i].dB_x_opt; 
+      dataPt.dy                    = mis[i].dB_y_opt; 
+      dataPt.dz                    = mis[i].dB_z_opt;
+      dataPt.dr                    = TMath::Sqrt( dataPt.dx*dataPt.dx + dataPt.dy*dataPt.dy + dataPt.dz*dataPt.dz ); 
+      // misalignment CORRECTION. always use the opt result.  this is in Hz  
+      dataPt.misCor                = mCor[i][2].val;  
+      dataPt.misCor_err            = mCor[i][2].err;  
       // fill vector 
       data.push_back(dataPt);  
    }
@@ -467,6 +430,9 @@ int GetJSONObject(std::vector<calib_result_t> data,json &jData){
       jData["dy"][i]                    = data[i].dy;
       jData["dz"][i]                    = data[i].dz;
       jData["dr"][i]                    = data[i].dr;
+      // misalignment CORRECTION data 
+      jData["misCor"][i]                = data[i].misCor;   
+      jData["misCor_err"][i]            = data[i].misCor_err;   
    }
    return 0; 
 }
@@ -555,7 +521,8 @@ int ApplyShimmedGradEstimates(int probe,std::string prodVersion,std::vector<grad
 		  if(i==2) ig = iz;
 		  data[i].grad     = ig;
 		  data[i].grad_err = fabs(ig);
-		  std::cout << "WARNING for probe " << probe << ": grad estimate of " << ig << " applied for axis " << axis[i] << std::endl;
+		  std::cout << Form("WARNING for probe %02d: gradient estimate of %.3lf +/- %.3lf Hz applied for axis %c",
+                                    probe,ig,fabs(ig),axis[i]) << std::endl;
 	       }
             }
          }

@@ -94,6 +94,7 @@ int LoadGradientData(const char *inpath,std::vector<grad_meas_t> &x);
 int LoadDeltaBData(const char *inpath,std::vector<deltab_t> &x);
 int LoadDeltaBData_trlyXY(const char *inpath,int probe,std::vector<deltab_t> &x); 
 int LoadDeltaBData_trlyXYZ(const char *inpath,int probe,std::vector<deltab_t> &x); 
+int LoadDeltaB_opt(const char *inpath,deltab_prod_t &pp,deltab_prod_t &tr); 
 
 int FindStartIndexTRLY(std::string date,int runNumber);
 int LoadBlinding(blind_t *data); 

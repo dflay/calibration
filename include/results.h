@@ -85,12 +85,8 @@ typedef struct calib_result {
    double freeErr;                // error from proton corrections (added in quadrature)  
 
    // these will always be opt results 
-   double misCor_x;               // misalignment correction along x axis in Hz        
-   double misCor_y;               // misalignment correction along y axis in Hz 
-   double misCor_z;               // misalignment correction along z axis in Hz
-   double misCor_x_err;           // misalignment correction uncertainty along x axis in Hz 
-   double misCor_y_err;           // misalignment correction uncertainty along y axis in Hz  
-   double misCor_z_err;           // misalignment correction uncertainty along z axis in Hz 
+   double misCor;                 // misalignment correction along x axis in Hz        
+   double misCor_err;             // misalignment correction uncertainty along x axis in Hz 
 
    double dx;                     // misalignment error along x axis in Hz 
    double dy;                     // misalignment error along y axis in Hz 

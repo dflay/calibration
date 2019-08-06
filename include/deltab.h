@@ -19,11 +19,15 @@ typedef struct deltab {
    double r2r_err;           // run-to-run (R2R) drift error 
 } deltab_t; 
 
+// another struct
+// index 0 = x, 1 = y, z = 2 
 typedef struct deltab_prod {
    double dB[3];
    double dB_err[3];
    double dB_aba[3];
    double dB_aba_err[3];
+   double dB_opt[3];
+   double dB_opt_err[3];
 } deltab_prod_t; 
 
 #endif 
