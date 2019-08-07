@@ -69,7 +69,7 @@ int DeltaB_pp_prod(std::string configFile){
 
    bool isBlind              = inputMgr->IsBlind();
    bool useTimeWeight        = inputMgr->GetTimeWeightStatus();
-   bool useOscCor            = false;  // never use oscillation corrections here  
+   bool useOscCor            = inputMgr->GetOscCorStatus(); // false;  // never use oscillation corrections here  
    int probeNumber           = inputMgr->GetTrolleyProbe();
    int axis                  = inputMgr->GetAxis();
    int runPeriod             = inputMgr->GetRunPeriod(); 
@@ -171,6 +171,9 @@ int DeltaB_pp_prod(std::string configFile){
       }
    }
 
+   TGraphErrors *gFXPR = GetFXPRTGraph_avg("GpsTimeStamp","freq","NONE",fxprData);
+   gm2fieldUtil::Graph::SetGraphParameters(gFXPR,20,kBlack);
+
    // PP data 
    const int N3 = run.size(); 
    std::vector<plungingProbeAnaEvent_t> ppInput,ppEvent; 
@@ -247,14 +250,14 @@ int DeltaB_pp_prod(std::string configFile){
    std::vector<double> trial; 
    for(int i=0;i<ND;i++){
       trial.push_back(i+1);
-      std::cout << Form("RAW trial %d: %.3lf +/- %.3lf Hz",i+1,diff[i],diffErr[i]) << std::endl;
+      std::cout << Form("RAW trial %02d: %.3lf +/- %.3lf Hz",i+1,diff[i],diffErr[i]) << std::endl;
    }
 
    const int NDA = diff_aba.size();
    std::vector<double> trial_aba;
    for(int i=0;i<NDA;i++){
       trial_aba.push_back(i+1);
-      std::cout << Form("ABA trial %d: %.3lf +/- %.3lf Hz",i+1,diff_aba[i],diffErr_aba[i]) << std::endl;
+      std::cout << Form("ABA trial %02d: %.3lf +/- %.3lf Hz",i+1,diff_aba[i],diffErr_aba[i]) << std::endl;
    }
   
    // single trial, use shot uncertainty 
@@ -274,15 +277,25 @@ int DeltaB_pp_prod(std::string configFile){
 
    // Plots
 
+   TGraph *gPP             = GetPPTGraph1("TimeStamp","freq",ppInput); 
+   TGraph *gPP_oscCor      = GetPPTGraph1("TimeStamp","freq",ppEvent); 
+
    TGraphErrors *gPP_bare  = gm2fieldUtil::Graph::GetTGraphErrors(bareTime ,bare      ,bareErr      );
    TGraphErrors *gPP_scc   = gm2fieldUtil::Graph::GetTGraphErrors(sccTime  ,scc       ,sccErr       );
    TGraphErrors *gDiff     = gm2fieldUtil::Graph::GetTGraphErrors(trial    ,diff      ,diffErr      );  
    TGraphErrors *gDiff_aba = gm2fieldUtil::Graph::GetTGraphErrors(trial_aba,diff_aba  ,diffErr_aba  );  
 
+   gm2fieldUtil::Graph::SetGraphParameters(gPP,20    ,kBlack); 
+   gm2fieldUtil::Graph::SetGraphParameters(gPP_oscCor,20,kRed); 
+  
    gm2fieldUtil::Graph::SetGraphParameters(gPP_bare   ,20,kBlack  );
    gm2fieldUtil::Graph::SetGraphParameters(gPP_scc    ,20,kRed    );
    gm2fieldUtil::Graph::SetGraphParameters(gDiff      ,20,kBlue   );
    gm2fieldUtil::Graph::SetGraphParameters(gDiff_aba  ,20,kGreen+2);
+
+   TMultiGraph *mg = new TMultiGraph();
+   mg->Add(gPP       ,"lp"); 
+   mg->Add(gPP_oscCor,"lp"); 
 
    TMultiGraph *mgPP = new TMultiGraph();
    mgPP->Add(gPP_bare,"lp");
@@ -306,6 +319,12 @@ int DeltaB_pp_prod(std::string configFile){
    std::cout << "-----------------------------------------------------" << std::endl; 
    std::cout << "Drift corrected [ABA]: " << std::endl;
    std::cout << Form("dB (%s): %.3lf +/- %.3lf Hz",gradName.c_str(),dB[1],dB_err[1]) << std::endl;
+
+   char msg[200]; 
+   if(dB[1]==0){
+      sprintf(msg,"[DeltaB_pp_prod]: No ABA data for probe %02d, axis %d!",probeNumber,axis);
+      Logger::PrintMessage(Logger::kERR,"default",msg,'a');  
+   }
 
    char outpath[200];
    sprintf(outpath,"%s/dB-pp_final-location_%s-grad_pr-%02d.csv",outDir.c_str(),gradName.c_str(),probeNumber);
@@ -385,7 +404,35 @@ int DeltaB_pp_prod(std::string configFile){
    c2->cd();
    plotPath = Form("%s/pp_dB_scc-currents_%s-grad_pr-%02d.png",plotDir.c_str(),gradName.c_str(),probeNumber); 
    c2->Print(plotPath);
-   delete c2;  
+   delete c2; 
+
+   TString Title_pp = Form("All PP Data");
+   if(useOscCor) Title_pp += Form(" (black = raw, red = osc cor)");
+   TString yAxisTitle_pp = Form("Frequency (Hz)");
+
+   TCanvas *c3 = new TCanvas("c3","PP Data",1200,600); 
+   c3->cd();
+
+   mg->Draw("a");
+   gm2fieldUtil::Graph::SetGraphLabels(mg,Title_pp,"",yAxisTitle_pp);
+   gm2fieldUtil::Graph::UseTimeDisplay(mg);
+   mg->Draw("a");
+   c3->Update(); 
+   
+   plotPath = Form("%s/pp_dB_%s-grad_all-events_pr-%02d.png",plotDir.c_str(),gradName.c_str(),probeNumber); 
+   c3->Print(plotPath);
+   delete c3;  
+
+   TCanvas *c4 = new TCanvas("c4","FXPR Data",1200,600);
+   c4->cd();
+
+   gFXPR->Draw("alp");
+   gm2fieldUtil::Graph::SetGraphLabels(gFXPR,"FXPR Data","","Frequency (Hz)");
+   gFXPR->Draw("alp");
+   c4->Update();
+
+   plotPath = Form("%s/pp_dB_%s-grad_fxpr-data_pr-%02d.png",plotDir.c_str(),gradName.c_str(),probeNumber);
+   c4->Print(plotPath);
 
    delete inputMgr;
  

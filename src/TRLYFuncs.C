@@ -382,16 +382,18 @@ int GetTRLYStats_sccToggle(bool useOscCor,int probe,int nev,std::vector<double> 
    std::vector<double> trTime,trFreq,trFreq_cor; 
    int rc = CorrectOscillation_trly(probe,nev,time,fxpr,Data,trTime,trFreq,trFreq_cor);
 
-   if(useOscCor) std::cout << "[GetTRLYStats_sccToggle]: USING OSCILLATION CORRECTION" << std::endl;
-   // std::cout << "nev = " << nev << std::endl;
-
+   const int NT = time.size();
+   int M = trTime.size();
+   if(useOscCor){ 
+      std::cout << "[GetTRLYStats_sccToggle]: USING OSCILLATION CORRECTION" << std::endl;
+      // for(int i=0;i<M;i++) std::cout << Form("Event %d, change = %.3lf Hz",i+1,trFreq[i]-trFreq_cor[i]) << std::endl;
+   }   
+       
    // now need to average over each toggle 
 
    int n=0;
    double lastTime=0,mean=0,stdev=0;
    std::vector<double> tt,ff; 
-   int M = trTime.size();
-   const int NT = time.size();
    for(int i=0;i<NT;i++){
       // find events that satisfy the timestamp
       // WARNING: must be careful to not accumulate events from previous toggles!  

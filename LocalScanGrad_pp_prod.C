@@ -133,10 +133,12 @@ int LocalScanGrad_pp_prod(std::string configFile){
 
    double ZERO[3] = {0,0,0}; 
 
+   char msg[200];
    int NSR = subRun.size();
    for(int i=0;i<NSR;i++){
       if(subRun[i]==-1){
-	 std::cout << "Invalid subrun number " << subRun[i] << "! There appears to be no scan data.  Exiting." << std::endl;
+	 sprintf(msg,"[LocalScanGrad_pp_prod]: Invalid subrun number %d for probe %02d!",subRun[i],probeNumber);
+	 Logger::PrintMessage(Logger::kERR,"default",msg,'a');
 	 PrintToFile(outpath,strTag,ZERO,ZERO,ZERO,ZERO);
 	 return 1;
       }

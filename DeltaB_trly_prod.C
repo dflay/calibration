@@ -34,10 +34,10 @@
 
 #include "./src/CustomUtilities.C"
 #include "./src/CustomMath.C"
-#include "./src/CustomAlgorithms.C"
 #include "./src/CustomImport.C"
 #include "./src/CustomExport.C"
 #include "./src/CustomGraph.C"
+#include "./src/CustomAlgorithms.C"
 #include "./src/OscFuncs.C"
 #include "./src/BlindFuncs.C"
 #include "./src/InputManager.C"
@@ -63,7 +63,7 @@ int DeltaB_trly_prod(std::string configFile){
 
    bool isBlind            = inputMgr->IsBlind();
    bool useTimeWeight      = inputMgr->GetTimeWeightStatus(); 
-   bool useOscCor          = false; // never use oscillation corrections here   
+   bool useOscCor          = inputMgr->GetOscCorStatus(); // false; // never use oscillation corrections here   
    bool loadTimes          = inputMgr->GetSCCTimeStatus(); 
    int probeNumber         = inputMgr->GetTrolleyProbe();
    int axis                = inputMgr->GetAxis();
@@ -211,6 +211,9 @@ int DeltaB_trly_prod(std::string configFile){
       }
    }
 
+   TGraphErrors *gFXPR = GetFXPRTGraph_avg("GpsTimeStamp","freq","NONE",fxprData);
+   gm2fieldUtil::Graph::SetGraphParameters(gFXPR,20,kBlack); 
+
    std::vector<double> X; 
    int NEV = trlyData.size();
    for(int i=0;i<NEV;i++) X.push_back( trlyData[i].freq[probeNumber-1] );
@@ -251,7 +254,9 @@ int DeltaB_trly_prod(std::string configFile){
    // get the mean field with SCC off and on 
    int nev = inputMgr->GetNumEventsToAvg(); // 30;  // keep 30 events in the analysis
    std::vector<double> bareTime,bare,bareErr,sccTime,scc,sccErr;  
+   if(useOscCor) std::cout << "[DeltaB_trly_prod]: Bare field data" << std::endl;
    rc = GetTRLYStats_sccToggle(useOscCor,probeNumber-1,nev,sccOff,fxprData,trlyData,bareTime,bare,bareErr); 
+   if(useOscCor) std::cout << "[DeltaB_trly_prod]: Grad field data" << std::endl;
    rc = GetTRLYStats_sccToggle(useOscCor,probeNumber-1,nev,sccOn ,fxprData,trlyData,sccTime ,scc ,sccErr ); 
 
    // do delta B calcs
@@ -338,6 +343,12 @@ int DeltaB_trly_prod(std::string configFile){
 
    rc = PrintToFile(outpath,gradName,dB,dB_err,drift,drift_err); 
 
+   char msg[200];
+   if(dB[1]==0){
+      sprintf(msg,"[DeltaB_trly_prod]: No ABA data for probe %02d, axis %d!",probeNumber,axis);
+      Logger::PrintMessage(Logger::kERR,"default",msg,'a');
+   }
+
    // draw some plots 
    TCanvas *c1 = new TCanvas("c1","Data",1200,600);
    c1->Divide(1,2); 
@@ -415,6 +426,84 @@ int DeltaB_trly_prod(std::string configFile){
    plotPath = Form("%s/trly_dB_scc-currents_%s-grad_pr-%02d.png",plotDir.c_str(),gradName.c_str(),probeNumber); 
    c3->Print(plotPath);
    delete c3;
+
+   // for the sake of making plots
+   std::vector<double> trTime_bare,trFreq_bare,trFreq_cor_bare;
+   std::vector<double> trTime_scc ,trFreq_scc ,trFreq_cor_scc;
+   rc = CorrectOscillation_trly(probeNumber-1,nev,bareTime,fxprData,trlyData,trTime_bare,trFreq_bare,trFreq_cor_bare);
+   rc = CorrectOscillation_trly(probeNumber-1,nev,sccTime ,fxprData,trlyData,trTime_scc,trFreq_scc,trFreq_cor_scc);
+ 
+   // to make it easier to see, subtract off the linear trend
+   int SIZE = trTime_bare.size(); 
+   double intercept=0,slope=0,r=0;
+   rc = gm2fieldUtil::Math::LeastSquaresFitting(trTime_bare,trFreq_bare,intercept,slope,r);
+   for(int i=0;i<SIZE;i++) trFreq_bare[i] -= (intercept + slope*trTime_bare[i]); 
+   rc = gm2fieldUtil::Math::LeastSquaresFitting(trTime_bare,trFreq_cor_bare,intercept,slope,r);
+   for(int i=0;i<SIZE;i++) trFreq_cor_bare[i] -= (intercept + slope*trTime_bare[i]); 
+
+   SIZE = trTime_scc.size(); 
+   rc = gm2fieldUtil::Math::LeastSquaresFitting(trTime_scc,trFreq_scc,intercept,slope,r);
+   for(int i=0;i<SIZE;i++) trFreq_scc[i] -= (intercept + slope*trTime_scc[i]); 
+   rc = gm2fieldUtil::Math::LeastSquaresFitting(trTime_scc,trFreq_cor_scc,intercept,slope,r);
+   for(int i=0;i<SIZE;i++) trFreq_cor_scc[i] -= (intercept + slope*trTime_scc[i]); 
+
+   TGraph *gTR_bare_raw = gm2fieldUtil::Graph::GetTGraph(trTime_bare,trFreq_bare); 
+   TGraph *gTR_bare_cor = gm2fieldUtil::Graph::GetTGraph(trTime_bare,trFreq_cor_bare); 
+   TGraph *gTR_scc_raw  = gm2fieldUtil::Graph::GetTGraph(trTime_scc ,trFreq_scc); 
+   TGraph *gTR_scc_cor  = gm2fieldUtil::Graph::GetTGraph(trTime_scc ,trFreq_cor_scc);
+
+   gm2fieldUtil::Graph::SetGraphParameters(gTR_bare_raw,21,kBlack); 
+   gm2fieldUtil::Graph::SetGraphParameters(gTR_bare_cor,20,kRed); 
+   gm2fieldUtil::Graph::SetGraphParameters(gTR_scc_raw ,21,kBlack); 
+   gm2fieldUtil::Graph::SetGraphParameters(gTR_scc_cor ,20,kRed);
+
+   TMultiGraph *mgTR_bare = new TMultiGraph(); 
+   mgTR_bare->Add(gTR_bare_raw,"lp");  
+   if(useOscCor) mgTR_bare->Add(gTR_bare_cor,"lp");  
+   
+   TMultiGraph *mgTR_scc = new TMultiGraph(); 
+   mgTR_scc->Add(gTR_scc_raw,"lp");  
+   if(useOscCor) mgTR_scc->Add(gTR_scc_cor,"lp");  
+
+   TString Title_tr = Form("TRLY %02d SCC OFF",probeNumber);
+   if(useOscCor) Title_tr += Form(" (black = raw, red = osc cor)");
+   TString yAxisTitle_tr = Form("Frequency (Hz)");
+
+   TCanvas *c4 = new TCanvas("c4","TRLY Data",1200,600);
+   c4->Divide(1,2);
+ 
+   c4->cd(1);
+   mgTR_bare->Draw("a");
+   gm2fieldUtil::Graph::SetGraphLabels(mgTR_bare,Title_tr,"",yAxisTitle_tr);
+   gm2fieldUtil::Graph::UseTimeDisplay(mgTR_bare);
+   gm2fieldUtil::Graph::SetGraphLabelSizes(mgTR_bare,0.05,0.06); 
+   mgTR_bare->Draw("a");
+   c4->Update();
+
+   c4->cd(2);
+   mgTR_scc->Draw("a");
+   gm2fieldUtil::Graph::SetGraphLabels(mgTR_scc,"SCC ON","",yAxisTitle_tr);
+   gm2fieldUtil::Graph::UseTimeDisplay(mgTR_scc);
+   gm2fieldUtil::Graph::SetGraphLabelSizes(mgTR_scc,0.05,0.06); 
+   mgTR_scc->Draw("a");
+   c4->Update();
+
+   c4->cd(); 
+   plotPath = Form("%s/trly_dB_%s-grad_all-events_pr-%02d.png",plotDir.c_str(),gradName.c_str(),probeNumber); 
+   c4->Print(plotPath);
+   delete c4;
+
+   TCanvas *c5 = new TCanvas("c5","FXPR Data",1200,600);
+   c5->cd();
+
+   gFXPR->Draw("alp");
+   gm2fieldUtil::Graph::SetGraphLabels(gFXPR,"FXPR Data","","Frequency (Hz)");
+   gm2fieldUtil::Graph::UseTimeDisplay(gFXPR);
+   gFXPR->Draw("alp");
+   c5->Update(); 
+
+   plotPath = Form("%s/trly_dB_%s-grad_fxpr-data_pr-%02d.png",plotDir.c_str(),gradName.c_str(),probeNumber); 
+   c5->Print(plotPath);
 
    delete inputMgr; 
 

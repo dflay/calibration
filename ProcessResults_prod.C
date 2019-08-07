@@ -148,15 +148,18 @@ int ProcessResults_prod(std::string configFile){
    result_free.pErr_aba = freeProtErr; 
    result_free.pErr_opt = freeProtErr; 
   
-   std::cout << Form("*********************** PROBE %02d RESULTS ***********************",probeNumber) << std::endl;
+   std::cout << Form("******************************************************************") << std::endl;
+   std::cout << Form("************************* PROBE %02d RESULTS ***********************",probeNumber) << std::endl;
    std::cout << "Bare" << std::endl;
-   std::cout << Form("[RAW]: %.3lf +/- %s",result.diff    ,errStr)     << std::endl;
-   std::cout << Form("[ABA]: %.3lf +/- %s",result.diff_aba,errStr_aba) << std::endl;
-   std::cout << Form("[opt]: %.3lf +/- %s",result.diff_opt,errStr_opt) << std::endl;
+   std::cout << Form("[RAW]: %.3lf +/- %s Hz",result.diff    ,errStr)     << std::endl;
+   std::cout << Form("[ABA]: %.3lf +/- %s Hz",result.diff_aba,errStr_aba) << std::endl;
+   std::cout << Form("[opt]: %.3lf +/- %s Hz",result.diff_opt,errStr_opt) << std::endl;
    std::cout << "Free proton" << std::endl;
-   std::cout << Form("[RAW]: %.3lf +/- %s",result_free.diff    ,errStr_free)     << std::endl;
-   std::cout << Form("[ABA]: %.3lf +/- %s",result_free.diff_aba,errStr_free_aba) << std::endl;
-   std::cout << Form("[opt]: %.3lf +/- %s",result_free.diff_opt,errStr_free_opt) << std::endl;
+   std::cout << Form("[RAW]: %.3lf +/- %s Hz",result_free.diff    ,errStr_free)     << std::endl;
+   std::cout << Form("[ABA]: %.3lf +/- %s Hz",result_free.diff_aba,errStr_free_aba) << std::endl;
+   std::cout << Form("[opt]: %.3lf +/- %s Hz",result_free.diff_opt,errStr_free_opt) << std::endl;
+   std::cout << Form("******************************************************************") << std::endl;
+   std::cout << Form("******************************************************************") << std::endl;
 
    // results  
    char outPath_final[500]; 

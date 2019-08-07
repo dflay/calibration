@@ -1,5 +1,4 @@
-// Make tables of all results   
-// TODO: Remove need to update shimmed gradient numbers with estimates    
+// Make tables of all results and print ROOT and JSON files that contain everything 
 
 #include <cstdlib> 
 #include <iostream>
@@ -79,7 +78,6 @@ int CollectData(std::vector<result_prod_t> r,std::vector<result_prod_t> rFree,
                 std::vector<deltab_prod_t> dB_pp,std::vector<deltab_prod_t> dB_tr,
                 std::vector<misalignment_t> mis,std::vector< std::vector<misalignCor_t> > mCor,std::vector<calib_result_t> &data); 
 
-// int MakeTables_prod(int runPeriod,bool isBlind,std::string blindLabel,std::string theDate){
 int MakeTables_prod(int runPeriod,std::string theDate){
 
    int rc=0;
@@ -159,7 +157,9 @@ int MakeTables_prod(int runPeriod,std::string theDate){
       deltaB_pp.push_back(dbPP);
       deltaB_trly.push_back(dbTR); 
       // load shimmed gradients 
-      rc = GetShimmedGradients(outDir,probeNumber,prodVersion,gradName,grad); 
+      sprintf(inpath,"%s/shim-grad_opt_pr-%02d.csv",outDir,probeNumber); 
+      rc = LoadShimmedGrad_opt(inpath,grad);  
+      if(rc!=0) return 1;
       shimGrad.push_back(grad);
       // clean up 
       grad.clear(); 
@@ -178,6 +178,7 @@ int MakeTables_prod(int runPeriod,std::string theDate){
       // load misalignment CORRECTION data 
       sprintf(inpath,"%s/misalign-cor_pr-%02d.csv",outDir,probeNumber); 
       rc = LoadMisalignmentCorData(inpath,mc); 
+      if(rc!=0) return 1;
       mCor.push_back(mc);
       // clean up 
       mc.clear(); 

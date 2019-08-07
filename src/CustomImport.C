@@ -2167,3 +2167,31 @@ int LoadDeltaB_opt(const char *inpath,deltab_prod_t &pp,deltab_prod_t &tr){
    }
    return 0;
 }
+//______________________________________________________________________________
+int LoadShimmedGrad_opt(const char *inpath,std::vector<grad_meas_t> &data){
+
+   grad_meas_t inData; 
+   std::string sa,sg,sge,sg_aba,sg_aba_e;
+
+   std::ifstream infile; 
+   infile.open(inpath); 
+   if( infile.fail() ){
+      std::cout << "[LoadDeltaB_opt]: Cannot open the file: " << inpath << std::endl;
+      return 1; 
+   }else{
+      while( !infile.eof() ){
+	 std::getline(infile,sa     ,','); 
+	 std::getline(infile,sg     ,','); 
+	 std::getline(infile,sge    ,','); 
+	 std::getline(infile,sg_aba ,','); 
+	 std::getline(infile,sg_aba_e); 
+	 inData.grad          = std::atof( sg.c_str() );      
+	 inData.grad_err      = std::atof( sge.c_str() );   
+	 inData.grad_fxpr     = std::atof( sg_aba.c_str() );
+	 inData.grad_fxpr_err = std::atof( sg_aba_e.c_str() );
+	 data.push_back(inData);  
+      }
+      infile.close();
+   }
+   return 0;
+}

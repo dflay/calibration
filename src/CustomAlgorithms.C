@@ -1,5 +1,52 @@
 #include "../include/CustomAlgorithms.h"
 //______________________________________________________________________________
+int CheckShimGrad(int probe,std::vector<grad_meas_t> &data){
+   // make sure we have non-zero entries for all values
+   // zeroes are usually because we don't have a measurement 
+   // first find the maximum
+   char msg[200];
+   const int N = data.size();
+   double max          = data[0].grad;
+   double max_err      = data[0].grad_err;
+   double max_fxpr     = data[0].grad_fxpr;
+   double max_fxpr_err = data[0].grad_fxpr_err;
+   for(int i=0;i<N;i++){
+      if( fabs(max)<=fabs(data[i].grad) ){
+         max          = data[i].grad;
+         max_err      = data[i].grad_err;
+         max_fxpr     = data[i].grad_fxpr;
+         max_fxpr_err = data[i].grad_fxpr_err;
+      }
+   }
+
+   bool isBad = gm2fieldUtil::Math::IsInfOrNaN<double>(max);
+   if(isBad){
+      sprintf(msg,"[CheckShimGrad]: Warning for maximum gradients (probe %02d)! inf or NaN.  Using 1000 Hz...",probe);
+      Logger::PrintMessage(Logger::kINFO,"default",msg,'a');
+      max          = 1E+3;
+      max_err      = 1E+3;
+      max_fxpr     = 1E+3;
+      max_fxpr_err = 1E+3;
+   }
+
+   // now check to see if we need to update a value 
+   for(int i=0;i<N;i++){
+      if( data[i].grad!=0 ){
+         // things are good, do nothing
+      }else{
+         // invalid gradient.  Make an update using the worst gradient we have 
+         sprintf(msg,"[CheckShimGrad]: Warning for probe %02d, axis %d! Using worst gradient of %.3lf +/- %.3lf Hz (ABA %.3lf +/- %.3lf Hz)",
+                           probe,i,max,max_err,max_fxpr,max_fxpr_err);
+         Logger::PrintMessage(Logger::kINFO,"default",msg,'a');
+         data[i].grad          = max;
+         data[i].grad_err      = max_err;
+         data[i].grad_fxpr     = max_fxpr;
+         data[i].grad_fxpr_err = max_fxpr_err;
+      }
+   }
+   return 0;
+}
+//______________________________________________________________________________
 int CopyTrolleyProbe(std::vector<trolleyAnaEvent_t> x,std::vector<trolleyAnaEvent_t> &y){
    // copy a trolley probe vector to a new one 
    trolleyAnaEvent_t data;
@@ -677,6 +724,7 @@ int GetDifference_ABA_final(bool useTimeWeight,
                             std::vector<double> B_time,std::vector<double> B,std::vector<double> B_err,
                             std::vector<double> &diff_aba,std::vector<double> &diff_aba_err){
    // WARNING: This assumes that the A measurement comes first!
+   std::cout << "[GetDifference_ABA_final]: Computing difference..." << std::endl;
    double w=0,w_prev=0,dt_tot=0;
    double diff=0,diff_prev=0;
    double arg=0,arg_err=0,arg_err_sq=0;
@@ -710,6 +758,7 @@ int GetDifference_ABA_final(bool useTimeWeight,
       diff_aba.push_back(arg);
       diff_aba_err.push_back(arg_err);
    }
+   std::cout << "[GetDifference_ABA_final]: Done." << std::endl;
    return 0;
 }
 //______________________________________________________________________________

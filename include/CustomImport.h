@@ -90,6 +90,7 @@ int LoadFieldData(const char *inpath,nmr_meas_t &x);
 
 int LoadGradientData(const char *inpath,grad_meas_t &x);
 int LoadGradientData(const char *inpath,std::vector<grad_meas_t> &x);
+int LoadShimmedGrad_opt(const char *inpath,std::vector<grad_meas_t> &data); 
 
 int LoadDeltaBData(const char *inpath,std::vector<deltab_t> &x);
 int LoadDeltaBData_trlyXY(const char *inpath,int probe,std::vector<deltab_t> &x); 
