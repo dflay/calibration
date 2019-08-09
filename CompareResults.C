@@ -16,7 +16,8 @@
 TGraphErrors *GetTGraphErrors(std::string xAxis,std::string yAxis,std::string yAxisErr,json data);
 
 TMultiGraph *GetTMultiGraph_diff(std::vector< std::vector<double> > X,
-                                 std::vector< std::vector<double> > Y,std::vector< std::vector<double> > EY,double sf=1.,double rho=0.); 
+                                 std::vector< std::vector<double> > Y,std::vector< std::vector<double> > EY,
+                                 std::vector<std::string> label,double sf=1.,double rho=0.); 
 
 int PrintToFile_csv(const char *outpath,std::string xAxis,std::string yAxis,std::string yAxisErr,json data); 
 
@@ -25,6 +26,8 @@ int AddToMultiGraph(int color,std::string label,std::string xAxis,std::string yA
                     json data,TMultiGraph *mg,TLegend *L); 
 
 int CompareResults(){
+
+   bool plotSim = false; 
 
    json input; 
 
@@ -70,16 +73,16 @@ int CompareResults(){
    std::vector<double> x,y,ey;  
    std::vector< std::vector<double> > X,Y,EY; 
  
-   std::string label;  
+   std::vector<std::string> label;  
    int color=0;
    json result; 
    for(int i=0;i<NT;i++){
       color++;
-      label  = input["ana-set"][i]; 
-      inpath = prefix + label + "/calibData_" + date + ".json"; 
-      std::cout << "Processing data set: " << label << std::endl; 
+      label.push_back( input["ana-set"][i] ); 
+      inpath = prefix + label[i] + "/calibData_" + date + ".json"; 
+      std::cout << "Processing data set: " << label[i] << std::endl; 
       rc = gm2fieldUtil::Import::ImportJSON(inpath,result);
-      AddToMultiGraph(color,label,xAxis,yAxis,yAxisErr,result,mg,L);
+      AddToMultiGraph(color,label[i],xAxis,yAxis,yAxisErr,result,mg,L);
       // also gather all data we care about into three doubly-indexed vectors.  
       FillVector(xAxis,result,x); 
       FillVector(yAxis,result,y); 
@@ -94,13 +97,41 @@ int CompareResults(){
       ey.clear();
    }   
 
+   // load Ran's data
+   json rData;  
+   std::string inpath_ran = "./output/blinded/ran-hong/run-1_05-16-19.json"; 
+   rc = gm2fieldUtil::Import::ImportJSON(inpath_ran,rData);
+   if(rc!=0) return 1; 
+
+   int NL = label.size();
+
+   bool plotRan = (bool)( (int)input["compare-ran"] );
+   if(plotRan){
+      label.push_back("Ran"); 
+      NL = label.size(); 
+      std::cout << "Adding Ran's data to the plots..." << std::endl;
+      AddToMultiGraph(kOrange+1,label[NL-1],xAxis,yAxis,yAxisErr,rData,mg,L);
+      if(yAxis.compare("calibCoeff_aba")==0){
+	 yAxis    = "calibCoeff"; 
+	 yAxisErr = "calibCoeffErr"; 
+      }
+      // also gather all data we care about into three doubly-indexed vectors.  
+      FillVector(xAxis,rData,x); 
+      FillVector(yAxis,rData,y); 
+      FillVector(yAxisErr,rData,ey); 
+      X.push_back(x);  
+      Y.push_back(y);  
+      EY.push_back(ey); 
+      std::cout << "--> Done!" << std::endl;
+   } 
+
    double sf  = 1.; 
    double rho = input["correlation"];  
-   TMultiGraph *mgDiff = GetTMultiGraph_diff(X,Y,EY,sf,rho);
-   mgDiff->Add(gSim,"lp");  
+   TMultiGraph *mgDiff = GetTMultiGraph_diff(X,Y,EY,label,sf,rho);
+   if(plotSim) mgDiff->Add(gSim,"lp");  
    
-   TLegend *LD = new TLegend(0.6,0.6,0.8,0.8); 
-   LD->AddEntry(gSim,"Simulation"); 
+   TLegend *LD = new TLegend(0.6,0.6,0.8,0.8);
+   if(plotSim) LD->AddEntry(gSim,"Simulation"); 
 
    TCanvas *c1 = new TCanvas("c1","Calibration Comparison",1200,600);
    c1->Divide(1,2); 
@@ -119,7 +150,7 @@ int CompareResults(){
    gm2fieldUtil::Graph::SetGraphLabelSizes(mgDiff,0.05,0.06); 
    mgDiff->GetYaxis()->SetRangeUser(-10,10);  
    mgDiff->Draw("a");
-   LD->Draw("same"); 
+   if(plotSim) LD->Draw("same"); 
    c1->Update(); 
 
    return 0;
@@ -127,13 +158,13 @@ int CompareResults(){
 //______________________________________________________________________________
 TMultiGraph *GetTMultiGraph_diff(std::vector< std::vector<double> > X,
                                  std::vector< std::vector<double> > Y,std::vector< std::vector<double> > EY,
-                                 double sf,double rho){
+				 std::vector<std::string> label,double sf,double rho){
 
    TMultiGraph *mg = new TMultiGraph(); 
 
    // now get differences
    const int N = X.size(); 
-   int M=0;
+   int M=0,color=0;
    double arg=0,arg_err=0; 
    std::vector<double> x,diff,diff_err; 
    std::vector< std::vector<double> > DIFF,DIFF_ERR;
@@ -142,6 +173,11 @@ TMultiGraph *GetTMultiGraph_diff(std::vector< std::vector<double> > X,
       for(int j=0;j<M;j++){
 	 arg     = (Y[i][j] - Y[0][j])/sf; 
          arg_err = TMath::Sqrt( EY[i][j]*EY[i][j] + EY[0][j]*EY[0][j] - 2.*rho*EY[i][j]*EY[0][j])/sf; // estimate
+	 if(label[i].compare("Ran")==0){
+	    // compare against i = 1, which is oscillation correction turned ON
+	    arg     = (Y[i][j] - Y[1][j])/sf; 
+	    arg_err = TMath::Sqrt( EY[i][j]*EY[i][j] + EY[1][j]*EY[1][j] - 2.*rho*EY[i][j]*EY[1][j])/sf; // estimate
+	 }
          // arg_err = TMath::Sqrt( EY[i][j]*EY[i][j] + EY[0][j]*EY[0][j] )/sf; // estimate
          // arg_err = 0.5*( EY[i][j] + EY[0][j] )/sf; // estimate.  This seems more realistic
 	 // std::cout << X[0][j] << " " << arg << " " << arg_err << std::endl;
@@ -149,8 +185,10 @@ TMultiGraph *GetTMultiGraph_diff(std::vector< std::vector<double> > X,
          diff.push_back(arg); 
          diff_err.push_back(arg_err); 
       }
+      color = i+1; 
+      if(label[i].compare("Ran")==0 ) color = kOrange+1; 
       TGraphErrors *g = gm2fieldUtil::Graph::GetTGraphErrors(x,diff,diff_err);
-      gm2fieldUtil::Graph::SetGraphParameters(g,20,i); 
+      gm2fieldUtil::Graph::SetGraphParameters(g,20,color); 
       mg->Add(g,"lp"); 
       // set up for next data 
       x.clear(); 
@@ -162,6 +200,13 @@ TMultiGraph *GetTMultiGraph_diff(std::vector< std::vector<double> > X,
 //______________________________________________________________________________
 int AddToMultiGraph(int color,std::string label,std::string xAxis,std::string yAxis,std::string yAxisErr,
                     json data,TMultiGraph *mg,TLegend *L){
+
+   if( label.compare("Ran")==0 && yAxis.compare("calibCoeff_aba")==0 ){
+      // Ran's numbers aren't necessarily ABA, but do have drift
+      yAxis    = "calibCoeff"; 
+      yAxisErr = "calibCoeffErr";
+      std::cout << "[AddToMultiGraph]: Adding Ran's data, using axis = " << yAxis << ", " << yAxisErr << std::endl; 
+   }
 
    TGraphErrors *g = GetTGraphErrors(xAxis,yAxis,yAxisErr,data);
    gm2fieldUtil::Graph::SetGraphParameters(g,20,color); 
@@ -182,11 +227,12 @@ TGraphErrors *GetTGraphErrors(std::string xAxis,std::string yAxis,std::string yA
 }
 //______________________________________________________________________________
 int FillVector(std::string axis,json data,std::vector<double> &v){
-   const int N = data["calibCoeff_aba"].size();
+   const int N = data["calibCoeff"].size();
    if(N==0){
-      std::cout << "[FillVector]: No data! " << std::endl;
+      std::cout << "[FillVector]: No data for axis = " << axis << "! " << std::endl;
       return 1;
    }
+   // std::cout << "[FillVector]: Looping over " << N << " entries for axis " << axis << std::endl;
    for(int i=0;i<N;i++){
       if(axis.compare("probe")==0){
 	 v.push_back(i+1); 

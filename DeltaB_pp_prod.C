@@ -43,6 +43,10 @@
 #include "./src/FitFuncs.C"
 #include "./src/OscFuncs.C"
 
+int SortPPDAQRuns_alt(std::vector<plungingProbeAnaEvent_t> data,
+                      std::vector<double> &tOdd ,std::vector<double> &fOdd,
+                      std::vector<double> &tEven,std::vector<double> &fEven); 
+
 int SortPPDAQRuns(std::vector<plungingProbeAnaEvent_t> data,bool sccStartOn,
                   std::vector<double> &sccTime ,std::vector<double> &scc ,std::vector<double> &sccErr,
                   std::vector<double> &bareTime,std::vector<double> &bare,std::vector<double> &bareErr);
@@ -201,6 +205,30 @@ int DeltaB_pp_prod(std::string configFile){
    // gather the PP DAQ runs to analyze
    std::vector<double> sccTime,scc,sccErr,bareTime,bare,bareErr; 
    rc = SortPPDAQRuns(ppEvent,sccStartOn,sccTime,scc,sccErr,bareTime,bare,bareErr);
+
+   // for plot purposes 
+   std::vector<double> tOdd_raw,fOdd_raw,tEven_raw,fEven_raw; 
+   std::vector<double> tOdd_cor,fOdd_cor,tEven_cor,fEven_cor; 
+   rc = SortPPDAQRuns_alt(ppInput,tOdd_raw,fOdd_raw,tEven_raw,fEven_raw);
+   rc = SortPPDAQRuns_alt(ppEvent,tOdd_cor,fOdd_cor,tEven_cor,fEven_cor);
+
+   TGraph *gOdd_raw  = gm2fieldUtil::Graph::GetTGraph(tOdd_raw ,fOdd_raw);
+   TGraph *gOdd_cor  = gm2fieldUtil::Graph::GetTGraph(tOdd_cor ,fOdd_cor);
+   TGraph *gEven_raw = gm2fieldUtil::Graph::GetTGraph(tEven_raw,fEven_raw);
+   TGraph *gEven_cor = gm2fieldUtil::Graph::GetTGraph(tEven_cor,fEven_cor);
+
+   gm2fieldUtil::Graph::SetGraphParameters(gOdd_raw,21,kBlack);
+   gm2fieldUtil::Graph::SetGraphParameters(gOdd_cor,20,kRed);
+   gm2fieldUtil::Graph::SetGraphParameters(gEven_raw,21,kBlack);
+   gm2fieldUtil::Graph::SetGraphParameters(gEven_cor,20,kRed);
+
+   TMultiGraph *mgo = new TMultiGraph();
+   mgo->Add(gOdd_raw,"lp"); 
+   mgo->Add(gOdd_cor,"lp"); 
+
+   TMultiGraph *mge = new TMultiGraph();
+   mge->Add(gEven_raw,"lp"); 
+   mge->Add(gEven_cor,"lp"); 
 
    // do delta B calcs
    // raw difference 
@@ -406,18 +434,35 @@ int DeltaB_pp_prod(std::string configFile){
    c2->Print(plotPath);
    delete c2; 
 
-   TString Title_pp = Form("All PP Data");
-   if(useOscCor) Title_pp += Form(" (black = raw, red = osc cor)");
+   TString Title_o;
+   TString Title_e = Form("All PP Data");
+   if(sccStartOn){
+      Title_e += Form("SCC ON");
+      Title_o = Form("SCC OFF");
+   }else{
+      Title_e += Form("SCC OFF");
+      Title_o = Form("SCC ON");
+   }
+   if(useOscCor) Title_e += Form(" (black = raw, red = osc cor)");
    TString yAxisTitle_pp = Form("Frequency (Hz)");
 
-   TCanvas *c3 = new TCanvas("c3","PP Data",1200,600); 
-   c3->cd();
-
-   mg->Draw("a");
-   gm2fieldUtil::Graph::SetGraphLabels(mg,Title_pp,"",yAxisTitle_pp);
-   gm2fieldUtil::Graph::UseTimeDisplay(mg);
-   mg->Draw("a");
+   TCanvas *c3 = new TCanvas("c3","PP Data",1200,600);
+   c3->Divide(1,2); 
+ 
+   c3->cd(1);
+   mge->Draw("a");
+   gm2fieldUtil::Graph::SetGraphLabels(mge,Title_e,"",yAxisTitle_pp);
+   gm2fieldUtil::Graph::UseTimeDisplay(mge);
+   mge->Draw("a");
    c3->Update(); 
+
+   c3->cd(2);
+   mgo->Draw("a");
+   gm2fieldUtil::Graph::SetGraphLabels(mgo,Title_o,"",yAxisTitle_pp);
+   gm2fieldUtil::Graph::UseTimeDisplay(mgo);
+   mgo->Draw("a");
+   c3->Update(); 
+   
    
    plotPath = Form("%s/pp_dB_%s-grad_all-events_pr-%02d.png",plotDir.c_str(),gradName.c_str(),probeNumber); 
    c3->Print(plotPath);
@@ -428,6 +473,7 @@ int DeltaB_pp_prod(std::string configFile){
 
    gFXPR->Draw("alp");
    gm2fieldUtil::Graph::SetGraphLabels(gFXPR,"FXPR Data","","Frequency (Hz)");
+   gm2fieldUtil::Graph::UseTimeDisplay(gFXPR); 
    gFXPR->Draw("alp");
    c4->Update();
 
@@ -436,6 +482,31 @@ int DeltaB_pp_prod(std::string configFile){
 
    delete inputMgr;
  
+   return 0;
+}
+//______________________________________________________________________________
+int SortPPDAQRuns_alt(std::vector<plungingProbeAnaEvent_t> data,
+                      std::vector<double> &tOdd ,std::vector<double> &fOdd,
+                      std::vector<double> &tEven,std::vector<double> &fEven){
+
+   int M=0;
+   const int N = data.size();  
+   for(int i=0;i<N;i++){
+      // compute the average for the PP DAQ run 
+      std::cout << "Processing PP DAQ run " << data[i].run << std::endl; 
+      M = data[i].numTraces; 
+      for(int j=0;j<M;j++){
+	 if(i%2!=0){
+	    // odd run 
+	    tOdd.push_back(data[i].time[j]/1E+9);  
+	    fOdd.push_back(data[i].freq[j]); 
+	 }else{
+	    // even run   
+	    tEven.push_back(data[i].time[j]/1E+9);  
+	    fEven.push_back(data[i].freq[j]);
+	 }
+      } 
+   }
    return 0;
 }
 //______________________________________________________________________________

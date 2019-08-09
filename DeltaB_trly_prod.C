@@ -50,7 +50,8 @@ int DeltaB_trly_prod(std::string configFile){
    std::cout << "TRLY DELTA B CALCULATION (ABA Method)" << std::endl;
 
    int rc=0;
-   int method = gm2fieldUtil::Constants::kPhaseDerivative;
+   int method     = gm2fieldUtil::Constants::kPhaseDerivative;
+   int fxprMethod = gm2fieldUtil::Constants::kPhaseDerivative; 
 
    InputManager *inputMgr = new InputManager();
    inputMgr->UseAxis(); 
@@ -204,7 +205,7 @@ int DeltaB_trly_prod(std::string configFile){
    bool subtractDrift = inputMgr->GetFXPRDriftStatus();  
    int period = inputMgr->GetNumEventsTimeWindow();
    for(int i=0;i<NRUN;i++){
-      rc = GetFixedProbeData_avg(run[i],method,fxprList,fxprData,prodVersion,subtractDrift,period,0);
+      rc = GetFixedProbeData_avg(run[i],fxprMethod,fxprList,fxprData,prodVersion,subtractDrift,period,0);
       if(rc!=0){
 	 std::cout << "No data!" << std::endl;
 	 return 1;
@@ -434,18 +435,20 @@ int DeltaB_trly_prod(std::string configFile){
    rc = CorrectOscillation_trly(probeNumber-1,nev,sccTime ,fxprData,trlyData,trTime_scc,trFreq_scc,trFreq_cor_scc);
  
    // to make it easier to see, subtract off the linear trend
+   double f0_bare = trFreq_bare[0];
+   double f0_scc  = trFreq_scc[0];  
    int SIZE = trTime_bare.size(); 
    double intercept=0,slope=0,r=0;
    rc = gm2fieldUtil::Math::LeastSquaresFitting(trTime_bare,trFreq_bare,intercept,slope,r);
-   for(int i=0;i<SIZE;i++) trFreq_bare[i] -= (intercept + slope*trTime_bare[i]); 
+   for(int i=0;i<SIZE;i++) trFreq_bare[i] -= -f0_bare + (intercept + slope*trTime_bare[i]); 
    rc = gm2fieldUtil::Math::LeastSquaresFitting(trTime_bare,trFreq_cor_bare,intercept,slope,r);
-   for(int i=0;i<SIZE;i++) trFreq_cor_bare[i] -= (intercept + slope*trTime_bare[i]); 
+   for(int i=0;i<SIZE;i++) trFreq_cor_bare[i] -= -f0_bare + (intercept + slope*trTime_bare[i]); 
 
    SIZE = trTime_scc.size(); 
    rc = gm2fieldUtil::Math::LeastSquaresFitting(trTime_scc,trFreq_scc,intercept,slope,r);
-   for(int i=0;i<SIZE;i++) trFreq_scc[i] -= (intercept + slope*trTime_scc[i]); 
+   for(int i=0;i<SIZE;i++) trFreq_scc[i] -= -f0_scc + (intercept + slope*trTime_scc[i]); 
    rc = gm2fieldUtil::Math::LeastSquaresFitting(trTime_scc,trFreq_cor_scc,intercept,slope,r);
-   for(int i=0;i<SIZE;i++) trFreq_cor_scc[i] -= (intercept + slope*trTime_scc[i]); 
+   for(int i=0;i<SIZE;i++) trFreq_cor_scc[i] -= -f0_scc + (intercept + slope*trTime_scc[i]); 
 
    TGraph *gTR_bare_raw = gm2fieldUtil::Graph::GetTGraph(trTime_bare,trFreq_bare); 
    TGraph *gTR_bare_cor = gm2fieldUtil::Graph::GetTGraph(trTime_bare,trFreq_cor_bare); 

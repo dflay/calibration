@@ -212,6 +212,31 @@ def writeConfigFileProd_ShimScan(data,confData,tag,keyList,axis,fitData,outpath)
    json.dump(outData,outfile)
    outfile.close()
 #_______________________________________________________________________________
+def writeConfigFileProd_params(confData,outpath): 
+   # write a JSON file that has all the analysis parameters relevant for the analysis 
+   # first delete the existing file if necesssary  
+   os.remove(outpath)  
+   # fill output json object/dictionary   
+   outData = {} 
+   outData["run-period"]             = confData["run-period"] 
+   outData["blinding"]               = confData["blinding"] 
+   outData["prod-tag"]               = confData["prod-tag"] 
+   outData["nmr-ana-tag"]            = confData["nmr-ana-tag"] 
+   outData["cut-file"]               = confData["cut-file"] 
+   outData["free-proton-cor"]        = confData["free-proton-cor"] 
+   outData["load-trly-swap-times"]   = confData["load-trly-swap-times"] 
+   outData["use-aba-time-weight"]    = confData["use-aba-time-weight"] 
+   outData["use-trly-temp-cor"]      = confData["use-trly-temp-cor"] 
+   outData["use-osc-cor"]            = confData["use-osc-cor"] 
+   outData["fxpr-remove-drift"]      = confData["fxpr-remove-drift"] 
+   outData["use-misalign-cor"]       = confData["use-misalign-cor"] 
+   outData["num-events-to-avg"]      = confData["num-events-to-avg"] 
+   outData["num-events-time-window"] = confData["num-events-time-window"]   
+   outData["fxpr-set"]               = confData["fxpr-set"]   
+   # write to file
+   with open(outpath,'a') as outfile: 
+       json.dump(outData,outfile,indent=2) 
+#_______________________________________________________________________________
 def writeConfigFileProd_imposedGrad(confData,tag,keyList,axis,fitData,outpath): 
    # write a JSON file for the ROOT script defined by tag 
    # build the output json object 
@@ -579,3 +604,34 @@ def deleteDir(path):
 #_______________________________________________________________________________
 def createDir(path): 
    os.makedirs(path)
+#_______________________________________________________________________________
+def setupPaths(deleteDir,today,isBlind,blindLabel): 
+   # set up directories and paths to inputs and outputs 
+   if(isBlind):
+      outDir = "./output/blinded/" + blindLabel + "/" + today
+   else:
+      outDir = "./output/unblinded/" + today
+   
+   if deleteDir:
+      if os.path.exists(outDir):
+         print( "Removing existing output from {0}".format(outDir) )
+         deleteDir(outDir)
+  
+   # setup output directories 
+   if(isBlind):
+      outDir  = "./output/blinded/" + blindLabel + "/" + today
+      plotDir = "./plots/blinded/" + blindLabel + "/" + today
+   else:
+      outDir  = "./output/unblinded/" + today
+      plotDir = "./plots/unblinded/"  + today
+   
+   if not os.path.exists(outDir):
+       os.makedirs(outDir)
+       print("[run_analysis]: Created directory: {0}".format(outDir) )
+   
+   if not os.path.exists(plotDir):
+       os.makedirs(plotDir)
+       print("[run_analysis]: Created directory: {0}".format(plotDir) )
+
+   return outDir,plotDir
+
