@@ -1,13 +1,16 @@
 #include "../include/CalibFuncs.h"
 //______________________________________________________________________________
-int GetOmegaP_err(perturbation_t pert,double &err){
-   // error on delta_t  
-   // double err_sq = pert.sigma_err*pert.sigma_err     + pert.chi_err*pert.chi_err 
-   //               + pert.delta_m_err*pert.delta_m_err + pert.delta_eps_err*pert.delta_eps_err 
-   //               + pert.delta_mag_err*pert.delta_mag_err;
-   // UPDATE: accounts for rad damping, rotational effects, sag, oxygen, etc 
-   double err_sq = pert.sigma_err*pert.sigma_err + pert.chi_err*pert.chi_err 
-                 + pert.delta_t_err*pert.delta_t_err;
+int GetOmegaP_err(perturbation_t pert,double T,double &err){
+   // error on delta_t 
+   int rc=0; 
+   double SIG=0,DSIG=0;
+   double delta_b=0,delta_b_err=0;
+   rc = GetDiamagneticShielding(pert.sigma,pert.sigma_err,T,SIG,DSIG);
+   rc = GetBulkMagneticSusceptibility(pert.eps,pert.eps_err,T,delta_b,delta_b_err);
+   double err_sq   = DSIG*DSIG + delta_b_err*delta_b_err  
+                   + pert.delta_s_err*pert.delta_s_err   + pert.delta_p_err*pert.delta_p_err
+                   + pert.delta_rd_err*pert.delta_rd_err + pert.delta_d_err*pert.delta_d_err
+                   + pert.delta_v_err*pert.delta_v_err;
    err = TMath::Sqrt(err_sq)*0.06179;  // convert to Hz
    return 0;
 }
@@ -20,9 +23,9 @@ int GetOmegaP_free(perturbation_t pert,double freq,double freqErr,double temp,do
    double sigma=0,sigma_err=0;
    GetDiamagneticShielding(pert.sigma,pert.sigma_err,temp,sigma,sigma_err); 
    // magnetic sucseptibility  
-   double chi=0;
-   GetMagneticSusceptibility(pert.chi,temp,chi);
-   double delta_tot  = GetDeltaTerm(sigma,pert.delta_m,chi,eps,pert.delta_eps,pert.delta_mag); 
+   double delta_b=0,delta_b_err=0;
+   rc = GetBulkMagneticSusceptibility(pert.eps,pert.eps_err,temp,delta_b,delta_b_err);
+   double delta_tot  = GetDeltaTerm(sigma,delta_b,pert.delta_s,pert.delta_p,pert.delta_rd,pert.delta_d); 
    // error on delta_t 
    double err=0;
    int rc = GetOmegaP_err(pert,err);  
@@ -56,17 +59,20 @@ int GetOmegaP_free(nmr_meas_t pp,perturbation_t pert,double *freq_free,double *f
    return 0;
 }
 //______________________________________________________________________________
-double GetDeltaTerm(double sigma,double delta_m,double chi,double eps,double delta_eps,double delta_mag){
-  // Compute the delta_t term.   
-  // - Input file carries the sign of the perturbation as measured (delta_m, delta_eps, delta_mag).  
+double GetDeltaTerm(double sigma,double delta_b,double delta_s,double delta_p,
+                    double delta_rd,double delta_d){
+  // Compute the delta_tot term.   
+  // - Input file carries the sign of the perturbation as measured (delta_s, delta_p, etc).  
   // - The factor of 1E-9 converts to 'absolute' scale, since the input is in ppb
-  // - Must flip the sign on delta_m and delta_eps.  if these are negative, we need to INCREASE 
+  // - Must flip the sign on delta terms.  if these are negative, we need to INCREASE 
   //   the field.  Since we divide by (1-delta_tot), we need to ensure the field goes UP 
   //   because of this negative perturbation.  The situation is reversed for positive perturbations.
-  double DELTA_M   = (-1.)*delta_m;    // material
-  double DELTA_EPS = (-1.)*delta_eps;  // asymmetry 
-  double DELTA_MAG = (-1.)*delta_mag;  // magnetic image 
-  double delta_t = 1E-9*(sigma + DELTA_M + (eps-4.*TMath::Pi()/3.)*chi + DELTA_EPS + DELTA_MAG);
+  double DELTA_S  = (-1.)*delta_s;   // material
+  double DELTA_P  = (-1.)*delta_p;   // sample paramagnetic impurities 
+  double DELTA_B  =  (1.)*delta_b;   // bulk magnetic susceptibility NOTE NO NEGATIVE SIGN HERE  
+  double DELTA_RD = (-1.)*delta_rd;  // radiation damping  
+  double DELTA_D  = (-1.)*delta_d;   // proton dipolar field   
+  double delta_t  = 1E-9*(sigma + DELTA_B + DELTA_S + DELTA_P + DELTA_RD + DELTA_D);
   return delta_t;
 }
 //______________________________________________________________________________
@@ -78,9 +84,25 @@ int GetDiamagneticShielding(double sigma,double dsigma,double T,double &SIG,doub
    return 0; 
 }
 //______________________________________________________________________________
-int GetMagneticSusceptibility(double chi,double T,double &CHI){
+int GetBulkMagneticSusceptibility(double eps,double deps,double chi,double dchi,double T,
+                                  double &DELTA_B,double &DELTA_B_ERR){
+   // central value; this is in SI formalism 
+   // units are ppb 
+   double CHI=0; 
+   int rc      = GetMagneticSusceptibility(chi,T,CHI);  
+   DELTA_B     = ( eps/(4.*TMath::Pi()) - 1./3. )*CHI;
+   // calculate the uncertainty 
+   double DEPS = ( CHI/(4.*TMath::Pi()) )*deps;
+   double DCHI = ( eps/(4.*TMath::Pi()) - 1./3. )*dchi;
+   DELTA_B_ERR = TMath::Sqrt( DEPS*DEPS + DCHI*DCHI);
+   return 0; 
+}
+//______________________________________________________________________________
+int GetMagneticSusceptibility(double chi,double dchi,double T,double &CHI,double &CHI_ERR){
    // compute magnetic susceptibility when accounting for temperature dependence 
    double a[3] = {1.38810E-4,-1.2685E-7,8.09E-10};
-   CHI = chi*( 1. + a[0]*(T-20.) + a[1]*TMath::Power(T-20.,2.) + a[2]*TMath::Power(T-20.,3.) );
+   double ARG  = 1. + a[0]*(T-20.) + a[1]*TMath::Power(T-20.,2.) + a[2]*TMath::Power(T-20.,3.); 
+   CHI     = chi*ARG;
+   CHI_ERR = dchi*ARG;
    return 0;
 }

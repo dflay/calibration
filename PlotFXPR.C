@@ -26,14 +26,15 @@
 #include "./include/trolleyAnaEvent.h"
 #include "./include/fixedProbeEvent.h"
 
-#include "./src/FitFuncs.C"
-#include "./src/TRLYFuncs.C"
 #include "./src/CustomMath.C"
 #include "./src/CustomImport.C"
 #include "./src/CustomExport.C"
 #include "./src/CustomGraph.C"
 #include "./src/CustomAlgorithms.C"
 #include "./src/CustomUtilities.C"
+#include "./src/FitFuncs.C"
+#include "./src/OscFuncs.C"
+#include "./src/TRLYFuncs.C"
 
 int PrintProbeInfo(int run,int method,std::string version,std::vector<int> probe); 
 TGraph *GetTGraph_adev(int NPTS,std::vector<averageFixedProbeEvent_t> data); 
@@ -50,12 +51,12 @@ int PlotFXPR(){
    std::cout << "Enter run: ";
    std::cin  >> run; 
  
-   std::vector<int> probe;
+   std::vector<int> probe1,probe2;
    // for(int i=0;i<378;i++) probe.push_back(i); 
-   probe.push_back(201); 
-   probe.push_back(202);
-   probe.push_back(211); 
-   probe.push_back(212); 
+   probe1.push_back(201); 
+   probe1.push_back(202);
+   probe1.push_back(211); 
+   probe1.push_back(212); 
    // probe.push_back(216); 
    // probe.push_back(217);
    // probe.push_back(226);
@@ -64,31 +65,34 @@ int PlotFXPR(){
    // rc = PrintProbeInfo(run,method,prodVersion,probe);
    // return rc;
 
-   std::vector<averageFixedProbeEvent_t> fxprData,fxprData2;   
+   std::string probe_path = "./input/probe-lists/fxpr-list_set-1.csv";
+   rc = gm2fieldUtil::Import::ImportData1<int>(probe_path,"csv",probe2);
 
-   bool subtractDrift = true; 
-   rc = GetFixedProbeData_avg(run,method,probe,fxprData,prodVersion,subtractDrift,1,0);
+   std::vector<averageFixedProbeEvent_t> fxprData1,fxprData2;   
+
+   int period         = 10;
+   bool subtractDrift = false; 
+   rc = GetFixedProbeData_avg(run,method,probe1,fxprData1,prodVersion,subtractDrift,period,0);
    if(rc!=0){
       std::cout << "No data!" << std::endl;
       return 1;
    }
 
-   int period = 12;
-   rc = GetFixedProbeData_avg(run,method,probe,fxprData2,prodVersion,subtractDrift,period,0);
+   rc = GetFixedProbeData_avg(run,method,probe2,fxprData2,prodVersion,subtractDrift,period,0);
    if(rc!=0){
       std::cout << "No data!" << std::endl;
       return 1;
    }
 
-   TGraphErrors *gt = GetFXPRTGraph_avg("GpsTimeStamp","freq","NONE",fxprData);
-   gm2fieldUtil::Graph::SetGraphParameters(gt,20,kBlack);
+   TGraphErrors *gt1 = GetFXPRTGraph_avg("GpsTimeStamp","freq_mean_sub","NONE",fxprData1);
+   gm2fieldUtil::Graph::SetGraphParameters(gt1,20,kBlack);
 
-   TGraphErrors *gt2 = GetFXPRTGraph_avg("GpsTimeStamp","freq","NONE",fxprData2);
+   TGraphErrors *gt2 = GetFXPRTGraph_avg("GpsTimeStamp","freq_mean_sub","NONE",fxprData2);
    gm2fieldUtil::Graph::SetGraphParameters(gt2,20,kRed);
 
    const int NPTS = 500; 
-   TGraph *ga = GetTGraph_adev(NPTS,fxprData);
-   gm2fieldUtil::Graph::SetGraphParameters(ga,20,kBlack);
+   // TGraph *ga = GetTGraph_adev(NPTS,fxprData);
+   // gm2fieldUtil::Graph::SetGraphParameters(ga,20,kBlack);
 
    // std::vector<fixedProbeEvent_t> fxpr1,fxpr2; 
    // rc = GetFixedProbeData(run,method,probe[0],fxpr1,prodVersion); 
@@ -101,37 +105,37 @@ int PlotFXPR(){
    // gm2fieldUtil::Graph::SetGraphParameters(g2,20,kRed);
 
    TMultiGraph *mg = new TMultiGraph();
-   mg->Add(gt,"lp");
+   mg->Add(gt1,"lp");
    mg->Add(gt2,"lp");
 
    TLegend *L = new TLegend(0.6,0.6,0.8,0.8); 
-   L->AddEntry(gt ,Form("Average over %d fxpr (%d time events)",(int)probe.size(),1),"p"); 
-   L->AddEntry(gt2,Form("Average over %d fxpr (%d time events)",(int)probe.size(),period),"p"); 
+   L->AddEntry(gt1,Form("Average over %d fxpr (%d time events)",(int)probe1.size(),period),"p"); 
+   L->AddEntry(gt2,Form("Average over %d fxpr (%d time events)",(int)probe2.size(),period),"p"); 
 
    TString Title = Form("Run %d, FXPR AVG",run);
    
    // TString plotPath = Form("tr-%02d_adev_run-%05d.png",probe,run);
 
    TCanvas *c1 = new TCanvas("c1","FXPR Data",1200,600);
-   c1->Divide(1,2); 
+   // c1->Divide(1,2); 
    
-   c1->cd(1);
+   c1->cd();
    mg->Draw("a");
    gm2fieldUtil::Graph::SetGraphLabels(mg,Title,"","Frequency (Hz)");
-   gm2fieldUtil::Graph::SetGraphLabelSizes(mg,0.05,0.06); 
+   // gm2fieldUtil::Graph::SetGraphLabelSizes(mg,0.05,0.06); 
    gm2fieldUtil::Graph::UseTimeDisplay(mg); 
    mg->Draw("a");
    L->Draw("same"); 
    c1->Update();
 
-   c1->cd(2); 
-   gPad->SetLogx();  
-   gPad->SetLogy();  
-   ga->Draw("alp");
-   gm2fieldUtil::Graph::SetGraphLabels(ga,"Allan Deviation","Number of Points","Allan Deviation (Hz)");
-   gm2fieldUtil::Graph::SetGraphLabelSizes(ga,0.05,0.06);
-   ga->Draw("alp");
-   c1->Update(); 
+   // c1->cd(2); 
+   // gPad->SetLogx();  
+   // gPad->SetLogy();  
+   // ga->Draw("alp");
+   // gm2fieldUtil::Graph::SetGraphLabels(ga,"Allan Deviation","Number of Points","Allan Deviation (Hz)");
+   // gm2fieldUtil::Graph::SetGraphLabelSizes(ga,0.05,0.06);
+   // ga->Draw("alp");
+   // c1->Update(); 
 
    return 0;
 }

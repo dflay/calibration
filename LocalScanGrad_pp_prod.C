@@ -158,17 +158,20 @@ int LocalScanGrad_pp_prod(std::string configFile){
       return 1;
    }
   
-   if(isBlind) ApplyBlindingPP(blindValue,ppInput);
+   if(isBlind) ApplyBlindingPP(blindValue,ppInput); 
+
+   // reference time for oscillation correction
+   // need first time of first PP event  
+   double t0 = ppInput[0].time[0]/1E+9;
 
    std::vector<int> fxprList;
    inputMgr->GetFXPRList(fxprList);
 
-   unsigned long long t0 = ppInput[0].time[0]; // we may have some huge field oscillation before the scan, which will affect drift 
    bool subtractDrift = inputMgr->GetFXPRDriftStatus();  
    int period = inputMgr->GetNumEventsTimeWindow(); // 10;
    std::vector<averageFixedProbeEvent_t> fxprData;
    for(int i=0;i<MR;i++){
-      rc = GetFixedProbeData_avg(mRun[i],prMethod,fxprList,fxprData,prodVersion,subtractDrift,period,t0);
+      rc = GetFixedProbeData_avg(mRun[i],prMethod,fxprList,fxprData,prodVersion,subtractDrift,period,0);
       if(rc!=0){
          std::cout << "No data!" << std::endl;
          return 1;
@@ -177,7 +180,7 @@ int LocalScanGrad_pp_prod(std::string configFile){
 
    // oscillation correction 
    if(useOscCor){
-      rc = CorrectOscillation_pp(fxprData,ppInput,ppData);
+      rc = CorrectOscillation_pp(fxprData,ppInput,ppData,t0);
    }else{
       CopyPlungingProbe(ppInput,ppData);
    }

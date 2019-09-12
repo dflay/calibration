@@ -237,14 +237,14 @@ int GetTRLYStatsAtTime_old(bool UseTempCor,bool UseOscCor,int probe,int nev,doub
 //______________________________________________________________________________
 int GetTRLYStatsAtTime(bool UseTempCor,bool UseOscCor,int probe,int nev,double fLO,
                        std::vector<double> time,std::vector<averageFixedProbeEvent_t> fxpr,
-                       std::vector<trolleyAnaEvent_t> Data,std::vector<calibSwap_t> &Event){
+                       std::vector<trolleyAnaEvent_t> Data,std::vector<calibSwap_t> &Event,double t0){
 
    // find the mean field at the times specified in the time vector 
    calibSwap_t theEvent; 
 
    // do oscillation correction and obtain ALL data associated with toggle times in time vector 
    std::vector<double> trTime,trFreq,trFreq_cor; 
-   int rc = CorrectOscillation_trly(probe,nev,time,fxpr,Data,trTime,trFreq,trFreq_cor);
+   int rc = CorrectOscillation_trly(probe,nev,time,fxpr,Data,trTime,trFreq,trFreq_cor,"time",t0);
    
    if(UseOscCor) std::cout << "[GetTRLYStatsAtTime]: USING OSCILLATION CORRECTION" << std::endl;
 
@@ -374,13 +374,13 @@ int GetTRLYStats_sccToggle_old(bool useOscCor,int probe,int nev,std::vector<doub
 //______________________________________________________________________________
 int GetTRLYStats_sccToggle(bool useOscCor,int probe,int nev,std::vector<double> time,
                            std::vector<averageFixedProbeEvent_t> fxpr,std::vector<trolleyAnaEvent_t> Data,
-                           std::vector<double> &TIME,std::vector<double> &MEAN,std::vector<double> &STDEV){
+                           std::vector<double> &TIME,std::vector<double> &MEAN,std::vector<double> &STDEV,double t0){
 
    // find the mean field at the times specified in the time vector 
 
    // do oscillation correction and obtain ALL data associated with toggle times in time vector 
    std::vector<double> trTime,trFreq,trFreq_cor; 
-   int rc = CorrectOscillation_trly(probe,nev,time,fxpr,Data,trTime,trFreq,trFreq_cor);
+   int rc = CorrectOscillation_trly(probe,nev,time,fxpr,Data,trTime,trFreq,trFreq_cor,"time",t0);
 
    const int NT = time.size();
    int M = trTime.size();

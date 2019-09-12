@@ -238,7 +238,10 @@ int FillFPVector_avg(std::string axis,std::vector<averageFixedProbeEvent_t> data
       if( axis.compare("freq")==0         ) v.push_back( data[i].freq      );
       if( axis.compare("freqErr")==0      ) v.push_back( data[i].freqErr   );
       if( axis.compare("NONE")==0         ) v.push_back(0.);
+      if( axis.compare("freq_mean_sub")==0) v.push_back( data[i].freq      );
    }
+   double mean = gm2fieldUtil::Math::GetMean<double>(v); 
+   if(axis.compare("freq_mean_sub")==0) for(int i=0;i<N;i++) v[i] -= mean;
    return 0;
 }
 // //______________________________________________________________________________

@@ -69,6 +69,7 @@ int DeltaB_trly_prod(std::string configFile){
    int probeNumber         = inputMgr->GetTrolleyProbe();
    int axis                = inputMgr->GetAxis();
    int runPeriod           = inputMgr->GetRunPeriod();
+   int nev                 = inputMgr->GetNumEventsToAvg();  
 
    // update the analysis method according to Ran's guidance 
    if(prodVersion.compare("v9_21_01")==0) method = gm2fieldUtil::Constants::kHilbertPhaseLinear;
@@ -216,8 +217,8 @@ int DeltaB_trly_prod(std::string configFile){
    gm2fieldUtil::Graph::SetGraphParameters(gFXPR,20,kBlack); 
 
    std::vector<double> X; 
-   int NEV = trlyData.size();
-   for(int i=0;i<NEV;i++) X.push_back( trlyData[i].freq[probeNumber-1] );
+   int NTR = trlyData.size();
+   for(int i=0;i<NTR;i++) X.push_back( trlyData[i].freq[probeNumber-1] );
    double MEAN  = gm2fieldUtil::Math::GetMean<double>(X); 
    double STDEV = gm2fieldUtil::Math::GetStandardDeviation<double>(X); 
 
@@ -252,13 +253,16 @@ int DeltaB_trly_prod(std::string configFile){
       tOFF_scc[i]->SetLineStyle(2);
    }
 
+   // find the reference time t0 for oscillation corrections
+   // WARNING: Can't do this here because we're CHANGING THE FIELD using SCC!  
+   double t0=-1;
+
    // get the mean field with SCC off and on 
-   int nev = inputMgr->GetNumEventsToAvg(); // 30;  // keep 30 events in the analysis
    std::vector<double> bareTime,bare,bareErr,sccTime,scc,sccErr;  
    if(useOscCor) std::cout << "[DeltaB_trly_prod]: Bare field data" << std::endl;
-   rc = GetTRLYStats_sccToggle(useOscCor,probeNumber-1,nev,sccOff,fxprData,trlyData,bareTime,bare,bareErr); 
+   rc = GetTRLYStats_sccToggle(useOscCor,probeNumber-1,nev,sccOff,fxprData,trlyData,bareTime,bare,bareErr,t0); 
    if(useOscCor) std::cout << "[DeltaB_trly_prod]: Grad field data" << std::endl;
-   rc = GetTRLYStats_sccToggle(useOscCor,probeNumber-1,nev,sccOn ,fxprData,trlyData,sccTime ,scc ,sccErr ); 
+   rc = GetTRLYStats_sccToggle(useOscCor,probeNumber-1,nev,sccOn ,fxprData,trlyData,sccTime ,scc ,sccErr ,t0); 
 
    // do delta B calcs
    // raw difference 

@@ -192,10 +192,16 @@ int DeltaB_pp_prod(std::string configFile){
 
    if(isBlind) ApplyBlindingPP(blindValue,ppInput);
 
+   // for diagnostics 
+
+   // reference time for oscillation correction
+   // WARNING: Can't do this here because we're CHANGING THE FIELD using SCC!  
+   double t0 = -1; 
+
    // oscillation correction 
    if(useOscCor){
       std::cout << "DOING OSCILLATION CORRECTION" << std::endl;
-      rc = CorrectOscillation_pp(fxprData,ppInput,ppEvent);
+      rc = CorrectOscillation_pp(fxprData,ppInput,ppEvent,t0);
    }else{
       CopyPlungingProbe(ppInput,ppEvent);
    }
@@ -206,7 +212,7 @@ int DeltaB_pp_prod(std::string configFile){
    std::vector<double> sccTime,scc,sccErr,bareTime,bare,bareErr; 
    rc = SortPPDAQRuns(ppEvent,sccStartOn,sccTime,scc,sccErr,bareTime,bare,bareErr);
 
-   // for plot purposes 
+   // for diagnostic plots 
    std::vector<double> tOdd_raw,fOdd_raw,tEven_raw,fEven_raw; 
    std::vector<double> tOdd_cor,fOdd_cor,tEven_cor,fEven_cor; 
    rc = SortPPDAQRuns_alt(ppInput,tOdd_raw,fOdd_raw,tEven_raw,fEven_raw);

@@ -75,7 +75,8 @@ int Process_pp_prod(std::string configFile){
    bool isBlind              = inputMgr->IsBlind();
    bool useOscCor            = inputMgr->GetOscCorStatus();
    int probeNumber           = inputMgr->GetTrolleyProbe();
-   int runPeriod             = inputMgr->GetRunPeriod();  
+   int runPeriod             = inputMgr->GetRunPeriod(); 
+   int nev                   = inputMgr->GetNumEventsToAvg();
 
    char cutPath[200]; 
    sprintf(cutPath,"./input/json/run-%d/%s",runPeriod,cutFile.c_str());
@@ -137,10 +138,24 @@ int Process_pp_prod(std::string configFile){
    }
   
    if(isBlind) ApplyBlindingPP(blindValue,ppInput);
+
+   std::vector<trolleyAnaEvent_t> trlyData;
+   for(int i=0;i<NRUNS;i++){
+      rc = GetTrolleyData(run[i],prMethod,trlyData,prodVersion);
+      if(rc!=0){
+	 std::cout << "No data!" << std::endl;
+	 return 1;
+      }
+   }
+
+   // get reference time 
+   std::vector<double> time;
+   rc = LoadTimes(probeNumber,runPeriod,prodVersion,"swap","tr",time);
+   double t0 = GetSwappingT0(probeNumber-1,nev,time,fxprData,ppInput,trlyData);
    
    // oscillation correction 
    if(useOscCor){
-      rc = CorrectOscillation_pp(fxprData,ppInput,ppData);
+      rc = CorrectOscillation_pp(fxprData,ppInput,ppData,t0);
    }else{
       CopyPlungingProbe(ppInput,ppData);
    }

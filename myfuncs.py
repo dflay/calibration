@@ -214,8 +214,6 @@ def writeConfigFileProd_ShimScan(data,confData,tag,keyList,axis,fitData,outpath)
 #_______________________________________________________________________________
 def writeConfigFileProd_params(confData,outpath): 
    # write a JSON file that has all the analysis parameters relevant for the analysis 
-   # first delete the existing file if necesssary  
-   os.remove(outpath)  
    # fill output json object/dictionary   
    outData = {} 
    outData["run-period"]             = confData["run-period"] 
@@ -233,9 +231,13 @@ def writeConfigFileProd_params(confData,outpath):
    outData["num-events-to-avg"]      = confData["num-events-to-avg"] 
    outData["num-events-time-window"] = confData["num-events-time-window"]   
    outData["fxpr-set"]               = confData["fxpr-set"]   
-   # write to file
+   # write to file  
+   if os.path.isfile(outpath): 
+      print("[writeConfigFileProd_params]: File {0} exists, deleting first".format(outpath) )
+      os.remove(outpath) 
    with open(outpath,'a') as outfile: 
-       json.dump(outData,outfile,indent=2) 
+       json.dump(outData,outfile,indent=2)
+   print("[writeConfigFileProd_params]: File {0} written".format(outpath)) 
 #_______________________________________________________________________________
 def writeConfigFileProd_imposedGrad(confData,tag,keyList,axis,fitData,outpath): 
    # write a JSON file for the ROOT script defined by tag 

@@ -27,7 +27,6 @@ int AddToMultiGraph(int color,std::string label,std::string xAxis,std::string yA
 
 int CompareResults(){
 
-   bool plotSim = false; 
 
    json input; 
 
@@ -39,6 +38,8 @@ int CompareResults(){
    bool isBlind = (bool)input["blinding"]["enable"]; 
    std::string blindLabel = input["blinding"]["label"]; 
    std::string date       = input["date"]; 
+   
+   bool plotSim = (bool)( (int)input["plot-sim"] ); 
 
    std::string prefix; 
    if(isBlind){

@@ -72,9 +72,11 @@ int Process_trly_prod(std::string configFile){
    inputMgr->Load(configFile);
    inputMgr->Print();
 
-   std::string prodVersion = inputMgr->GetProductionTag();  
-   std::string anaDate     = inputMgr->GetAnalysisDate();
-   std::string blindLabel  = inputMgr->GetBlindLabel();
+   std::string prodVersion   = inputMgr->GetProductionTag();  
+   std::string nmrAnaVersion = inputMgr->GetNMRANATag();  
+   std::string anaDate       = inputMgr->GetAnalysisDate();
+   std::string blindLabel    = inputMgr->GetBlindLabel();
+   std::string cutFile       = inputMgr->GetCutFile();
  
    bool isBlind            = inputMgr->IsBlind();
    bool loadSwapTimes      = inputMgr->GetSwapTimeStatus();
@@ -82,13 +84,18 @@ int Process_trly_prod(std::string configFile){
    bool useOscCor          = inputMgr->GetOscCorStatus(); 
    int axis                = inputMgr->GetAxis();  
    int probeNumber         = inputMgr->GetTrolleyProbe(); 
-   int runPeriod           = inputMgr->GetRunPeriod(); 
+   int runPeriod           = inputMgr->GetRunPeriod();
+   int nev                 = inputMgr->GetNumEventsToAvg(); 
 
    date_t theDate;
    GetDate(theDate);
 
    std::string plotDir = GetPath("plots" ,isBlind,blindLabel,theDate.getDateString()); 
-   std::string outDir  = GetPath("output",isBlind,blindLabel,theDate.getDateString()); 
+   std::string outDir  = GetPath("output",isBlind,blindLabel,theDate.getDateString());
+
+   char cutPath[200];
+   sprintf(cutPath,"./input/json/run-%d/%s",runPeriod,cutFile.c_str());
+   std::string cutpath = cutPath; 
 
    int blindUnits  = inputMgr->GetBlindUnits(); 
    double blindMag = inputMgr->GetBlindScale(); 
@@ -160,15 +167,25 @@ int Process_trly_prod(std::string configFile){
       FindTRLYStopTimes(probeNumber-1,angle,trlyData,trlyGalil,time);
    }
 
+   // get reference time
+   int ppMethod = plungingProbeAnalysis::kLeastSquaresPhase; 
+   std::vector<plungingProbeAnaEvent_t> ppData;
+   for(int i=0;i<NRUNS;i++) rc = GetPlungingProbeData(run[i],method,ppMethod,ppData,prodVersion,nmrAnaVersion,cutpath);
+   if(rc!=0){
+      std::cout << "No data!" << std::endl;
+      return 1;
+   }
+ 
+   double t0 = GetSwappingT0(probeNumber-1,nev,time,fxprData,ppData,trlyData);
+
    const int NL = time.size();
    std::cout << "Found " << NL << " trolley swaps" << std::endl;
 
    // now get average field for 30 seconds BEFORE each time stamp
-   int nev = inputMgr->GetNumEventsToAvg(); 
    double fLO = 61.74E+6; 
 
    std::vector<calibSwap_t> trlySwap; 
-   rc = GetTRLYStatsAtTime(useTempCor,useOscCor,probeNumber-1,nev,fLO,time,fxprData,trlyData,trlySwap);
+   rc = GetTRLYStatsAtTime(useTempCor,useOscCor,probeNumber-1,nev,fLO,time,fxprData,trlyData,trlySwap,t0);
 
    char outPath[500];
    sprintf(outPath,"%s/trly-swap-data_pr-%02d_%s.csv",outDir.c_str(),probeNumber,anaDate.c_str());
