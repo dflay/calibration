@@ -38,7 +38,8 @@ int InputManager::Init(){
    fRunDate         = "NONE";  
    fFitFunc         = "NONE";
    fProdTag         = "NONE"; 
-   fNMRANATag       = "NONE"; 
+   fNMRANATag       = "NONE";
+   fPPID            = "NONE";  
    ClearVectors(); 
    return 0;
 }
@@ -164,6 +165,7 @@ int InputManager::Parse(){
    bool curStatus    = DoesKeyExist("dBz-current");
    bool fxprdStatus  = DoesKeyExist("fxpr-remove-drift"); 
    bool mcorStatus   = DoesKeyExist("use-misalign-cor");  
+   bool ppStatus     = DoesKeyExist("pp-id"); 
 
    // parameters common to all 
    std::string unitStr="";
@@ -213,7 +215,8 @@ int InputManager::Parse(){
       if(nevStatus)  fNumEventsToAvg = (int)fParams["num-events-to-avg"];  
       if(twStatus )  fNumEventsTimeWindow = (int)fParams["num-events-time-window"]; 
       if(angleStatus) fTrolleyAngle  = (double)fParams["trly_azi-angle"]; 
-      if(curStatus)   fDBZCurrent    = (double)fParams["dBz-current"]; 
+      if(curStatus)   fDBZCurrent    = (double)fParams["dBz-current"];
+      if(ppStatus)    fPPID          = fParams["pp-id"];  
    }
 
    // trolley Delta-B measurements
@@ -251,6 +254,7 @@ int InputManager::Print(){
    if(fAxis==1) axis = 'y'; 
    if(fAxis==2) axis = 'z'; 
    std::cout << "------------------- Input Manager -------------------" << std::endl;
+   std::cout << "Plunging Probe SN:  " << fPPID            << std::endl; 
    std::cout << "Trolley probe:      " << fTrolleyProbe    << std::endl;
    std::cout << "Is blinded:         " << fIsBlind         << std::endl;
    std::cout << "Blind label:        " << fBlindLabel      << std::endl;

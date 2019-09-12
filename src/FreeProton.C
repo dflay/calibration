@@ -99,18 +99,17 @@ double FreeProton::GetDelta_t_err(double T){
    CalculateDiamagneticShielding(T,SIG,DSIG);
    CalculateBulkMagneticSusceptibility(T,delta_b,delta_b_err);
    // full calculation 
-   double err_sq   = DSIG*DSIG + delta_b_err*delta_b_err   
-                   + fdelta_s_err*fdelta_s_err   + fdelta_p_err*fdelta_p_err
-                   + fdelta_rd_err*fdelta_rd_err + fdelta_d_err*fdelta_d_err
-                   + fdelta_v_err*fdelta_v_err;
-   double err = TMath::Sqrt(err_sq);  // convert to Hz
+   double err_sq = DSIG*DSIG + delta_b_err*delta_b_err   
+                 + fdelta_s_err*fdelta_s_err   + fdelta_p_err*fdelta_p_err
+                 + fdelta_rd_err*fdelta_rd_err + fdelta_d_err*fdelta_d_err
+                 + fdelta_v_err*fdelta_v_err;
+   double err = TMath::Sqrt(err_sq);  
    return err;
 }
 //______________________________________________________________________________
 double FreeProton::GetDelta_t(double T){
   // Compute the delta_tot term.   
   // - Input file carries the sign of the perturbation as measured (delta_s, delta_p, etc).  
-  // - The factor of 1E-9 converts to 'absolute' scale, since the input is in ppb
   // - Must flip the sign on delta terms.  if these are negative, we need to INCREASE 
   //   the field.  Since we divide by (1-delta_tot), we need to ensure the field goes UP 
   //   because of this negative perturbation.  The situation is reversed for positive perturbations.
@@ -192,8 +191,32 @@ void FreeProton::CalculateMagneticSusceptibility(double T,double &CHI,double &CH
 void FreeProton::CalculateDiamagneticShielding(double T,double &SIG,double &ERR){
    // compute diamagnetic shielding with temperature dependence
    // sigma_T0 = sigma @ T = 25 deg C
-   // input units: ppb; output units: ppb  
-   SIG = fsigma - 10.36*(T-25);
-   ERR = TMath::Sqrt(fsigma_err*fsigma_err + 0.30*0.30*1E-18);
+   double dsigdT     = -10.36E-9; 
+   double dsigdT_err = 0.3E-9;
+   SIG = fsigma + dsigdT*(T-25);
+   ERR = TMath::Sqrt(fsigma_err*fsigma_err + (T-25.)*(T-25.)*dsigdT_err*dsigdT_err);  
    return 0;
+}
+//______________________________________________________________________________
+void FreeProton::Print(std::string units){
+ 
+   double sf=1;
+   std::string unitStr = ""; 
+   if( units.compare("ppb")==0 ){
+      sf      = 1E-9;
+      unitStr = "ppb"; 
+   }
+
+   std::cout << "-------------------------------------------------" << std::endl; 
+   std::cout << "Probe: " << fProbeID  << std::endl;
+   std::cout << Form("delta_s             = %.1lf ± %.1lf %s",fdelta_s /sf,fdelta_s_err /sf,unitStr.c_str() ) << std::endl;
+   std::cout << Form("delta_p             = %.1lf ± %.1lf %s",fdelta_p /sf,fdelta_p_err /sf,unitStr.c_str() ) << std::endl;
+   std::cout << Form("delta_rd            = %.1lf ± %.1lf %s",fdelta_rd/sf,fdelta_rd_err/sf,unitStr.c_str() ) << std::endl;
+   std::cout << Form("delta_d             = %.1lf ± %.1lf %s",fdelta_d /sf,fdelta_d_err /sf,unitStr.c_str() ) << std::endl;
+   std::cout << Form("delta_v             = %.1lf ± %.1lf %s",fdelta_v /sf,fdelta_v_err /sf,unitStr.c_str() ) << std::endl;
+   std::cout << Form("eps                 = %.3lf ± %.3E"    ,feps,feps_err)                                  << std::endl;  
+   std::cout << Form("sigma(T = 25 deg C) = %.1lf ± %.1lf %s",fsigma/sf,fsigma_err/sf,unitStr.c_str() )       << std::endl;  
+   std::cout << Form("chi(T = 20 deg C)   = %.1lf ± %.1lf %s",fchi/sf,fchi_err/sf,unitStr.c_str() )           << std::endl;  
+   std::cout << "-------------------------------------------------" << std::endl;
+ 
 }

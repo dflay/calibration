@@ -40,7 +40,8 @@
 #include "./src/InputManager.C"
 #include "./src/FitFuncs.C"
 #include "./src/TRLYFuncs.C"
-#include "./src/CalibFuncs.C"
+// #include "./src/CalibFuncs.C"
+#include "./src/FreeProton.C"
 
 double gMarkerSize = 0.8;
 double gXSize      = 0.05;  
@@ -57,10 +58,13 @@ int ProcessResults_prod(std::string configFile){
    inputMgr->Load(configFile);
    inputMgr->Print();
 
+   std::string ppID       = inputMgr->GetPPID(); 
    std::string anaDate    = inputMgr->GetAnalysisDate();
    std::string blindLabel = inputMgr->GetBlindLabel();
+
    bool isBlind           = inputMgr->IsBlind();
    bool isMisalignCor     = inputMgr->GetMisalignCorStatus(); 
+
    int probeNumber        = inputMgr->GetTrolleyProbe(); 
    int runPeriod          = inputMgr->GetRunPeriod(); 
 
@@ -115,14 +119,19 @@ int ProcessResults_prod(std::string configFile){
    } 
 
    // load in perturbation data (just in case we need it) 
-   char inpath_pert[200];
-   perturbation_t ppPert;
-   sprintf(inpath_pert,"./input/perturbation/pp-pert_run-%d.json",runPeriod);
-   LoadPerturbationData_json(inpath_pert,ppPert);
+   // char inpath_pert[200];
+   // perturbation_t ppPert;
+   // sprintf(inpath_pert,"./input/perturbation/pp-pert_run-%d.json",runPeriod);
+   // LoadPerturbationData_json(inpath_pert,ppPert);
 
-   // compute errors from free proton corrections 
-   double freeProtErr=0;
-   rc = GetOmegaP_err(ppPert,freeProtErr);
+   FreeProton *fp = new FreeProton(ppID,runPeriod); 
+
+   // compute errors from free proton corrections
+   double T0 = 25.0; // use T = 25 deg for the uncertainty calculation -- weak T dependence, so this is OK  
+   double freeProtErr = fp->GetDelta_t_err(T0)*(0.06179/1E-9);  // converts to Hz 
+   // rc = GetOmegaP_err(ppPert,freeProtErr);
+
+   delete fp; 
 
    char errStr[200],errStr_aba[200],errStr_opt[200];
    sprintf(errStr    ,"%.3lf +/- %.3lf",shot_err    ,tot_misalign_err); 

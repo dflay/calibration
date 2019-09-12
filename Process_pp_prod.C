@@ -42,7 +42,8 @@
 #include "./src/InputManager.C"
 #include "./src/FitFuncs.C"
 #include "./src/TRLYFuncs.C"
-#include "./src/CalibFuncs.C"
+// #include "./src/CalibFuncs.C"
+#include "./src/FreeProton.C"
 
 double gMarkerSize = 0.8; 
 
@@ -70,7 +71,8 @@ int Process_pp_prod(std::string configFile){
    std::string nmrAnaVersion = inputMgr->GetNMRANATag();
    std::string anaDate       = inputMgr->GetAnalysisDate();
    std::string blindLabel    = inputMgr->GetBlindLabel();
-   std::string cutFile       = inputMgr->GetCutFile(); 
+   std::string cutFile       = inputMgr->GetCutFile();
+   std::string ppID          = inputMgr->GetPPID();  
  
    bool isBlind              = inputMgr->IsBlind();
    bool useOscCor            = inputMgr->GetOscCorStatus();
@@ -161,16 +163,17 @@ int Process_pp_prod(std::string configFile){
    }
 
    // load in perturbation data 
-   char inpath[200]; 
-   perturbation_t ppPert;
-   sprintf(inpath,"./input/perturbation/pp-pert_run-%d.json",runPeriod);
-   LoadPerturbationData_json(inpath,ppPert);
+   // char inpath[200]; 
+   // perturbation_t ppPert;
+   // sprintf(inpath,"./input/perturbation/pp-pert_run-%d.json",runPeriod);
+   // LoadPerturbationData_json(inpath,ppPert);
 
    int M=0;
 
    // get stats for the PP 
    std::vector<calibSwap_t> raw,free; 
-   rc = GetSwapStatsForPP(ppPert,ppData,raw,free,yMin,yMax); 
+   // rc = GetSwapStatsForPP(ppPert,ppData,raw,free,yMin,yMax); 
+   rc = GetSwapStatsForPP(runPeriod,ppID,ppData,raw,free,yMin,yMax); 
 
    // print to file 
    rc = PrintToFile(outpath_raw ,raw ); 
@@ -213,11 +216,13 @@ int Process_pp_prod(std::string configFile){
    return 0;
 }
 //______________________________________________________________________________
-int GetSwapStatsForPP(perturbation_t ppPert,std::vector<plungingProbeAnaEvent_t> data,
+int GetSwapStatsForPP(int runPeriod,std::string probeID,std::vector<plungingProbeAnaEvent_t> data,
                       std::vector<calibSwap_t> &raw,std::vector<calibSwap_t> &free,double &min,double &max){
 
    // gather stats for the PP; recall a single PP-DAQ run has N traces in it. 
    // here, a PP-DAQ run is a single swap!
+
+   FreeProton *fp = new FreeProton(probeID,runPeriod);
 
    min = 50E+3; 
    max = 0; 
@@ -259,7 +264,8 @@ int GetSwapStatsForPP(perturbation_t ppPert,std::vector<plungingProbeAnaEvent_t>
          // we want to add back in the LO since we're comparing against the TRLY eventually 
 	 arg = data[i].freq[j] + data[i].freq_LO[j]; 
 	 // get the free-proton frequency here
-	 GetOmegaP_free(ppPert,arg,0,data[i].temp[j],0,freqFree,freqFreeErr_stat);
+	 // GetOmegaP_free(ppPert,arg,0,data[i].temp[j],0,freqFree,freqFreeErr_stat);
+         freqFree = fp->GetOmegaP_free(arg,data[i].temp[j]); 
 	 F.push_back(arg);
 	 FF.push_back(freqFree);
          T.push_back(data[i].temp[j]);
@@ -322,6 +328,8 @@ int GetSwapStatsForPP(perturbation_t ppPert,std::vector<plungingProbeAnaEvent_t>
 
    min -= 2; 
    max += 2;
+
+   delete fp; 
 
    return 0;
 }
