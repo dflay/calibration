@@ -49,7 +49,7 @@ double gMarkerSize = 0.8;
 
 TGraphErrors *GetPPFreeGraph(TString xAxis,TString yAxis,std::vector<calibSwap_t> data); 
 
-int GetSwapStatsForPP(perturbation_t ppPert,std::vector<plungingProbeAnaEvent_t> data,
+int GetSwapStatsForPP(int runPeriod,std::string ppID,std::vector<plungingProbeAnaEvent_t> data,
                       std::vector<calibSwap_t> &raw,std::vector<calibSwap_t> &free,double &min,double &max);
 
 int PrintToFile(std::string outpath,std::vector<calibSwap_t> data); 
@@ -79,6 +79,10 @@ int Process_pp_prod(std::string configFile){
    int probeNumber           = inputMgr->GetTrolleyProbe();
    int runPeriod             = inputMgr->GetRunPeriod(); 
    int nev                   = inputMgr->GetNumEventsToAvg();
+
+   double tempCorValue = 0;
+   bool useTempCor_pp  = inputMgr->GetTempCorStatus_pp(); 
+   if(useTempCor_pp) tempCorValue = inputMgr->GetTempCor_pp();  
 
    char cutPath[200]; 
    sprintf(cutPath,"./input/json/run-%d/%s",runPeriod,cutFile.c_str());
@@ -127,12 +131,13 @@ int Process_pp_prod(std::string configFile){
    }
 
    // PP data 
+   bool useNMRANA = true;
    std::vector<plungingProbeAnaEvent_t> ppInput,ppData;
 
    int NPP=0; 
    for(int i=0;i<NRUNS;i++){
       std::cout << "Getting PP data for run " << run[i] << "..." << std::endl;
-      rc = GetPlungingProbeData(run[i],prMethod,ppMethod,ppInput,prodVersion,nmrAnaVersion,cutpath);
+      rc = GetPlungingProbeData(run[i],prMethod,ppMethod,ppInput,prodVersion,nmrAnaVersion,cutpath,useNMRANA,tempCorValue);
       if(rc!=0){
 	 std::cout << "No data!" << std::endl;
 	 return 1;

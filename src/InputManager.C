@@ -20,11 +20,13 @@ int InputManager::Init(){
    fLoadSCCTime     = false;
    fUseTimeWeight   = false; 
    fUseTempCor      = false;
+   fUseTempCor_pp   = false;
    fUseOscCor       = false; 
    fRemoveFXPRDrift = false;
    fUseMisalignCor  = false;  
-   fNumEventsToAvg  =  0;  
-   fNumEventsTimeWindow =  0; 
+   fTempCor_pp      = 0;
+   fNumEventsToAvg  = 0;  
+   fNumEventsTimeWindow = 0; 
    fTrolleyAngle    = 0; 
    fDBZCurrent      = 0; 
    fTrolleyProbe    = -1; 
@@ -165,7 +167,7 @@ int InputManager::Parse(){
    bool curStatus    = DoesKeyExist("dBz-current");
    bool fxprdStatus  = DoesKeyExist("fxpr-remove-drift"); 
    bool mcorStatus   = DoesKeyExist("use-misalign-cor");  
-   bool ppStatus     = DoesKeyExist("pp-id"); 
+   bool ppStatus     = DoesKeyExist("pp"); 
 
    // parameters common to all 
    std::string unitStr="";
@@ -216,7 +218,11 @@ int InputManager::Parse(){
       if(twStatus )  fNumEventsTimeWindow = (int)fParams["num-events-time-window"]; 
       if(angleStatus) fTrolleyAngle  = (double)fParams["trly_azi-angle"]; 
       if(curStatus)   fDBZCurrent    = (double)fParams["dBz-current"];
-      if(ppStatus)    fPPID          = fParams["pp-id"];  
+      if(ppStatus){
+	 fPPID           = fParams["pp"]["id"];  
+	 fUseTempCor_pp  = (bool)( (int)fParams["pp"]["temp-cor-enable"] ); // 2 wire => 4 wire correction! 
+	 fTempCor_pp     = (double)fParams["pp"]["temp-cor-value"];
+      } 
    }
 
    // trolley Delta-B measurements

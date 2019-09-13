@@ -72,7 +72,11 @@ int LocalScanGrad_pp_prod(std::string configFile){
    bool useOscCor            = inputMgr->GetOscCorStatus();
    int probeNumber           = inputMgr->GetTrolleyProbe(); 
    int axis                  = inputMgr->GetAxis();
-   int runPeriod             = inputMgr->GetRunPeriod();  
+   int runPeriod             = inputMgr->GetRunPeriod(); 
+
+   double tempCorValue = 0;
+   bool useTempCor_pp  = inputMgr->GetTempCorStatus_pp();
+   if(useTempCor_pp) tempCorValue = inputMgr->GetTempCor_pp(); 
 
    char cutPath[200];
    sprintf(cutPath,"./input/json/run-%d/%s",runPeriod,cutFile.c_str());
@@ -150,9 +154,10 @@ int LocalScanGrad_pp_prod(std::string configFile){
    }
 
    // PP data 
+   bool useNMRANA = true;
    std::vector<plungingProbeAnaEvent_t> ppData,ppEvent,ppInput; 
    std::cout << "Getting PP data for run " << midasRun << "..." << std::endl; 
-   for(int i=0;i<MR;i++) rc = GetPlungingProbeData(mRun[i],prMethod,ppMethod,ppInput,prodVersion,nmrAnaVersion,cutPath);
+   for(int i=0;i<MR;i++) rc = GetPlungingProbeData(mRun[i],prMethod,ppMethod,ppInput,prodVersion,nmrAnaVersion,cutPath,useNMRANA,tempCorValue);
    if(rc!=0){
       std::cout << "No data!" << std::endl;
       return 1;

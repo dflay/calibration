@@ -327,7 +327,7 @@ int GetTrolleyData(int run,int method,std::vector<trolleyAnaEvent_t> &trlyEvent,
 }
 //______________________________________________________________________________
 int GetPlungingProbeData(int run,int prMethod,int ppMethod,std::vector<plungingProbeAnaEvent_t> &data,
-                         std::string version,std::string nmrAnaVersion,std::string cutFile,bool useNMRANA){
+                         std::string version,std::string nmrAnaVersion,std::string cutFile,bool useNMRANA,double tempCor){
 
    // prMethod = production method (from art analysis) 
    // ppMethod = UMass analysis method 
@@ -401,6 +401,7 @@ int GetPlungingProbeData(int run,int prMethod,int ppMethod,std::vector<plungingP
          theY    = ppInfo[i].Y;
          thePhi  = ppInfo[i].Phi;
       }
+      theTemp += tempCor;
       timeStamp = gm2fieldUtil::GetStringTimeStampFromUTC(theTime/1E+9);
       // std::cout << "EVENT " << i << " TIME " << timeStamp << " RUN " << theRun << std::endl;
       if(theRun==lastRun){

@@ -185,7 +185,6 @@ void FreeProton::CalculateMagneticSusceptibility(double T,double &CHI,double &CH
    double ARG  = 1. + a[0]*(T-20.) + a[1]*TMath::Power(T-20.,2.) + a[2]*TMath::Power(T-20.,3.);
    CHI     = fchi*ARG;
    CHI_ERR = fchi_err*ARG;
-   return 0;
 }
 //______________________________________________________________________________
 void FreeProton::CalculateDiamagneticShielding(double T,double &SIG,double &ERR){
@@ -195,7 +194,6 @@ void FreeProton::CalculateDiamagneticShielding(double T,double &SIG,double &ERR)
    double dsigdT_err = 0.3E-9;
    SIG = fsigma + dsigdT*(T-25);
    ERR = TMath::Sqrt(fsigma_err*fsigma_err + (T-25.)*(T-25.)*dsigdT_err*dsigdT_err);  
-   return 0;
 }
 //______________________________________________________________________________
 void FreeProton::Print(std::string units){

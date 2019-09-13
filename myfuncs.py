@@ -181,6 +181,7 @@ def writeConfigFileProd_ShimScan(data,confData,tag,keyList,axis,fitData,outpath)
    outData['num-events-time-window'] = confData['num-events-time-window']  
    outData['fxpr-remove-drift']      = confData['fxpr-remove-drift']  
    outData['use-misalign-cor']       = confData['use-misalign-cor']  
+   outData['pp']                     = confData['pp']  
     
    # probe-specific data  
    outData['date']                 = data['date']
@@ -306,7 +307,7 @@ def writeConfigFileProd(data,confData,tag,keyList,axis,fitData,outpath):
    outData['num-events-time-window'] = confData['num-events-time-window']  
    outData['fxpr-remove-drift']      = confData['fxpr-remove-drift']  
    outData['use-misalign-cor']       = confData['use-misalign-cor'] 
-   outData['pp-id']                  = confData['pp-id']  
+   outData['pp']                     = confData['pp']  
     
    # probe-specific data  
    outData['date']                 = data['date']

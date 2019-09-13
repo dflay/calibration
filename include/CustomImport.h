@@ -36,7 +36,9 @@ int GetTrolleyData(std::string date,int run,int method,std::vector<trolleyAnaEve
 
 // Reading PP data
 int GetPlungingProbeData(int run,int prMethod,int ppMethod,std::vector<plungingProbeAnaEvent_t> &data,
-                         std::string version,std::string nmrAnaVersion,std::string cutData="UNKNOWN.json",bool useNMRANA=true); 
+                         std::string version,std::string nmrAnaVersion,std::string cutData="UNKNOWN.json",
+                         bool useNMRANA=true,double tempCor=0); 
+
 int ModifyPlungingProbeData(int method,plungingProbeAnaEvent_t &data,std::string nmrAnaVersion,std::string cutFile); 
 
 int GetFixedProbeData(int run,int method,int probe,std::vector<fixedProbeEvent_t> &data,std::string version);

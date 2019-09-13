@@ -76,7 +76,11 @@ int DeltaB_pp_prod(std::string configFile){
    bool useOscCor            = inputMgr->GetOscCorStatus(); // false;  // never use oscillation corrections here  
    int probeNumber           = inputMgr->GetTrolleyProbe();
    int axis                  = inputMgr->GetAxis();
-   int runPeriod             = inputMgr->GetRunPeriod(); 
+   int runPeriod             = inputMgr->GetRunPeriod();
+
+   double tempCorValue = 0;
+   bool useTempCor_pp  = inputMgr->GetTempCorStatus_pp();
+   if(useTempCor_pp) tempCorValue = inputMgr->GetTempCor_pp(); 
 
    char cutPath[200];
    sprintf(cutPath,"./input/json/run-%d/%s",runPeriod,cutFile.c_str());
@@ -178,12 +182,13 @@ int DeltaB_pp_prod(std::string configFile){
    TGraphErrors *gFXPR = GetFXPRTGraph_avg("GpsTimeStamp","freq","NONE",fxprData);
    gm2fieldUtil::Graph::SetGraphParameters(gFXPR,20,kBlack);
 
-   // PP data 
+   // PP data
+   bool useNMRANA = true; 
    const int N3 = run.size(); 
    std::vector<plungingProbeAnaEvent_t> ppInput,ppEvent; 
    for(int i=0;i<N3;i++){
       std::cout << "Getting PP data for run " << run[i] << "..." << std::endl; 
-      rc = GetPlungingProbeData(run[i],prMethod,ppMethod,ppInput,prodVersion,nmrAnaVersion,cutpath);
+      rc = GetPlungingProbeData(run[i],prMethod,ppMethod,ppInput,prodVersion,nmrAnaVersion,cutpath,useNMRANA,tempCorValue);
       if(rc!=0){
 	 std::cout << "No data!" << std::endl;
 	 return 1;

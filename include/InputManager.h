@@ -16,9 +16,9 @@ class InputManager{
       json fParams; 
       bool fIsSimple,fIsFullAnalysis,fIsBlind,fUseP2PFit,fIsFinalLocation;
       bool fUseAxis,fIsFreeProton,fLoadSwapTime,fLoadSCCTime,fUseTimeWeight,fUseTempCor;
-      bool fUseOscCor,fRemoveFXPRDrift,fUseMisalignCor; 
+      bool fUseOscCor,fRemoveFXPRDrift,fUseMisalignCor,fUseTempCor_pp; 
       int fTrolleyProbe,fAxis,fFXPRListTag,fBlindUnits,fRunPeriod,fNumEventsToAvg,fNumEventsTimeWindow; 
-      double fBlindScale,fTrolleyAngle,fDBZCurrent; 
+      double fBlindScale,fTrolleyAngle,fDBZCurrent,fTempCor_pp; 
       std::string fType,fDevice,fRunDate,fFitFunc,fBlindLabel,fProdTag,fNMRANATag,fCutFile,fPPID;
       std::vector<int> fRunList,fFXPRList; 
       std::vector<std::string> fRunLabel; 
@@ -51,10 +51,11 @@ class InputManager{
       bool GetSwapTimeStatus()       const { return fLoadSwapTime;    }  
       bool GetSCCTimeStatus()        const { return fLoadSCCTime;     }  
       bool GetTimeWeightStatus()     const { return fUseTimeWeight;   } 
-      bool GetTempCorStatus()        const { return fUseTempCor;      } 
       bool GetOscCorStatus()         const { return fUseOscCor;       } 
       bool GetFXPRDriftStatus()      const { return fRemoveFXPRDrift; }  
       bool GetMisalignCorStatus()    const { return fUseMisalignCor;  }  
+      bool GetTempCorStatus()        const { return fUseTempCor;      } 
+      bool GetTempCorStatus_pp()     const { return fUseTempCor_pp;   } 
      
       int GetTrolleyProbe()          const { return fTrolleyProbe;    } 
       int GetAxis()                  const { return fAxis;            }
@@ -66,7 +67,8 @@ class InputManager{
 
       double GetBlindScale()         const { return fBlindScale;      }  
       double GetTrolleyAngle()       const { return fTrolleyAngle;    }  
-      double GetDBZCurrent()         const { return fDBZCurrent;      }  
+      double GetDBZCurrent()         const { return fDBZCurrent;      } 
+      double GetTempCor_pp()         const { return fTempCor_pp;      }  
 
       std::string GetType()          const { return fType;            } 
       std::string GetDevice()        const { return fDevice;          } 
