@@ -44,7 +44,7 @@
 #include "./src/TRLYFuncs.C"
 // #include "./src/TRLYCoordinates.C"
 
-int PrintToFile(const char *outpath,std::string header,std::vector<double> x,std::vector<double> dx);
+int PrintToFile(const char *outpath,std::vector<double> x,std::vector<double> dx);
 int CalculateResidual(TGraph2D *g,TF2 *myFit,TGraph2D *gr); 
 
 double myFitFunc2D(double *x,double *par); 
@@ -271,14 +271,14 @@ int ImposedGrad_xy_2D_prod(std::string configFile){
    sprintf(outpath_rad ,"%s/imposed-grad-x_fit-pars_2D.csv",outDir.c_str()); 
    sprintf(outpath_vert,"%s/imposed-grad-y_fit-pars_2D.csv",outDir.c_str()); 
 
-   rc = PrintToFile(outpath_rad ,"par,err",xPar,xParErr); 
-   rc = PrintToFile(outpath_vert,"par,err",yPar,yParErr); 
+   rc = PrintToFile(outpath_rad ,xPar,xParErr); 
+   rc = PrintToFile(outpath_vert,yPar,yParErr); 
 
    sprintf(outpath_rad ,"%s/imposed-grad-x_2D.csv",outDir.c_str()); 
    sprintf(outpath_vert,"%s/imposed-grad-y_2D.csv",outDir.c_str()); 
 
-   rc = PrintToFile(outpath_rad ,"val,err",igX,igXe); 
-   rc = PrintToFile(outpath_vert,"val,err",igY,igYe); 
+   rc = PrintToFile(outpath_rad ,igX,igXe); 
+   rc = PrintToFile(outpath_vert,igY,igYe); 
 
    // fit errors 
    // sprintf(outpath_rad ,"%s/imposed-grad-x_fit-err.csv",outDir.c_str()); 
@@ -310,7 +310,7 @@ int CalculateResidual(TGraph2D *g,TF2 *myFit,TGraph2D *gr){
    return 0;
 }
 //______________________________________________________________________________
-int PrintToFile(const char *outpath,std::string header,std::vector<double> x,std::vector<double> dx){
+int PrintToFile(const char *outpath,std::vector<double> x,std::vector<double> dx){
    char outStr[200]; 
    const int N = x.size();
    std::ofstream outfile; 
@@ -320,7 +320,6 @@ int PrintToFile(const char *outpath,std::string header,std::vector<double> x,std
       std::cout << "[ImposedGrad_xy_2D_prod]: Cannot open the file: " << outpath << std::endl;
       return 1;
    }else{
-      outfile << header << std::endl;
       for(int i=0;i<N;i++){
 	 sprintf(outStr,"%.3lf,%.3lf",x[i],dx[i]);
 	 outfile << outStr << std::endl; 

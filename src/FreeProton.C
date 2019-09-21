@@ -85,7 +85,7 @@ int FreeProton::LoadData(std::string probeName,int runPeriod){
 }
 //______________________________________________________________________________
 double FreeProton::GetOmegaP_free(double freq,double T){
-   double delta_t = GetDelta_t(T); 
+   double delta_t   = GetDelta_t(T); 
    double freq_free = freq/(1.-delta_t); 
    return freq_free;
 }

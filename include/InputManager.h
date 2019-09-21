@@ -64,8 +64,8 @@ class InputManager{
       int GetRunPeriod()             const { return fRunPeriod;       } 
       int GetNumEventsToAvg()        const { return fNumEventsToAvg;  }  
       int GetNumEventsTimeWindow()   const { return fNumEventsTimeWindow; }  
-      int GetImposedGradientFitDimension() const { return fImpGradFitDim; }  
-      int GetImposedGradientFitOrder() const { return fImpGradFitOrder; }  
+      int GetImpGradFitDimension()   const { return fImpGradFitDim;   }  
+      int GetImpGradFitOrder()       const { return fImpGradFitOrder; }  
 
       double GetBlindScale()         const { return fBlindScale;      }  
       double GetTrolleyAngle()       const { return fTrolleyAngle;    }  
