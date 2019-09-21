@@ -231,7 +231,9 @@ def writeConfigFileProd_params(confData,outpath):
    outData["use-misalign-cor"]       = confData["use-misalign-cor"] 
    outData["num-events-to-avg"]      = confData["num-events-to-avg"] 
    outData["num-events-time-window"] = confData["num-events-time-window"]   
-   outData["fxpr-set"]               = confData["fxpr-set"]   
+   outData["fxpr-set"]               = confData["fxpr-set"]  
+   outData['pp']                     = confData['pp'] 
+   outData['imp-grad']               = confData['imp-grad'] 
    # write to file  
    if os.path.isfile(outpath): 
       print("[writeConfigFileProd_params]: File {0} exists, deleting first".format(outpath) )
@@ -249,8 +251,11 @@ def writeConfigFileProd_imposedGrad(confData,tag,keyList,axis,fitData,outpath):
    outData['blinding']               = confData['blinding'] 
    outData['run-period']             = confData['run-period']
    outData['use-osc-cor']            = confData['use-osc-cor'] 
-   # outData['prod-tag']               = confData['prod-tag'] 
-   # outData['nmr-ana-tag']            = confData['nmr-ana-tag']
+   outData['prod-tag']               = confData['prod-tag'] 
+   outData['nmr-ana-tag']            = confData['nmr-ana-tag']
+   outData['pp']                     = confData['pp'] 
+   outData['imp-grad']               = confData['imp-grad'] 
+
    # outData['fxpr-set']               = confData['fxpr-set']
    # outData['free-proton-cor']        = confData['free-proton-cor'] 
    # outData['load-trly-swap-times']   = confData['load-trly-swap-times'] 
@@ -308,6 +313,7 @@ def writeConfigFileProd(data,confData,tag,keyList,axis,fitData,outpath):
    outData['fxpr-remove-drift']      = confData['fxpr-remove-drift']  
    outData['use-misalign-cor']       = confData['use-misalign-cor'] 
    outData['pp']                     = confData['pp']  
+   outData['imp-grad']               = confData['imp-grad'] 
     
    # probe-specific data  
    outData['date']                 = data['date']

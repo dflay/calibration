@@ -73,7 +73,7 @@ int DeltaB_pp_prod(std::string configFile){
 
    bool isBlind              = inputMgr->IsBlind();
    bool useTimeWeight        = inputMgr->GetTimeWeightStatus();
-   bool useOscCor            = inputMgr->GetOscCorStatus(); // false;  // never use oscillation corrections here  
+   bool useOscCor            = false; // inputMgr->GetOscCorStatus(); // never use oscillation corrections here  
    int probeNumber           = inputMgr->GetTrolleyProbe();
    int axis                  = inputMgr->GetAxis();
    int runPeriod             = inputMgr->GetRunPeriod();

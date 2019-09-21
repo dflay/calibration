@@ -34,7 +34,9 @@ int InputManager::Init(){
    fFXPRListTag     = -1;
    fRunPeriod       = -1;
    fBlindUnits      = -1;  
-   fBlindScale      = -1; 
+   fBlindScale      = -1;
+   fImpGradFitDim   = -1;  
+   fImpGradFitOrder = -1;  
    fType            = "NONE";
    fDevice          = "NONE";  
    fRunDate         = "NONE";  
@@ -167,7 +169,8 @@ int InputManager::Parse(){
    bool curStatus    = DoesKeyExist("dBz-current");
    bool fxprdStatus  = DoesKeyExist("fxpr-remove-drift"); 
    bool mcorStatus   = DoesKeyExist("use-misalign-cor");  
-   bool ppStatus     = DoesKeyExist("pp"); 
+   bool ppStatus     = DoesKeyExist("pp");
+   bool impStatus    = DoesKeyExist("imp-grad");  
 
    // parameters common to all 
    std::string unitStr="";
@@ -222,6 +225,10 @@ int InputManager::Parse(){
 	 fPPID           = fParams["pp"]["id"];  
 	 fUseTempCor_pp  = (bool)( (int)fParams["pp"]["temp-cor-enable"] ); // 2 wire => 4 wire correction! 
 	 fTempCor_pp     = (double)fParams["pp"]["temp-cor-value"];
+      }
+      if(impStatus){
+	 fImpGradFitDim   = (int)fParams["imp-grad"]["fit-dimension"]; 
+	 fImpGradFitOrder = (int)fParams["imp-grad"]["fit-order"]; 
       } 
    }
 

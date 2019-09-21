@@ -17,7 +17,7 @@ class InputManager{
       bool fIsSimple,fIsFullAnalysis,fIsBlind,fUseP2PFit,fIsFinalLocation;
       bool fUseAxis,fIsFreeProton,fLoadSwapTime,fLoadSCCTime,fUseTimeWeight,fUseTempCor;
       bool fUseOscCor,fRemoveFXPRDrift,fUseMisalignCor,fUseTempCor_pp; 
-      int fTrolleyProbe,fAxis,fFXPRListTag,fBlindUnits,fRunPeriod,fNumEventsToAvg,fNumEventsTimeWindow; 
+      int fTrolleyProbe,fAxis,fFXPRListTag,fBlindUnits,fRunPeriod,fNumEventsToAvg,fNumEventsTimeWindow,fImpGradFitDim,fImpGradFitOrder; 
       double fBlindScale,fTrolleyAngle,fDBZCurrent,fTempCor_pp; 
       std::string fType,fDevice,fRunDate,fFitFunc,fBlindLabel,fProdTag,fNMRANATag,fCutFile,fPPID;
       std::vector<int> fRunList,fFXPRList; 
@@ -55,7 +55,7 @@ class InputManager{
       bool GetFXPRDriftStatus()      const { return fRemoveFXPRDrift; }  
       bool GetMisalignCorStatus()    const { return fUseMisalignCor;  }  
       bool GetTempCorStatus()        const { return fUseTempCor;      } 
-      bool GetTempCorStatus_pp()     const { return fUseTempCor_pp;   } 
+      bool GetTempCorStatus_pp()     const { return fUseTempCor_pp;   }
      
       int GetTrolleyProbe()          const { return fTrolleyProbe;    } 
       int GetAxis()                  const { return fAxis;            }
@@ -64,6 +64,8 @@ class InputManager{
       int GetRunPeriod()             const { return fRunPeriod;       } 
       int GetNumEventsToAvg()        const { return fNumEventsToAvg;  }  
       int GetNumEventsTimeWindow()   const { return fNumEventsTimeWindow; }  
+      int GetImposedGradientFitDimension() const { return fImpGradFitDim; }  
+      int GetImposedGradientFitOrder() const { return fImpGradFitOrder; }  
 
       double GetBlindScale()         const { return fBlindScale;      }  
       double GetTrolleyAngle()       const { return fTrolleyAngle;    }  

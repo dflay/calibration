@@ -22,6 +22,9 @@ int SetDataFileParameters(std::string version,std::string &fileName,std::string 
    }else if( version.compare("v9_21_01")==0 ){
       fileName = "FieldPlainRootOutput_";
       dataPath = "/data1/newg2/DataProduction/Offline/ArtTFSDir/v9_21_01";  
+   }else if( version.compare("v9_21_04_dev")==0 ){
+      fileName = "FieldPlainRootOutput_";
+      dataPath = "/data2/newg2/DataProduction/Offline/ArtTFSDir/v9_21_04_dev";  
    }else if( version.compare("nearline")==0 ){
       fileName = "FieldGraphOut"; 
       dataPath = "/data1/newg2/DataProduction/Nearline/ArtTFSDir"; 
