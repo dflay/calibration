@@ -147,7 +147,6 @@ int InputManager::Parse(){
    bool anaStatus    = DoesKeyExist("full-ana"); 
    bool locStatus    = DoesKeyExist("final-loc"); 
    bool p2pStatus    = DoesKeyExist("p2p-fit"); 
-   bool protStatus   = DoesKeyExist("free-proton-cor");
    bool runStatus    = DoesKeyExist("nruns"); 
    bool fxprStatus   = DoesKeyExist("fxpr-set"); 
    bool dateStatus   = DoesKeyExist("date"); 
@@ -158,7 +157,7 @@ int InputManager::Parse(){
    bool sccStatus    = DoesKeyExist("load-trly-scc-times");  
    bool timeStatus   = DoesKeyExist("use-aba-time-weight");
    bool tempStatus   = DoesKeyExist("use-trly-temp-cor");
-   bool oscStatus    = DoesKeyExist("use-osc-cor");
+   bool oscStatus    = DoesKeyExist("osc-cor");
    bool runpStatus   = DoesKeyExist("run-period"); 
    bool prodStatus   = DoesKeyExist("prod-tag");  
    bool nmrAnaStatus = DoesKeyExist("nmr-ana-tag"); 
@@ -209,13 +208,15 @@ int InputManager::Parse(){
       if(trlyStatus) fTrolleyProbe   = (int)fParams["trly-probe"]; 
       if(runpStatus) fRunPeriod      = fParams["run-period"];  
       if(axisStatus) fAxis           = (int)fParams["axis"];
-      if(protStatus) fIsFreeProton   = (bool)( (int)fParams["free-proton-cor"] );  
       if(fitStatus)  fFitFunc        = fParams["fit"];
       if(swapStatus) fLoadSwapTime   = (bool)( (int)fParams["load-trly-swap-times"] ); 
       if(sccStatus)  fLoadSCCTime    = (bool)( (int)fParams["load-trly-scc-times"] ); 
       if(timeStatus) fUseTimeWeight  = (bool)( (int)fParams["use-aba-time-weight"] ); 
       if(tempStatus) fUseTempCor     = (bool)( (int)fParams["use-trly-temp-cor"] ); 
-      if(oscStatus)  fUseOscCor      = (bool)( (int)fParams["use-osc-cor"] ); 
+      if(oscStatus){
+	 fUseOscCor  = (bool)( (int)fParams["osc-cor"]["enable"] );
+         fOscCorType = fParams["osc-cor"]["type"];  
+      } 
       if(cutStatus)  fCutFile        = fParams["cut-file"];
       if(nevStatus)  fNumEventsToAvg = (int)fParams["num-events-to-avg"];  
       if(twStatus )  fNumEventsTimeWindow = (int)fParams["num-events-time-window"]; 
@@ -225,6 +226,7 @@ int InputManager::Parse(){
 	 fPPID           = fParams["pp"]["id"];  
 	 fUseTempCor_pp  = (bool)( (int)fParams["pp"]["temp-cor-enable"] ); // 2 wire => 4 wire correction! 
 	 fTempCor_pp     = (double)fParams["pp"]["temp-cor-value"];
+         fIsFreeProton   = (bool)( (int)fParams["pp"]["free-proton-enable"] );  
       }
       if(impStatus){
 	 fImpGradFitDim   = (int)fParams["imp-grad"]["fit-dimension"]; 

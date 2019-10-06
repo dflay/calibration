@@ -19,7 +19,7 @@ class InputManager{
       bool fUseOscCor,fRemoveFXPRDrift,fUseMisalignCor,fUseTempCor_pp; 
       int fTrolleyProbe,fAxis,fFXPRListTag,fBlindUnits,fRunPeriod,fNumEventsToAvg,fNumEventsTimeWindow,fImpGradFitDim,fImpGradFitOrder; 
       double fBlindScale,fTrolleyAngle,fDBZCurrent,fTempCor_pp; 
-      std::string fType,fDevice,fRunDate,fFitFunc,fBlindLabel,fProdTag,fNMRANATag,fCutFile,fPPID;
+      std::string fType,fDevice,fRunDate,fFitFunc,fBlindLabel,fProdTag,fNMRANATag,fCutFile,fPPID,fOscCorType;
       std::vector<int> fRunList,fFXPRList; 
       std::vector<std::string> fRunLabel; 
 
@@ -81,6 +81,7 @@ class InputManager{
       std::string GetNMRANATag()     const { return fNMRANATag;       }
       std::string GetCutFile()       const { return fCutFile;         } 
       std::string GetPPID()          const { return fPPID;            } 
+      std::string GetOscCorType()    const { return fOscCorType;      } 
 
       std::string GetValue(std::string key)                       const { return fParams[key]; }  
       std::string GetValue(std::string key,std::string subKey)    const { return fParams[key][subKey]; } 
