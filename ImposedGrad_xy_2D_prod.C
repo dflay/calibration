@@ -43,6 +43,7 @@
 #include "./src/FitErr.C"
 #include "./src/TRLYFuncs.C"
 // #include "./src/TRLYCoordinates.C"
+#include "./src/SystFuncs.C"
 
 int PrintToFile(const char *outpath,std::vector<double> x,std::vector<double> dx);
 int CalculateResidual(TGraph2D *g,TF2 *myFit,TGraph2D *gr); 
@@ -73,7 +74,10 @@ int ImposedGrad_xy_2D_prod(std::string configFile){
 
    bool isBlind              = inputMgr->IsBlind();
    int runPeriod             = inputMgr->GetRunPeriod();
-   int fitOrder              = inputMgr->GetImpGradFitOrder();  
+   int fitOrder              = inputMgr->GetImpGradFitOrder(); 
+   // systematics 
+   bool isSyst               = inputMgr->GetSystStatus();
+   bool varyFit              = inputMgr->GetSystFitStatus("imp-grad"); 
 
    date_t theDate; 
    GetDate(theDate); 
@@ -266,7 +270,13 @@ int ImposedGrad_xy_2D_prod(std::string configFile){
       igYe.push_back(DBY_err);  
    }
  
-   // // print to file
+   if(isSyst && varyFit){
+      std::cout << "[ImposedGrad_xy_2D_prod]: SYSTEMATIC VARIATION! Will vary fit result within (Gaussian) uncertainties" << std::endl;
+      rc = systFunc::RandomizeFitValues(igX,igXe);
+      rc = systFunc::RandomizeFitValues(igY,igYe);
+   }
+
+   // print to file
    char outpath_rad[200],outpath_vert[200]; 
    sprintf(outpath_rad ,"%s/imposed-grad-x_fit-pars_2D.csv",outDir.c_str()); 
    sprintf(outpath_vert,"%s/imposed-grad-y_fit-pars_2D.csv",outDir.c_str()); 

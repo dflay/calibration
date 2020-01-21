@@ -27,4 +27,15 @@ namespace systFunc {
       }
       return 0;
    }
+   //______________________________________________________________________________
+   int RandomizeFitValues(int NP,double *x,double *dx){
+      // randomize the value in x[i] on the range Gaus(x[i],dx[i]) 
+      // specific to varying fit parameters within their 1-sigma uncertainties.  
+      double rval=0;
+      for(int i=0;i<NP;i++){
+	 rval = random_df::getRandomNumber_gaus(x[i],dx[i]);
+	 x[i] = rval; 
+      }
+      return 0;
+   }
 }

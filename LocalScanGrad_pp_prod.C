@@ -42,6 +42,7 @@
 #include "./src/FitErr.C"
 #include "./src/InputManager.C"
 #include "./src/TRLYFuncs.C"
+#include "./src/SystFuncs.C"
 
 int GetAziGrad(TGraph *g,double &grad,double &gradErr);
 int GetCoordinates(std::vector<calibSwap_t> data,std::vector<double> &r); 
@@ -72,7 +73,10 @@ int LocalScanGrad_pp_prod(std::string configFile){
    bool useOscCor            = inputMgr->GetOscCorStatus();
    int probeNumber           = inputMgr->GetTrolleyProbe(); 
    int axis                  = inputMgr->GetAxis();
-   int runPeriod             = inputMgr->GetRunPeriod(); 
+   int runPeriod             = inputMgr->GetRunPeriod();
+   // systematics 
+   bool isSyst               = inputMgr->GetSystStatus();
+   bool varyFit              = inputMgr->GetSystFitStatus("shim");
 
    double tempCorValue = 0;
    bool useTempCor_pp  = inputMgr->GetTempCorStatus_pp();
@@ -358,6 +362,11 @@ int LocalScanGrad_pp_prod(std::string configFile){
    ER[0] = dBdr_err; 
    ER[1] = dBdr_err; 
    ER[2] = 0;
+
+   if(isSyst && varyFit){
+      std::cout << "[LocalScanGrad_pp_prod]: SYSTEMATIC VARIATION! Will vary fit result within (Gaussian) uncertainties" << std::endl;
+      rc = systFunc::RandomizeFitValues(3,PR,ER); 
+   }
 
    double drift[3]     = {0,0,0};
    double drift_err[3] = {0,0,0};
