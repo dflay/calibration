@@ -23,27 +23,34 @@ int InputManager::Init(){
    fUseTempCor_pp   = false;
    fUseOscCor       = false; 
    fRemoveFXPRDrift = false;
-   fUseMisalignCor  = false;  
+   fUseMisalignCor  = false; 
+   fVaryDBTime_tr   = false;  
+   fVarySwapTime_tr = false; 
+   fVaryShimFit     = false; 
+   fVaryImpGradFit  = false; 
+   fSyst            = false;  
    fTempCor_pp      = 0;
    fNumEventsToAvg  = 0;  
    fNumEventsTimeWindow = 0; 
-   fTrolleyAngle    = 0; 
-   fDBZCurrent      = 0; 
-   fTrolleyProbe    = -1; 
-   fAxis            = -1;
-   fFXPRListTag     = -1;
-   fRunPeriod       = -1;
-   fBlindUnits      = -1;  
-   fBlindScale      = -1;
-   fImpGradFitDim   = -1;  
-   fImpGradFitOrder = -1;  
-   fType            = "NONE";
-   fDevice          = "NONE";  
-   fRunDate         = "NONE";  
-   fFitFunc         = "NONE";
-   fProdTag         = "NONE"; 
-   fNMRANATag       = "NONE";
-   fPPID            = "NONE";  
+   fTrolleyAngle     = 0; 
+   fDBZCurrent       = 0;
+   fDBDeltaTime_tr   = 0; 
+   fSwapDeltaTime_tr = 0; 
+   fTrolleyProbe     = -1; 
+   fAxis             = -1;
+   fFXPRListTag      = -1;
+   fRunPeriod        = -1;
+   fBlindUnits       = -1;  
+   fBlindScale       = -1;
+   fImpGradFitDim    = -1;  
+   fImpGradFitOrder  = -1;  
+   fType             = "NONE";
+   fDevice           = "NONE";  
+   fRunDate          = "NONE";  
+   fFitFunc          = "NONE";
+   fProdTag          = "NONE"; 
+   fNMRANATag        = "NONE";
+   fPPID             = "NONE";  
    ClearVectors(); 
    return 0;
 }
@@ -148,7 +155,6 @@ int InputManager::Parse(){
    bool locStatus    = DoesKeyExist("final-loc"); 
    bool p2pStatus    = DoesKeyExist("p2p-fit"); 
    bool runStatus    = DoesKeyExist("nruns"); 
-   bool fxprStatus   = DoesKeyExist("fxpr-set"); 
    bool dateStatus   = DoesKeyExist("date"); 
    bool blindStatus  = DoesKeyExist("blinding"); 
    bool trlyStatus   = DoesKeyExist("trly-probe");
@@ -166,10 +172,10 @@ int InputManager::Parse(){
    bool twStatus     = DoesKeyExist("num-events-time-window"); 
    bool angleStatus  = DoesKeyExist("trly_azi-angle"); 
    bool curStatus    = DoesKeyExist("dBz-current");
-   bool fxprdStatus  = DoesKeyExist("fxpr-remove-drift"); 
    bool mcorStatus   = DoesKeyExist("use-misalign-cor");  
    bool ppStatus     = DoesKeyExist("pp");
-   bool impStatus    = DoesKeyExist("imp-grad");  
+   bool impStatus    = DoesKeyExist("imp-grad"); 
+   bool systStatus   = DoesKeyExist("syst");  
 
    // parameters common to all 
    std::string unitStr="";
@@ -194,15 +200,18 @@ int InputManager::Parse(){
       }
    }
 
-   if(fxprStatus){
-      fFXPRListTag = (int)fParams["fxpr-set"]; 
-      LoadFXPRList();
-   } 
-      
-   if(fxprdStatus) fRemoveFXPRDrift = (bool)( (int)fParams["fxpr-remove-drift"] );
-
    if(mcorStatus)  fUseMisalignCor  = (bool)( (int)fParams["use-misalign-cor"] );  
-   
+  
+   if(systStatus){
+      fSyst             = (bool)( (int)fParams["syst"]["enable"]         ); 
+      fVaryDBTime_tr    = (bool)( (int)fParams["syst"]["vary-db-time"]   ); 
+      fVarySwapTime_tr  = (bool)( (int)fParams["syst"]["vary-swap-time"] ); 
+      fVaryShimFit      = (bool)( (int)fParams["syst"]["vary-shim-fit"]  ); 
+      fVaryImpGradFit   = (bool)( (int)fParams["syst"]["vary-igrad-fit"] );
+      fDBDeltaTime_tr   = (double)fParams["syst"]["tr-db-delta"];  
+      fSwapDeltaTime_tr = (double)fParams["syst"]["tr-swap-delta"];  
+   }
+ 
    // calibration: production 
    if( fType.compare("calib-prod")==0 ){
       if(trlyStatus) fTrolleyProbe   = (int)fParams["trly-probe"]; 
@@ -214,8 +223,11 @@ int InputManager::Parse(){
       if(timeStatus) fUseTimeWeight  = (bool)( (int)fParams["use-aba-time-weight"] ); 
       if(tempStatus) fUseTempCor     = (bool)( (int)fParams["use-trly-temp-cor"] ); 
       if(oscStatus){
-	 fUseOscCor  = (bool)( (int)fParams["osc-cor"]["enable"] );
-         fOscCorType = fParams["osc-cor"]["type"];  
+	 fUseOscCor       = (bool)( (int)fParams["osc-cor"]["enable"] );
+         fOscCorType      = fParams["osc-cor"]["type"];  
+	 fRemoveFXPRDrift = (bool)( (int)fParams["osc-cor"]["fxpr-remove-drift"] );
+	 fFXPRListTag     = (int)fParams["osc-cor"]["fxpr-set"]; 
+	 LoadFXPRList();
       } 
       if(cutStatus)  fCutFile        = fParams["cut-file"];
       if(nevStatus)  fNumEventsToAvg = (int)fParams["num-events-to-avg"];  

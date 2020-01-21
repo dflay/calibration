@@ -131,9 +131,9 @@ int ImposedGrad_z_prod(std::string configFile){
    rc = LoadScanTimes(run[0],runPeriod,prodVersion,time1);
    rc = LoadScanTimes(run[1],runPeriod,prodVersion,time2);
 
-   // std::cout << run[0] << " TIMES" << std::endl;
+   // std::cout << Form("run %05d TIMES",run[0]) << std::endl;
    // for(int i=0;i<time1.size();i++) std::cout << gm2fieldUtil::GetStringTimeStampFromUTC(time1[i]) << std::endl; 
-   // std::cout << run[1] << " TIMES" << std::endl;
+   // std::cout << Form("run %05d TIMES",run[1]) << std::endl;
    // for(int i=0;i<time2.size();i++) std::cout << gm2fieldUtil::GetStringTimeStampFromUTC(time2[i]) << std::endl; 
 
    // apply oscillation correction 
@@ -184,10 +184,12 @@ int ImposedGrad_z_prod(std::string configFile){
       }
    }
 
+   // this is the baseline 
    TGraph *g1 = gm2fieldUtil::Graph::GetTGraph(trPhi1,FREQ1);
    gm2fieldUtil::Graph::SetGraphParameters(g1,20,kBlack);
 
-   TGraph *g2 = gm2fieldUtil::Graph::GetTGraph(trPhi2,FREQ2);
+   // this is the gradient-on data
+   TGraph *g2 = gm2fieldUtil::Graph::GetTGraph(trPhi2,FREQ2); 
    gm2fieldUtil::Graph::SetGraphParameters(g2,20,kRed);
 
    const int NPTS = 20;
@@ -217,7 +219,7 @@ int ImposedGrad_z_prod(std::string configFile){
 
    TString fitName = "myFit";
    const int npar = 4;  
-   double delta = 0.02; // roughly 2.5 mm 
+   double delta = 0.6; // 0.02; // roughly 2.5 mm 
    double min = angle - delta;   
    double max = angle + delta;
    std::cout << Form("Fit range: %.3lf to %.3lf",min,max) << std::endl;
@@ -274,7 +276,7 @@ int ImposedGrad_z_prod(std::string configFile){
    // double dBdz_err = parErr[1]/124./current;  // convert from Hz/deg -> Hz/mm 
    // std::cout << Form("dB/dz = %.3lf +/- %.3lf Hz/mm",dBdz,dBdz_err) << std::endl; 
 
-   double sf       = 1./124./current; 
+   double sf       = 1./124.; // NOTE: Not dividing by current anymore!  
    double dBdz     = sf*theFit->Derivative(XX[0]);  
    double dBdz_err = sf*GetFitError(theFit,fitResult,MyPolyFitFuncDerivative_impGradZ,XX);  
    std::cout << Form("dB/dz = %.3lf +/- %.3lf Hz/mm",dBdz,dBdz_err) << std::endl; 
@@ -358,6 +360,42 @@ int ImposedGrad_z_prod(std::string configFile){
    c3->cd();
    plotPath = Form("%s/azi-grad_fxpr-data.png",plotDir.c_str());
    c3->Print(plotPath);  
+
+   // now determine the gradient in the shimmed field -- will use as an estimate for some probes 
+   double parBL[npar]    = {1.,750.,1.,angle};
+   double parBLErr[npar] = {0,0,0,0};
+   TF1 *myFitBL = new TF1("myFitBL",fitFunc,min,max,npar);
+   for(int i=0;i<npar;i++) myFit->SetParameter(i,parBL[i]);  
+   myFitBL->FixParameter(3,par[3]);   
+   myFitBL->SetLineColor(kRed);
+
+   TCanvas *c4 = new TCanvas("c4","Shimmed Field Plot",1200,600);
+
+   c4->cd();
+   g2->Draw("a");
+   gm2fieldUtil::Graph::SetGraphLabels(g2,"Shimmed Field","Azimuthal Position (deg)","Frequency (Hz)");
+   g2->Draw("a");
+   TFitResultPtr fitResultBL = g2->Fit("myFitBL","RQS");
+   c4->Update(); 
+
+   plotPath = Form("%s/azi-grad_est_pr-%02d.png",plotDir.c_str(),probeNumber);
+   c4->Print(plotPath);  
+
+   TF1 *theFitBL = g2->GetFunction("myFitBL"); 
+   for(int i=0;i<npar;i++){
+      parBL[i]    = theFitBL->GetParameter(i); 
+      parBLErr[i] = theFitBL->GetParError(i); 
+      // std::cout << Form("p[%d] = %.3lf ",i,par[i]) << std::endl;
+   }
+
+   double dBdz_bl     = sf*theFitBL->Derivative(XX[0]);  
+   double dBdz_bl_err = sf*GetFitError(theFitBL,fitResultBL,MyPolyFitFuncDerivative_impGradZ,XX);  
+
+   // assume 100% uncertainty on probes 1, 3, 9, 11 
+   if(probeNumber==1||probeNumber==3||probeNumber==9||probeNumber==11) dBdz_bl_err = TMath::Abs(dBdz_bl); 
+
+   sprintf(outpath,"%s/azi-grad_est_pr-%02d.csv",outDir.c_str(),probeNumber); 
+   rc = PrintToFile_trlyDBz(outpath,dBdz_bl,dBdz_bl_err);
 
    return 0;
 }

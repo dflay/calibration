@@ -324,6 +324,96 @@ int GetTRLYStatsAtTime(bool UseTempCor,bool UseOscCor,int probe,int nev,double f
    return 0;
 }
 //______________________________________________________________________________
+int GetTRLYStatsAtTime_hybrid(bool UseTempCor,bool UseOscCor,int probe,int nev,double fLO,
+                              std::vector<double> time,std::vector<averageFixedProbeEvent_t> fxpr,
+                              std::vector<trolleyAnaEvent_t> Data,std::vector<calibSwap_t> &Event,std::vector<double> t0){
+
+   // find the mean field at the times specified in the time vector 
+   calibSwap_t theEvent; 
+
+   // do oscillation correction and obtain ALL data associated with toggle times in time vector 
+   std::vector<double> trTime,trFreq,trFreq_cor; 
+   int rc = CorrectOscillation_trly_hybrid(probe,nev,time,fxpr,Data,trTime,trFreq,trFreq_cor,"time",t0);
+   if(rc!=0) return rc; 
+   
+   if(UseOscCor) std::cout << "[GetTRLYStatsAtTime]: USING OSCILLATION CORRECTION" << std::endl;
+
+   // now need to average over each toggle 
+
+   int n=0;
+   int M = trTime.size();
+   const int NT = time.size();
+   double lastTime=0;
+   double arg_freq=0,delta_t=0;
+   double mean_freq=0,stdev_freq=0;
+   double mean_temp=0,stdev_temp=0;
+   double mean_x=0,stdev_x=0;
+   double mean_y=0,stdev_y=0;
+   double mean_z=0,stdev_z=0;
+   std::vector<double> tt,freq,temp,x,y,z;
+   for(int i=0;i<NT;i++){
+      // find events that satisfy the timestamp for frequency and apply corrections 
+      // WARNING: be careful to not accumulate events from previous swaps!  
+      for(int j=0;j<M;j++){
+	 if(trTime[j]>lastTime && trTime[j]<time[i]){
+	    tt.push_back(trTime[j]); 
+	    if(UseTempCor){
+	       // FIXME: apply a temperature correction if necessary
+	       // accounts for the trolley being at a temperature other than 25 deg c  
+	       delta_t = (4.0E-9)*(temp[j]-25.0);
+	    }
+	    if(UseOscCor){
+	       arg_freq = (fLO + trFreq_cor[j])/(1.-delta_t);  
+	    }else{
+	       arg_freq = (fLO + trFreq[j])/(1.-delta_t);  
+	    }
+	    freq.push_back(arg_freq); 
+	 }
+      }
+      // std::cout << "SWAP " << i+1 << ": GATHERED " << freq.size() << " EVENTS" << std::endl;
+      // gather all other variables
+      rc = FilterSingle("temp",probe,nev,time[i],Data,temp);
+      rc = FilterSingle("r"   ,probe,nev,time[i],Data,x);
+      rc = FilterSingle("y"   ,probe,nev,time[i],Data,y);
+      rc = FilterSingle("phi" ,probe,nev,time[i],Data,z);
+      // now get mean of events 
+      mean_freq  = gm2fieldUtil::Math::GetMean<double>(freq);
+      stdev_freq = gm2fieldUtil::Math::GetStandardDeviation<double>(freq);
+      mean_temp  = gm2fieldUtil::Math::GetMean<double>(temp);
+      stdev_temp = gm2fieldUtil::Math::GetStandardDeviation<double>(temp);
+      mean_x     = gm2fieldUtil::Math::GetMean<double>(x);
+      stdev_x    = gm2fieldUtil::Math::GetStandardDeviation<double>(x);
+      mean_y     = gm2fieldUtil::Math::GetMean<double>(y);
+      stdev_y    = gm2fieldUtil::Math::GetStandardDeviation<double>(y);
+      mean_z     = gm2fieldUtil::Math::GetMean<double>(z);
+      stdev_z    = gm2fieldUtil::Math::GetStandardDeviation<double>(z);
+      // store result
+      theEvent.time    = time[i]; 
+      theEvent.freq    = mean_freq;
+      theEvent.freqErr = stdev_freq; 
+      theEvent.temp    = mean_temp; 
+      theEvent.tempErr = stdev_temp; 
+      theEvent.r       = mean_x;       
+      theEvent.rErr    = stdev_x;       
+      theEvent.y       = mean_y;       
+      theEvent.yErr    = stdev_y;       
+      theEvent.phi     = mean_z;       
+      theEvent.phiErr  = stdev_z;       
+      Event.push_back(theEvent);  
+      // set up for next time 
+      n = tt.size();
+      lastTime = tt[n-1];
+      tt.clear(); 
+      freq.clear();
+      temp.clear();
+      x.clear();
+      y.clear();
+      z.clear();
+   } 
+
+   return 0;
+}
+//______________________________________________________________________________
 int GetTRLYStats_sccToggle_old(bool useOscCor,int probe,int nev,std::vector<double> time,
                                std::vector<averageFixedProbeEvent_t> fxpr,std::vector<trolleyAnaEvent_t> Data,
                                std::vector<double> &TIME,std::vector<double> &MEAN,std::vector<double> &STDEV){

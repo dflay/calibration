@@ -42,6 +42,7 @@
 #include "./src/InputManager.C"
 #include "./src/FitFuncs.C"
 #include "./src/TRLYFuncs.C"
+#include "./src/SystFuncs.C"
 
 double gMarkerSize = 0.8; 
 
@@ -78,14 +79,18 @@ int Process_trly_prod(std::string configFile){
    std::string blindLabel    = inputMgr->GetBlindLabel();
    std::string cutFile       = inputMgr->GetCutFile();
  
-   bool isBlind            = inputMgr->IsBlind();
-   bool loadSwapTimes      = inputMgr->GetSwapTimeStatus();
-   bool useTempCor         = inputMgr->GetTempCorStatus(); 
-   bool useOscCor          = inputMgr->GetOscCorStatus(); 
-   int axis                = inputMgr->GetAxis();  
-   int probeNumber         = inputMgr->GetTrolleyProbe(); 
-   int runPeriod           = inputMgr->GetRunPeriod();
-   int nev                 = inputMgr->GetNumEventsToAvg(); 
+   bool isBlind              = inputMgr->IsBlind();
+   bool loadSwapTimes        = inputMgr->GetSwapTimeStatus();
+   bool useTempCor           = inputMgr->GetTempCorStatus(); 
+   bool useOscCor            = inputMgr->GetOscCorStatus(); 
+   int axis                  = inputMgr->GetAxis();  
+   int probeNumber           = inputMgr->GetTrolleyProbe(); 
+   int runPeriod             = inputMgr->GetRunPeriod();
+   int nev                   = inputMgr->GetNumEventsToAvg();
+   // systematics 
+   bool isSyst               = inputMgr->GetSystStatus();
+   bool varySwap_time        = inputMgr->GetVaryTimeStatus("tr","swap");
+   double swap_delta         = inputMgr->GetDeltaTime("tr","swap");   
 
    date_t theDate;
    GetDate(theDate);
@@ -165,6 +170,11 @@ int Process_trly_prod(std::string configFile){
       LoadTimes(probeNumber,runPeriod,prodVersion,"swap",dev,time);
    }else{
       FindTRLYStopTimes(probeNumber-1,angle,trlyData,trlyGalil,time);
+   }
+
+   if(isSyst && varySwap_time){
+      std::cout << "[Process_trly_prod]: SYSTEMATIC VARIATION! Swap times will be randomized by up to " << swap_delta << " sec" <<std::endl;
+      rc = systFunc::RandomizeTimeValues(swap_delta,time);
    }
 
    // get reference time

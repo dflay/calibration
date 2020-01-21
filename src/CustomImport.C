@@ -25,12 +25,27 @@ int SetDataFileParameters(std::string version,std::string &fileName,std::string 
    }else if( version.compare("v9_21_04_dev")==0 ){
       fileName = "FieldPlainRootOutput_";
       dataPath = "/data2/newg2/DataProduction/Offline/ArtTFSDir/v9_21_04_dev";  
+   }else if( version.compare("v9_21_04")==0 ){
+      fileName = "FieldPlainRootOutput_";
+      dataPath = "/data2/newg2/DataProduction/Offline/ArtTFSDir/v9_21_04";  
    }else if( version.compare("nearline")==0 ){
       fileName = "FieldGraphOut"; 
       dataPath = "/data1/newg2/DataProduction/Nearline/ArtTFSDir"; 
    }else if( version.compare("nearline-run-2")==0 ){
       fileName = "FieldGraphOut"; 
-      dataPath = "/mnt/nfs/g2field-server-2/newg2/DataProduction/Nearline/ArtTFSDir"; 
+      dataPath = "/mnt/nfs/g2field-server-2/newg2/DataProduction/Nearline/ArtTFSDir";
+   }else if( version.compare("v9_30_00_dev")==0 ) {
+      // run 2 calibration is here 
+      fileName = "FieldPlainRootOutput_";
+      dataPath = "/data1/newg2/DataProduction/Offline/ArtTFSDir/v9_30_00_dev"; 
+   }else if( version.compare("v9_30_00_dev")==0 ) {
+      // run 3 
+      fileName = "FieldPlainRootOutput_";
+      dataPath = "/data1/newg2/DataProduction/Offline/ArtTFSDir/v9_30_00_dev"; 
+   }else if( version.compare("pp-img")==0 ){
+      // for PP image studies
+      fileName = "FieldGraphOut"; 
+      dataPath = "/mnt/nfs/FieldDataRaid/Calibration/PPImage"; 
    }else{
       std::cout << "No match for production tag: " << version << std::endl;
       return 1;
@@ -95,6 +110,75 @@ int GetFixedProbeData(int run,int method,int probe,std::vector<fixedProbeEvent_t
       data.push_back(dataPt); 
    }
 
+   return 0;
+}
+//______________________________________________________________________________
+int GetTrolleyData_avg(bool subtractDrift,int period,std::vector<trolleyAnaEvent_t> trly,std::vector<averageTrolleyAnaEvent_t> &data){
+   // construct the average over all 17 probes
+   const int N = trly.size();
+   const int M = 17;
+   // unsigned long long mean_time=0;
+   double mean_time=0,mean_freq=0,stdev_freq=0;
+   std::vector<double> t,tt,f,ff;
+   // std::vector<unsigned long long> t,tt;
+   for(int i=0;i<N;i++){
+      for(int j=0;j<M;j++) t.push_back( trly[i].time[j]/1E+9 );
+      for(int j=0;j<M;j++) f.push_back( trly[i].freq[j] );
+      mean_time      = gm2fieldUtil::Math::GetMean<double>(t);
+      mean_freq      = gm2fieldUtil::Math::GetMean<double>(f);
+      stdev_freq     = gm2fieldUtil::Math::GetStandardDeviation<double>(f);
+      tt.push_back(mean_time);
+      ff.push_back(mean_freq);
+      // dataPt.time    = mean_time;
+      // dataPt.freq    = mean_freq;
+      // dataPt.freqErr = stdev_freq;
+      // dataPt.r    = 0.;
+      // dataPt.y    = 0.;
+      // dataPt.phi  = 0.;
+      // data.push_back(dataPt); 
+      // clear for next event 
+      f.clear();
+      t.clear();
+   }
+
+   // construct moving average over time 
+   double x,y;
+   std::vector<double> TT,FF;
+   gm2fieldUtil::Algorithm::MovingAverage<double> *mvAvg1 = new gm2fieldUtil::Algorithm::MovingAverage<double>(period);
+   gm2fieldUtil::Algorithm::MovingAverage<double> *mvAvg2 = new gm2fieldUtil::Algorithm::MovingAverage<double>(period);
+   const int NN = tt.size();
+   for(int i=0;i<NN;i++){
+      x = mvAvg1->GetUpdatedAverage(tt[i]);
+      y = mvAvg2->GetUpdatedAverage(ff[i]);
+      TT.push_back(x);
+      FF.push_back(y);
+   }
+
+   delete mvAvg1;
+   delete mvAvg2;
+
+   // determine slope of data 
+   double slope=0,intercept=0,r=0;
+   int rc = gm2fieldUtil::Math::LeastSquaresFitting(TT,FF,intercept,slope,r);
+
+   // subtract off slope and fill the struct 
+   double arg=0;
+   averageTrolleyAnaEvent_t dataPt;
+   for(int i=0;i<NN;i++){
+      arg = FF[i] - (intercept + slope*TT[i]);
+      if(subtractDrift){
+         dataPt.freq = arg;
+      }else{
+         dataPt.freq = FF[i];
+      }
+      dataPt.time    = (unsigned long long)(TT[i]*1E+9);  // this needs to be unsigned long long 
+      dataPt.freqErr = 0;
+      dataPt.r       = 0;
+      dataPt.y       = 0;
+      dataPt.phi     = 0;
+      // std::cout << TT[i] << " " << dataPt.freq << std::endl;
+      data.push_back(dataPt);
+   }
    return 0;
 }
 //______________________________________________________________________________
@@ -268,7 +352,7 @@ int GetTrolleyData(int run,int method,std::vector<trolleyAnaEvent_t> &trlyEvent,
    NT = trlyTime.size();
    NM = trlyMon.size();
 
-   if(version.compare("nearline")==0){
+   if(version.compare("nearline")==0 || version.compare("pp-img")==0 ){
       rc = GetTrolleyFrequencies<gm2field::trolleyProbeFrequency_v1_t>(run,trlyFreq,version);
       rc = GetTrolleyPosition<gm2field::trolleyPosition_v1_t>(run,trlyPos,version);
       NP = trlyPos.size();
@@ -298,7 +382,7 @@ int GetTrolleyData(int run,int method,std::vector<trolleyAnaEvent_t> &trlyEvent,
    bool validEvent = false;
    for(int i=startIndex;i<NT;i++){
       for(int j=0;j<NUM_TRLY;j++){
-         if(version.compare("nearline")==0){
+         if(version.compare("nearline")==0 || version.compare("pp-img")==0){
             arg_phi  = trlyPos[i].Phi[j][0]*gm2fieldUtil::Constants::DEG_PER_RAD;
             arg_freq = trlyFreq[i].Frequency[j][method];
          }else{
@@ -324,6 +408,60 @@ int GetTrolleyData(int run,int method,std::vector<trolleyAnaEvent_t> &trlyEvent,
       }
       if(validEvent) trlyEvent.push_back(data);
       validEvent = false;
+   }
+
+   return 0;
+}
+//______________________________________________________________________________
+int GetTrolleyData_mp(int run,std::vector<trolleyAnaEventMP_t> &trlyEvent,std::string version){
+
+   int rc=0;
+
+   std::vector<gm2field::trolleyFieldMultipole_v1_t> trlyMP;
+   std::vector<gm2field::trolleyFieldMultipole_t> trlyMP_new;
+
+   int NT=0;
+
+   if(version.compare("nearline")==0 || version.compare("pp-img")==0){
+      rc = GetTrolleyMultipoles<gm2field::trolleyFieldMultipole_v1_t>(run,trlyMP,version);
+      NT = trlyMP.size();
+   }else{ 
+      rc = GetTrolleyMultipoles<gm2field::trolleyFieldMultipole_t>(run,trlyMP_new,version); 
+      NT = trlyMP_new.size();
+   }
+
+   if(NT<=1) return 1;
+
+   trolleyAnaEventMP_t data;
+
+   int startIndex=22;  // for continuous mode 
+
+   // special case...
+   if(run==3030) startIndex = 10;
+   if(run==4911) startIndex = 35;
+
+   double arg_phi=0,arg_mp=0,arg_time=0;
+   bool validEvent=true, isBad=false;
+   for(int i=startIndex;i<NT;i++){
+      for(int j=0;j<NUM_MP;j++){
+         if(version.compare("nearline")==0 || version.compare("pp-img")==0){
+            arg_phi  = 0;
+	    arg_time = 0;
+            arg_mp   = trlyMP[i].Multipole[j][0];
+         }else{
+            arg_phi  = trlyMP_new[i].Phi;
+            arg_mp   = trlyMP_new[i].Multipole[j];
+	    arg_time = trlyMP_new[i].Time;
+         }
+         if(arg_phi<0) arg_phi += 360.;
+	 isBad = gm2fieldUtil::Math::IsInfOrNaN(arg_mp);
+         if(isBad) arg_mp = -1000;
+	 data.time  = arg_time;
+	 data.mp[j] = arg_mp;
+	 data.phi   = arg_phi;
+         // std::cout << gm2fieldUtil::GetStringTimeStampFromUTC( data.time/1E+9 ) << " " << data.mp[j] << std::endl; 
+      }
+      trlyEvent.push_back(data);
    }
 
    return 0;
@@ -470,6 +608,7 @@ int GetPlungingProbeData(int run,int prMethod,int ppMethod,std::vector<plungingP
       std::cout << "[GetPlungingProbeData]: Using NMR-ANA results... " << endl;
       for(int i=0;i<NN;i++){
 	 rc = ModifyPlungingProbeData(ppMethod,data[i],nmrAnaVersion,cutFile);
+         if(rc==2) data.erase(data.begin()+i); // erase the entry with no data in it 
       }
       std::cout << "[GetPlungingProbeData]: --> Done." << std::endl;
    }
@@ -521,7 +660,6 @@ int ModifyPlungingProbeData(int method,plungingProbeAnaEvent_t &data,std::string
    if(isDiff){ 
       MSG = "----------- INCOMING PP DATA ------------";
       rc = Logger::PrintMessage(Logger::kINFO,"default",MSG,'a'); 
-
       for(int i=0;i<M;i++){
 	 timeStamp = gm2fieldUtil::GetStringTimeStampFromUTC( data.time[i]/1E+9 ); 
 	 sprintf(msg,"run %05d, trace %02d: time = %s, ampl = %.3lf, freq = %.3lf, temp = %.3lf",
@@ -562,6 +700,8 @@ int ModifyPlungingProbeData(int method,plungingProbeAnaEvent_t &data,std::string
    }
    data.numTraces = k;
 
+   rc = 0; 
+
    // print for confirmation
    if(isDiff){
       MSG = "----------- UPDATED PP DATA ------------";
@@ -573,9 +713,14 @@ int ModifyPlungingProbeData(int method,plungingProbeAnaEvent_t &data,std::string
          MSG = msg; 
 	 rc = Logger::PrintMessage(Logger::kINFO,"default",MSG,'a'); 
       }
+      if(k==0){
+	 MSG = "No events"; 
+	 rc = Logger::PrintMessage(Logger::kINFO,"default",MSG,'a');
+	 rc = 2; 
+      } 
    } 
    
-   return 0;
+   return rc;
 }
 //______________________________________________________________________________
 int LoadImageResults(std::string inpath,std::vector<imageResult_t> &data){
@@ -628,7 +773,7 @@ int LoadImageParameters(std::string inpath,std::string type,std::vector<imagePar
       in.midasRun  = (int)input[type][i]["midas-run"];
       in.nmrDAQRun = (int)input[type][i]["nmr-daq-run"];
       in.height    = (double)input[type][i]["fxpr-height"];
-      // std::cout << Form("trial: %d, MIDAS: %d, NMR-DAQ: %d, height = %.3lf mm",in.trial,in.midasRun,in.nmrDAQRun,in.height) << std::endl;
+      std::cout << Form("trial: %d, MIDAS: %d, NMR-DAQ: %d, height = %.3lf mm",in.trial,in.midasRun,in.nmrDAQRun,in.height) << std::endl;
       data.push_back(in);
    }
    return rc;
@@ -636,9 +781,10 @@ int LoadImageParameters(std::string inpath,std::string type,std::vector<imagePar
 //______________________________________________________________________________
 int LoadScanTimes(int runNumber,int runPeriod,std::string prodVersion,std::vector<double> &time){
    // load in the by-hand determined swap times 
+   int M=0;
    std::vector<std::string> stime;
    unsigned long int aTime;
-   std::string st;
+   std::string st,substr;
    char inpath[200];
    sprintf(inpath,"./input/scan-times/run-%d/%s/run-%d.txt",runPeriod,prodVersion.c_str(),runNumber);
    std::ifstream infile;
@@ -649,7 +795,18 @@ int LoadScanTimes(int runNumber,int runPeriod,std::string prodVersion,std::vecto
    }else{
       while( !infile.eof() ){
          std::getline(infile,st);
-         aTime = gm2fieldUtil::GetUTCTimeStampFromString(st,true);
+	 M = st.size();
+         if(M==0) continue;
+         substr = st.substr(M-3,M-1);
+	 // std::cout << st << "," << substr << std::endl; 
+         if( substr.compare("CST")==0 ){
+	    // standard time
+	    aTime = gm2fieldUtil::GetUTCTimeStampFromString(st,false);
+         }else{
+	    // daylight savings time 
+	    aTime = gm2fieldUtil::GetUTCTimeStampFromString(st,true);
+         }
+         // aTime = gm2fieldUtil::GetUTCTimeStampFromString(st,true);
          stime.push_back(st);
          time.push_back(aTime);
       }
@@ -666,9 +823,10 @@ int LoadScanTimes(int runNumber,int runPeriod,std::string prodVersion,std::vecto
 //______________________________________________________________________________
 int LoadTimes(int probe,int runPeriod,std::string prodVersion,std::string type,std::string dev,std::vector<double> &time){
    // load in the by-hand determined swap times 
+   int M=0;
    std::vector<std::string> stime;
    unsigned long int aTime;
-   std::string st;
+   std::string st,substr;
    char inpath[200];
    sprintf(inpath,"./input/%s-times/run-%d/%s/%s-%02d.txt",type.c_str(),runPeriod,prodVersion.c_str(),dev.c_str(),probe);
    std::ifstream infile;
@@ -679,15 +837,28 @@ int LoadTimes(int probe,int runPeriod,std::string prodVersion,std::string type,s
    }else{
       while( !infile.eof() ){
          std::getline(infile,st);
-         aTime = gm2fieldUtil::GetUTCTimeStampFromString(st,true);
+	 M = st.size();
+         if(M==0) continue;
+         substr = st.substr(M-3,M-1);
+	 // std::cout << st << "," << substr << std::endl; 
+         if( substr.compare("CST")==0 ){
+	    // standard time
+	    aTime = gm2fieldUtil::GetUTCTimeStampFromString(st,false);
+         }else{
+	    // daylight savings time 
+	    aTime = gm2fieldUtil::GetUTCTimeStampFromString(st,true);
+         }
          stime.push_back(st);
          time.push_back(aTime);
       }
-      time.pop_back();
+      // time.pop_back();
       infile.close();
    }
 
-   const int N = time.size();
+   int N = time.size();
+   if(time[N-1]==time[N-2]) time.pop_back();  
+
+   N = time.size();
    for(int i=0;i<N;i++) std::cout << Form("%s (%.0lf)",stime[i].c_str(),time[i]) << std::endl;
 
    return 0;
@@ -1276,6 +1447,7 @@ int ImportNMRANAData_new(int run,std::string version,std::vector<nmrAnaEvent_t> 
   // ppRunSummary_t myRunSummary;
   gm2fieldUtil::Temperature::Sensor *tempSensor = new gm2fieldUtil::Temperature::Sensor("PT1000");
   tempSensor->SetDataPath(TEMP_DIR);
+
   // cut data 
   Cut *myCut = new Cut(cutFile);
 
@@ -1295,6 +1467,7 @@ int ImportNMRANAData_new(int run,std::string version,std::vector<nmrAnaEvent_t> 
     std::cout << "Cannot open the file: " << inpath << std::endl;
     return 1;
   }else{
+    std::cout << "Opened the file: " << inpath << std::endl;
     while( !infile.eof() ){
       std::getline(infile,sp      ,',');
       std::getline(infile,sch     ,',');

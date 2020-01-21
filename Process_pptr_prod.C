@@ -44,6 +44,7 @@
 #include "./src/TRLYFuncs.C"
 // #include "./src/CalibFuncs.C"
 #include "./src/FreeProton.C"
+#include "SystFuncs.C"
 
 double gMarkerSize = 0.8; 
 
@@ -51,6 +52,16 @@ TGraphErrors *GetPPFreeGraph(TString xAxis,TString yAxis,std::vector<calibSwap_t
 
 int GetSwapStatsForPP(int runPeriod,std::string ppID,std::vector<plungingProbeAnaEvent_t> data,
                       std::vector<calibSwap_t> &raw,std::vector<calibSwap_t> &free,double &min,double &max);
+
+int GetTRLYSwapPlots(bool useOscCor,int probe,int nev,std::vector<double> time,std::vector<double> t0,
+                     std::vector<averageFixedProbeEvent_t> fxpr,std::vector<trolleyAnaEvent_t> trlyData,
+                     TGraph **gFreq,TGraph **gTemp); 
+
+int GetTRLYSwapData(bool useOscCor,int probe,int nev,double time,double t0,
+                    std::vector<averageFixedProbeEvent_t> fxpr,
+                    std::vector<trolleyAnaEvent_t> Data,
+                    std::vector<double> &TIME,std::vector<double> &FREQ,std::vector<double> &TEMP,
+                    std::vector<double> &X,std::vector<double> &Y,std::vector<double> &Z); 
 
 int PrintToFile(std::string outpath,std::vector<calibSwap_t> data); 
 
@@ -76,9 +87,14 @@ int Process_pptr_prod(std::string configFile){
  
    bool isBlind              = inputMgr->IsBlind();
    bool useOscCor            = inputMgr->GetOscCorStatus();
+   bool useTempCor           = inputMgr->GetTempCorStatus();
    int probeNumber           = inputMgr->GetTrolleyProbe();
    int runPeriod             = inputMgr->GetRunPeriod(); 
    int nev                   = inputMgr->GetNumEventsToAvg();
+   // systematics 
+   bool isSyst               = inputMgr->GetSystStatus();
+   bool varySwap_time        = inputMgr->GetVaryTimeStatus("tr","swap");
+   double swap_delta         = inputMgr->GetDeltaTime("tr","swap");
 
    double tempCorValue = 0;
    bool useTempCor_pp  = inputMgr->GetTempCorStatus_pp(); 
@@ -105,7 +121,8 @@ int Process_pptr_prod(std::string configFile){
    int blindUnits  = inputMgr->GetBlindUnits(); 
    double blindMag = inputMgr->GetBlindScale(); 
    gm2fieldUtil::Blinder *myBlind = new gm2fieldUtil::Blinder(blindLabel,blindMag,blindUnits);
-   double blindValue = myBlind->GetBlinding(1); // in Hz
+   double blindValue_pp = myBlind->GetBlinding(1); // in Hz
+   double blindValue_tr = myBlind->GetBlinding(2); // in Hz
 
    std::vector<int> run;
    std::vector<std::string> label;
@@ -113,8 +130,6 @@ int Process_pptr_prod(std::string configFile){
    inputMgr->GetRunLabels(label);
 
    const int NRUNS = run.size();
-
-   double yMin=0,yMax=0;
 
    TString ppPlotPath,trPlotPath;  
 
@@ -146,7 +161,7 @@ int Process_pptr_prod(std::string configFile){
       }
    }
   
-   if(isBlind) ApplyBlindingPP(blindValue,ppInput);
+   if(isBlind) ApplyBlindingPP(blindValue_pp,ppInput);
 
    std::vector<trolleyAnaEvent_t> trlyData;
    for(int i=0;i<NRUNS;i++){
@@ -157,12 +172,21 @@ int Process_pptr_prod(std::string configFile){
       }
    }
 
-   if(isBlind) ApplyBlindingTRLY(blindValue,trlyData);
+   if(isBlind) ApplyBlindingTRLY(blindValue_tr,trlyData);
 
    // get reference time 
    std::vector<double> time,T0;
    rc = LoadTimes(probeNumber,runPeriod,prodVersion,"swap","tr",time);
+
+   if(isSyst && varySwap_time){
+      std::cout << "[Process_trly_prod]: SYSTEMATIC VARIATION! Swap times will be randomized by up to " << swap_delta << " sec" <<std::endl;
+      rc = systFunc::RandomizeTimeValues(swap_delta,time);
+   }
+
    rc = GetSwappingT0_hybrid(probeNumber-1,nev,time,fxprData,ppInput,trlyData,T0);
+
+   const int NL = time.size();
+   std::cout << "Found " << NL << " trolley swaps" << std::endl;
    
    // oscillation correction 
    if(useOscCor){
@@ -206,7 +230,7 @@ int Process_pptr_prod(std::string configFile){
 
    TGraph **gFreq = new TGraph*[NL];
    TGraph **gTemp = new TGraph*[NL];
-   rc = GetTRLYSwapPlots(useOscCor,probeNumber-1,nev,time,fxprData,trlyData,gFreq,gTemp);
+   rc = GetTRLYSwapPlots(useOscCor,probeNumber-1,nev,time,T0,fxprData,trlyData,gFreq,gTemp);
 
    TMultiGraph *mgf = new TMultiGraph();
    TMultiGraph *mgt = new TMultiGraph();
@@ -449,5 +473,65 @@ int PrintToFile(std::string outpath,std::vector<calibSwap_t> data){
       std::cout << "The data has been written to file: " << outpath << std::endl;
       outfile.close();
    }  
+   return 0;
+}
+//______________________________________________________________________________
+int GetTRLYSwapPlots(bool useOscCor,int probe,int nev,std::vector<double> time,std::vector<double> t0,
+                     std::vector<averageFixedProbeEvent_t> fxpr,std::vector<trolleyAnaEvent_t> trlyData,
+                     TGraph **gFreq,TGraph **gTemp){
+   // for diagnostic plots
+   int M=0,rc=0;
+   const int NL = time.size();
+   std::vector<double> EV,TIME,FREQ,TEMP,X,Y,Z;
+   for(int i=0;i<NL;i++){
+      rc = GetTRLYSwapData(useOscCor,probe,nev,time[i],t0[i],fxpr,trlyData,TIME,FREQ,TEMP,X,Y,Z);
+      M = FREQ.size();
+      if(M==0) std::cout << "[GetTRLYSwapPlots]: NO EVENTS!" << std::endl;
+      for(int j=0;j<M;j++) EV.push_back(j+1);
+      gFreq[i] = gm2fieldUtil::Graph::GetTGraph(EV,FREQ);
+      gTemp[i] = gm2fieldUtil::Graph::GetTGraph(EV,TEMP);
+      gm2fieldUtil::Graph::SetGraphParameters(gFreq[i],20,kWhite+i+1);
+      gm2fieldUtil::Graph::SetGraphParameters(gTemp[i],20,kWhite+i+1);
+      // clean up for next time
+      EV.clear();
+      TIME.clear();
+      FREQ.clear();
+      TEMP.clear();
+      X.clear();
+      Y.clear();
+      Z.clear();
+   }
+   return 0;
+}
+//______________________________________________________________________________
+int GetTRLYSwapData(bool useOscCor,int probe,int nev,double time,double t0,
+                    std::vector<averageFixedProbeEvent_t> fxpr,
+                    std::vector<trolleyAnaEvent_t> Data,
+                    std::vector<double> &TIME,std::vector<double> &FREQ,std::vector<double> &TEMP,
+                    std::vector<double> &X,std::vector<double> &Y,std::vector<double> &Z){
+   // find the mean field at the times specified in the time vector 
+
+   int rc=0;
+   // all variables 
+   // rc = FilterSingle("time",probe,nev,time,Data,TIME);
+   rc = FilterSingle("temp",probe,nev,time,Data,TEMP);
+   rc = FilterSingle("r"   ,probe,nev,time,Data,X   );
+   rc = FilterSingle("y"   ,probe,nev,time,Data,Y   );
+   rc = FilterSingle("phi" ,probe,nev,time,Data,Z   );
+   // now for frequency 
+   // do oscillation correction and obtain ALL data associated with toggle times in time vector 
+   std::vector<double> tt;
+   tt.push_back(time);
+   std::vector<double> trFreq,trFreq_cor;
+   rc = CorrectOscillation_trly(probe,nev,tt,fxpr,Data,TIME,trFreq,trFreq_cor,"time",t0);
+   int M = TIME.size();
+   for(int i=0;i<M;i++){
+      if(useOscCor){
+         FREQ.push_back(trFreq_cor[i]);
+      }else{
+         FREQ.push_back(trFreq[i]);
+      }
+   }
+
    return 0;
 }

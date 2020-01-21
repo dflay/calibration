@@ -21,7 +21,7 @@ typedef struct plungingProbeAnaEvent{
    double t2Time[PP_MAX_EVENTS];               // T2 time (sec) 
    int run;                                    // NMR-DAQ run   
    int midasRun;                               // MIDAS run    
-   int numTraces;                              // number of traces for the run 
+   int numTraces;                              // number of traces for the (NMR-DAQ) run 
    int nzc[PP_MAX_EVENTS];                     // number of zero crossings  
    int traceNumber[PP_MAX_EVENTS];             // signal trace number   
    int channelNumber[PP_MAX_EVENTS];           // signal channel number   

@@ -77,7 +77,6 @@ def writeConfigFileProd_trlyDB(data,tag,keyList,axis,fitData,trlyProbe,outpath):
    outData['run-period']             = confData['run-period'] 
    outData['prod-tag']               = confData['prod-tag'] 
    outData['nmr-ana-tag']            = confData['nmr-ana-tag']
-   outData['fxpr-set']               = confData['fxpr-set']
    outData['load-trly-swap-times']   = confData['load-trly-swap-times'] 
    outData['use-aba-time-weight']    = confData['use-aba-time-weight']
    outData['use-trly-temp-cor']      = confData['use-trly-temp-cor'] 
@@ -85,8 +84,8 @@ def writeConfigFileProd_trlyDB(data,tag,keyList,axis,fitData,trlyProbe,outpath):
    outData['cut-file']               = confData['cut-file'] 
    outData['num-events-to-avg']      = confData['num-events-to-avg']  
    outData['num-events-time-window'] = confData['num-events-time-window'] 
-   outData['fxpr-remove-drift']      = confData['fxpr-remove-drift']  
    outData['use-misalign-cor']       = confData['use-misalign-cor']  
+   outData['syst']                   = confData['syst'] 
     
    # probe-specific data  
    outData['date']                   = data['date']
@@ -169,7 +168,6 @@ def writeConfigFileProd_ShimScan(data,confData,tag,keyList,axis,fitData,outpath)
    outData['run-period']             = confData['run-period'] 
    outData['prod-tag']               = confData['prod-tag'] 
    outData['nmr-ana-tag']            = confData['nmr-ana-tag']
-   outData['fxpr-set']               = confData['fxpr-set']
    outData['load-trly-swap-times']   = confData['load-trly-swap-times'] 
    outData['use-aba-time-weight']    = confData['use-aba-time-weight']
    outData['use-trly-temp-cor']      = confData['use-trly-temp-cor'] 
@@ -177,10 +175,10 @@ def writeConfigFileProd_ShimScan(data,confData,tag,keyList,axis,fitData,outpath)
    outData['cut-file']               = confData['cut-file'] 
    outData['num-events-to-avg']      = confData['num-events-to-avg']  
    outData['num-events-time-window'] = confData['num-events-time-window']  
-   outData['fxpr-remove-drift']      = confData['fxpr-remove-drift']  
    outData['use-misalign-cor']       = confData['use-misalign-cor']  
    outData['pp']                     = confData['pp']  
-    
+   outData['syst']                   = confData['syst'] 
+ 
    # probe-specific data  
    outData['date']                 = data['date']
    outData['trly-probe']           = data['trly-probe'] 
@@ -224,13 +222,12 @@ def writeConfigFileProd_params(confData,outpath):
    outData["use-aba-time-weight"]    = confData["use-aba-time-weight"] 
    outData["use-trly-temp-cor"]      = confData["use-trly-temp-cor"] 
    outData["osc-cor"]                = confData["osc-cor"] 
-   outData["fxpr-remove-drift"]      = confData["fxpr-remove-drift"] 
    outData["use-misalign-cor"]       = confData["use-misalign-cor"] 
    outData["num-events-to-avg"]      = confData["num-events-to-avg"] 
    outData["num-events-time-window"] = confData["num-events-time-window"]   
-   outData["fxpr-set"]               = confData["fxpr-set"]  
    outData['pp']                     = confData['pp'] 
    outData['imp-grad']               = confData['imp-grad'] 
+   outData['syst']                   = confData['syst']  
    # write to file  
    if os.path.isfile(outpath): 
       print("[writeConfigFileProd_params]: File {0} exists, deleting first".format(outpath) )
@@ -252,6 +249,7 @@ def writeConfigFileProd_imposedGrad(confData,tag,keyList,axis,fitData,outpath):
    outData['nmr-ana-tag']            = confData['nmr-ana-tag']
    outData['pp']                     = confData['pp'] 
    outData['imp-grad']               = confData['imp-grad'] 
+   outData['syst']                   = confData['syst']  
 
    # outData['fxpr-set']               = confData['fxpr-set']
    # outData['load-trly-swap-times']   = confData['load-trly-swap-times'] 
@@ -297,7 +295,6 @@ def writeConfigFileProd(data,confData,tag,keyList,axis,fitData,outpath):
    outData['run-period']             = confData['run-period'] 
    outData['prod-tag']               = confData['prod-tag'] 
    outData['nmr-ana-tag']            = confData['nmr-ana-tag']
-   outData['fxpr-set']               = confData['fxpr-set']
    outData['load-trly-swap-times']   = confData['load-trly-swap-times'] 
    outData['use-aba-time-weight']    = confData['use-aba-time-weight']
    outData['use-trly-temp-cor']      = confData['use-trly-temp-cor'] 
@@ -305,10 +302,10 @@ def writeConfigFileProd(data,confData,tag,keyList,axis,fitData,outpath):
    outData['cut-file']               = confData['cut-file'] 
    outData['num-events-to-avg']      = confData['num-events-to-avg']  
    outData['num-events-time-window'] = confData['num-events-time-window']  
-   outData['fxpr-remove-drift']      = confData['fxpr-remove-drift']  
    outData['use-misalign-cor']       = confData['use-misalign-cor'] 
    outData['pp']                     = confData['pp']  
-   outData['imp-grad']               = confData['imp-grad'] 
+   outData['imp-grad']               = confData['imp-grad']
+   outData['syst']                   = confData['syst']  
     
    # probe-specific data  
    outData['date']                 = data['date']

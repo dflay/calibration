@@ -32,7 +32,8 @@
 #include "Constants.h"
 
 // Reading trolley data 
-int GetTrolleyData(std::string date,int run,int method,std::vector<trolleyAnaEvent_t> &trlyEvent,std::string version);
+int GetTrolleyData(int run,int method,std::vector<trolleyAnaEvent_t> &trlyEvent,std::string version);
+int GetTrolleyData_mp(int run,std::vector<trolleyAnaEventMP_t> &trlyEvent,std::string version); 
 
 // Reading PP data
 int GetPlungingProbeData(int run,int prMethod,int ppMethod,std::vector<plungingProbeAnaEvent_t> &data,
@@ -44,7 +45,9 @@ int ModifyPlungingProbeData(int method,plungingProbeAnaEvent_t &data,std::string
 int GetFixedProbeData(int run,int method,int probe,std::vector<fixedProbeEvent_t> &data,std::string version);
 int GetFixedProbeData_avg(int run,int method,std::vector<int> probe,
                           std::vector<averageFixedProbeEvent_t> &data,std::string version,
-                          bool subtractDrift=false,int period=1,unsigned long long t0=0); 
+                          bool subtractDrift=false,int period=1,unsigned long long t0=0);
+
+int GetTrolleyData_avg(bool subtractDrift,int period,std::vector<trolleyAnaEvent_t> trly,std::vector<averageTrolleyAnaEvent_t> &data);  
 
 // Reading SCC data 
 int GetSurfaceCoilData(int run,std::vector<surfaceCoilEvent_t> &data,std::string version);  

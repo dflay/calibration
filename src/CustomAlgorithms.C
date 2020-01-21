@@ -111,12 +111,39 @@ int CopyPlungingProbe(std::vector<plungingProbeAnaEvent_t> x,std::vector<plungin
 
    return 0;
 }
+// //______________________________________________________________________________
+// int CopyPlungingProbe_nmrAna_to_ppAna_single(int method,nmrAnaEvent_t data,plungingProbeAnaEvent_t &y){
+//    // copy a plunging probe nmrAnaEvent_t vector to a plungingProbeAnaEvent_t struct
+//    // note that the vector does NOT have a MIDAS run attached to it necessarily, 
+//    // and that the index moves from the that of the VECTOR to that of the data MEMBERS
+//    int M       = data.numTraces; 
+//    y.run       = data.run;
+//    y.numTraces = M;
+//    y.midasRun  = 0;
+//    for(int i=0;i<M;i++){
+//       y.time[i]          = data[i].time;
+//       y.t2Time[i]        = data[i].t2;
+//       y.nzc[i]           = data[i].zc;
+//       y.traceNumber[i]   = data[i].pulse;
+//       y.channelNumber[i] = data[i].ch;
+//       y.freq_LO[i]       = data[i].freq_LO;
+//       y.freq_RF[i]       = data[i].freq_pi2;
+//       y.freq[i]          = data[i].freq[method];
+//       y.freq_err[i]      = 0;
+//       y.r[i]             = 0;
+//       y.y[i]             = 0;
+//       y.phi[i]           = 0;
+//       y.temp[i]          = data[i].temp;
+//       y.temp_err[i]      = 0;
+//    }
+//    return 0;
+// }
 //______________________________________________________________________________
 int CopyPlungingProbe_nmrAna_to_ppAna(int method,std::vector<nmrAnaEvent_t> data,plungingProbeAnaEvent_t &y){
    // copy a plunging probe nmrAnaEvent_t vector to a plungingProbeAnaEvent_t struct
    // note that the vector does NOT have a MIDAS run attached to it necessarily, 
    // and that the index moves from the that of the VECTOR to that of the data MEMBERS 
-   int M = data.size();
+   int M       = data.size();
    y.run       = data[0].run;
    y.numTraces = M;
    y.midasRun  = 0;
@@ -1504,6 +1531,37 @@ int FindTrolleyEvent(unsigned long long time, std::vector<trolleyAnaEvent_t> trl
 
    int Tevent = 0;
    if(fabs((Long64_t)(time - trly[highEvent].time[TP])) < fabs((Long64_t)(time - trly[highEvent-1].time[TP]))){
+      Tevent = highEvent;
+   }
+   else Tevent = highEvent-1;
+
+   return Tevent;
+}
+//______________________________________________________________________________       
+int FindTrolleyEvent(unsigned long long time, std::vector<averageTrolleyAnaEvent_t> trly){
+   //Find first ok event (want something that is >20e9)
+   //First trolley event is weird
+   //Should be within first 20                                                          
+   int startEvent = 0;
+   for(int i=0;i<20;i++){
+      if(trly[i].time > 20e9){
+	 startEvent = i;
+	 break;
+      }
+   }
+
+   //Look for when the time is just smaller than a trolley time. Then compare between the 2 times around it  
+   int highEvent = 0;
+   int size = trly.size();
+   for(int i=startEvent;i<size;i++){
+      if(trly[i].time > time){
+	 highEvent = i;
+	 break;
+      }
+   }
+
+   int Tevent = 0;
+   if(fabs((Long64_t)(time - trly[highEvent].time)) < fabs((Long64_t)(time - trly[highEvent-1].time))){
       Tevent = highEvent;
    }
    else Tevent = highEvent-1;

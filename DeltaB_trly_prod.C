@@ -43,6 +43,7 @@
 #include "./src/InputManager.C"
 #include "./src/FitFuncs.C"
 #include "./src/TRLYFuncs.C"
+#include "./src/SystFuncs.C"
 
 int DeltaB_trly_prod(std::string configFile){
 
@@ -70,6 +71,10 @@ int DeltaB_trly_prod(std::string configFile){
    int axis                = inputMgr->GetAxis();
    int runPeriod           = inputMgr->GetRunPeriod();
    int nev                 = inputMgr->GetNumEventsToAvg();  
+   // systematics 
+   bool isSyst             = inputMgr->GetSystStatus(); 
+   bool varyDB_time        = inputMgr->GetVaryTimeStatus("tr","db");
+   double dB_delta         = inputMgr->GetDeltaTime("tr","db");  
 
    // update the analysis method according to Ran's guidance 
    if(prodVersion.compare("v9_21_01")==0) method = gm2fieldUtil::Constants::kHilbertPhaseLinear;
@@ -182,6 +187,12 @@ int DeltaB_trly_prod(std::string configFile){
    }else{
       std::cout << "SCC was OFF to start the sequence" << std::endl;
    } 
+
+   if(isSyst && varyDB_time){
+      std::cout << "[DeltaB_trly_prod]: SYSTEMATIC VARIATION! Delta-B times will be randomized by up to " << dB_delta << " sec" <<std::endl;
+      rc = systFunc::RandomizeTimeValues(dB_delta,sccOff); 
+      rc = systFunc::RandomizeTimeValues(dB_delta,sccOn ); 
+   }
 
    // save the times -- DO NOT NEED AFTER FIRST ANA PASS
    // char scc_time_path[200];                                                              

@@ -22,7 +22,7 @@ TMultiGraph *GetTMultiGraph_diff(std::vector< std::vector<double> > X,
 int PrintToFile_csv(const char *outpath,std::string xAxis,std::string yAxis,std::string yAxisErr,json data); 
 
 int FillVector(std::string axis,json data,std::vector<double> &v); 
-int AddToMultiGraph(int color,std::string label,std::string xAxis,std::string yAxis,std::string yAxisErr,
+int AddToMultiGraph(int color,int marker,std::string label,std::string xAxis,std::string yAxis,std::string yAxisErr,
                     json data,TMultiGraph *mg,TLegend *L); 
 
 int CompareResults(){
@@ -35,7 +35,8 @@ int CompareResults(){
 
    const int NT = input["ana-set"].size(); 
 
-   bool isBlind = (bool)input["blinding"]["enable"]; 
+   bool isBlind           = (bool)input["blinding"]["enable"];
+   bool plotBand          = (bool)input["blinding"]["plot-band"];  
    std::string blindLabel = input["blinding"]["label"]; 
    std::string date       = input["date"]; 
    
@@ -74,16 +75,21 @@ int CompareResults(){
    std::vector<double> x,y,ey;  
    std::vector< std::vector<double> > X,Y,EY; 
  
+   char filename[200]; 
    std::vector<std::string> label;  
-   int color=0;
+   int color=0,marker=19;
    json result; 
    for(int i=0;i<NT;i++){
       color++;
+      marker++;
+      if(color==3) color = kGreen+1;
       label.push_back( input["ana-set"][i] ); 
+      sprintf(filename,"%s.csv",label[i].c_str() ); 
       inpath = prefix + label[i] + "/calibData_" + date + ".json"; 
       std::cout << "Processing data set: " << label[i] << std::endl; 
       rc = gm2fieldUtil::Import::ImportJSON(inpath,result);
-      AddToMultiGraph(color,label[i],xAxis,yAxis,yAxisErr,result,mg,L);
+      AddToMultiGraph(color,marker,label[i],xAxis,yAxis,yAxisErr,result,mg,L);
+      rc = PrintToFile_csv(filename,xAxis,yAxis,yAxisErr,result);
       // also gather all data we care about into three doubly-indexed vectors.  
       FillVector(xAxis,result,x); 
       FillVector(yAxis,result,y); 
@@ -100,7 +106,7 @@ int CompareResults(){
 
    // load Ran's data
    json rData;  
-   std::string inpath_ran = "./output/blinded/ran-hong/run-1_05-16-19.json"; 
+   std::string inpath_ran = "./output/blinded/ran-hong/run-1_10-07-19.json"; 
    rc = gm2fieldUtil::Import::ImportJSON(inpath_ran,rData);
    if(rc!=0) return 1; 
 
@@ -111,7 +117,7 @@ int CompareResults(){
       label.push_back("Ran"); 
       NL = label.size(); 
       std::cout << "Adding Ran's data to the plots..." << std::endl;
-      AddToMultiGraph(kOrange+1,label[NL-1],xAxis,yAxis,yAxisErr,rData,mg,L);
+      AddToMultiGraph(kOrange+1,20,label[NL-1],xAxis,yAxis,yAxisErr,rData,mg,L);
       if(yAxis.compare("calibCoeff_aba")==0){
 	 yAxis    = "calibCoeff"; 
 	 yAxisErr = "calibCoeffErr"; 
@@ -175,9 +181,8 @@ TMultiGraph *GetTMultiGraph_diff(std::vector< std::vector<double> > X,
 	 arg     = (Y[i][j] - Y[0][j])/sf; 
          arg_err = TMath::Sqrt( EY[i][j]*EY[i][j] + EY[0][j]*EY[0][j] - 2.*rho*EY[i][j]*EY[0][j])/sf; // estimate
 	 if(label[i].compare("Ran")==0){
-	    // compare against i = 1, which is oscillation correction turned ON
-	    arg     = (Y[i][j] - Y[1][j])/sf; 
-	    arg_err = TMath::Sqrt( EY[i][j]*EY[i][j] + EY[1][j]*EY[1][j] - 2.*rho*EY[i][j]*EY[1][j])/sf; // estimate
+	    arg     = (Y[i][j] - Y[0][j])/sf; 
+	    arg_err = TMath::Sqrt( EY[i][j]*EY[i][j] + EY[0][j]*EY[0][j] - 2.*rho*EY[i][j]*EY[0][j])/sf; // estimate
 	 }
          // arg_err = TMath::Sqrt( EY[i][j]*EY[i][j] + EY[0][j]*EY[0][j] )/sf; // estimate
          // arg_err = 0.5*( EY[i][j] + EY[0][j] )/sf; // estimate.  This seems more realistic
@@ -187,6 +192,7 @@ TMultiGraph *GetTMultiGraph_diff(std::vector< std::vector<double> > X,
          diff_err.push_back(arg_err); 
       }
       color = i+1; 
+      if(color==3) color = kGreen+1; 
       if(label[i].compare("Ran")==0 ) color = kOrange+1; 
       TGraphErrors *g = gm2fieldUtil::Graph::GetTGraphErrors(x,diff,diff_err);
       gm2fieldUtil::Graph::SetGraphParameters(g,20,color); 
@@ -199,7 +205,7 @@ TMultiGraph *GetTMultiGraph_diff(std::vector< std::vector<double> > X,
    return mg; 
 }
 //______________________________________________________________________________
-int AddToMultiGraph(int color,std::string label,std::string xAxis,std::string yAxis,std::string yAxisErr,
+int AddToMultiGraph(int color,int marker,std::string label,std::string xAxis,std::string yAxis,std::string yAxisErr,
                     json data,TMultiGraph *mg,TLegend *L){
 
    if( label.compare("Ran")==0 && yAxis.compare("calibCoeff_aba")==0 ){
@@ -210,7 +216,7 @@ int AddToMultiGraph(int color,std::string label,std::string xAxis,std::string yA
    }
 
    TGraphErrors *g = GetTGraphErrors(xAxis,yAxis,yAxisErr,data);
-   gm2fieldUtil::Graph::SetGraphParameters(g,20,color); 
+   gm2fieldUtil::Graph::SetGraphParameters(g,marker,color); 
 
    mg->Add(g,"lp"); 
    L->AddEntry(g,label.c_str(),"p"); 

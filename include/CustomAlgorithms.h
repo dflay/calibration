@@ -58,6 +58,7 @@ int CalculateTRLYAvg_Stationary(int probeNumber,std::vector<trolleyAnaEvent_t> E
 // copy functions
 int CopyPlungingProbe(plungingProbeAnaEvent_t x,plungingProbeAnaEvent_t &y);
 int CopyPlungingProbe(std::vector<plungingProbeAnaEvent_t> x,std::vector<plungingProbeAnaEvent_t> &y);
+// int CopyPlungingProbe_nmrAna_to_ppAna_single(int method,nmrAnaEvent_t data,plungingProbeAnaEvent_t &y);
 int CopyPlungingProbe_nmrAna_to_ppAna(int method,std::vector<nmrAnaEvent_t> data,plungingProbeAnaEvent_t &y);
 int CopyTrolleyProbe(std::vector<trolleyAnaEvent_t> x,std::vector<trolleyAnaEvent_t> &y);
 int FilterPlungingProbeData(std::vector<int> subRun,
@@ -139,6 +140,7 @@ int CorrectTRLYForDriftDuringMeasurement(int method,std::vector<int> trlyList,st
 int GetAverageTRLY(unsigned long long time,std::vector<int> trlyList,std::vector<trolleyAnaEvent_t> trlyData,double &mean,double &stdev);
 
 int FindTrolleyEvent(unsigned long long time, std::vector<trolleyAnaEvent_t> trly, int TP);
+int FindTrolleyEvent(unsigned long long time, std::vector<averageTrolleyAnaEvent_t> trly); 
 
 int CorrectTRLYForDriftAcrossRuns(unsigned long long tStart,unsigned long long tStop,
                                   TGraph *gDrift,std::vector<trolleyAnaEvent_t> &trlyData,

@@ -4,6 +4,7 @@
 // a trolley analysis event
 
 #define NUM_TRLY 17   
+#define NUM_MP 9
 
 typedef struct trolleyAnaEvent{
    unsigned long long time[NUM_TRLY];  // time of measurement (ns since epoch)  
@@ -13,6 +14,23 @@ typedef struct trolleyAnaEvent{
    Double_t phi[NUM_TRLY];             // azimuthal position of probe
    Double_t temp[NUM_TRLY];            // temperature (deg C)
 } trolleyAnaEvent_t;
+
+typedef struct trolleyAnaEventMP{
+   Double_t mp[NUM_MP];                // trolley multipoles 
+   Double_t phi;
+   Double_t time;
+} trolleyAnaEventMP_t;
+
+// an averaged event over all trolley data (use for PP IMG analysis) 
+typedef struct averageTrolleyAnaEvent { 
+   unsigned long long time;
+   Double_t freq;
+   Double_t freqErr;
+   Double_t r;
+   Double_t y;
+   Double_t phi;
+   Double_t temp;
+} averageTrolleyAnaEvent_t; 
 
 // trolley swap event 
 typedef struct trolleySwapEvent { 
