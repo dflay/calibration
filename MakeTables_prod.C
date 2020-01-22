@@ -78,7 +78,7 @@ int CollectData(std::vector<result_prod_t> r,std::vector<result_prod_t> rFree,
                 std::vector<deltab_prod_t> dB_pp,std::vector<deltab_prod_t> dB_tr,
                 std::vector<misalignment_t> mis,std::vector< std::vector<misalignCor_t> > mCor,std::vector<calib_result_t> &data); 
 
-int MakeTables_prod(int runPeriod,std::string theDate){
+int MakeTables_prod(int runPeriod,std::string theDate,int isSyst,int systDirNum){
 
    int rc=0;
 
@@ -94,13 +94,15 @@ int MakeTables_prod(int runPeriod,std::string theDate){
    bool isBlind            = configData["blinding"]["enable"];  
    bool isMisCor           = (bool)( (int)configData["use-misalign-cor"] );
 
-   char outDir[200];
-   if(isBlind)  sprintf(outDir,"./output/blinded/%s",blindLabel.c_str());
-   if(!isBlind) sprintf(outDir,"./output/unblinded");
-   sprintf(outDir,"%s/%s",outDir,theDate.c_str()); 
+   std::string outDir = GetPath("output",isBlind,blindLabel,theDate.c_str(),isSyst,systDirNum); 
+
+   // char outDir[200];
+   // if(isBlind)  sprintf(outDir,"./output/blinded/%s",blindLabel.c_str());
+   // if(!isBlind) sprintf(outDir,"./output/unblinded");
+   // sprintf(outDir,"%s/%s",outDir,theDate.c_str()); 
 
    char outPath[200]; 
-   sprintf(outPath,"%s/calibData_%s",outDir,theDate.c_str()); 
+   sprintf(outPath,"%s/calibData_%s",outDir.c_str(),theDate.c_str()); 
 
    result_prod_t result;
    std::vector<result_prod_t> res,resFree;
@@ -142,41 +144,41 @@ int MakeTables_prod(int runPeriod,std::string theDate){
       probeNumber = i+1; 
       std::cout << Form("LOADING PROBE %02d",probeNumber) << std::endl;
       // load raw result 
-      sprintf(inpath,"%s/results_final_pr-%02d.csv",outDir,probeNumber);
+      sprintf(inpath,"%s/results_final_pr-%02d.csv",outDir.c_str(),probeNumber);
       rc = LoadResultsProdFinalData(inpath,result);
       if(rc!=0) continue;
       probe.push_back(probeNumber);  
       res.push_back(result); 
       // load free-proton result 
-      sprintf(inpath,"%s/results_final_free-prot_pr-%02d.csv",outDir,probeNumber);
+      sprintf(inpath,"%s/results_final_free-prot_pr-%02d.csv",outDir.c_str(),probeNumber);
       rc = LoadResultsProdFinalData(inpath,result);
       resFree.push_back(result); 
       // load OPTIMIZED Delta-B numbers
-      sprintf(inpath,"%s/delta-b-opt_pr-%02d.csv",outDir,probeNumber); 
+      sprintf(inpath,"%s/delta-b-opt_pr-%02d.csv",outDir.c_str(),probeNumber); 
       rc = LoadDeltaB_opt(inpath,dbPP,dbTR);
       deltaB_pp.push_back(dbPP);
       deltaB_trly.push_back(dbTR); 
       // load shimmed gradients 
-      sprintf(inpath,"%s/shim-grad_opt_pr-%02d.csv",outDir,probeNumber); 
+      sprintf(inpath,"%s/shim-grad_opt_pr-%02d.csv",outDir.c_str(),probeNumber); 
       rc = LoadShimmedGrad_opt(inpath,grad);  
       if(rc!=0) return 1;
       shimGrad.push_back(grad);
       // clean up 
       grad.clear(); 
       // get imposed gradients 
-      sprintf(inpath,"%s/imposed-gradients_pr-%02d.csv",outDir,probeNumber); 
+      sprintf(inpath,"%s/imposed-gradients_pr-%02d.csv",outDir.c_str(),probeNumber); 
       rc = GetImposedGradients(inpath,ig); 
       if(rc!=0) return 1;
       impGrad.push_back(ig); 
       // clean up 
       ig.clear(); 
       // load misalignment data 
-      sprintf(inpath,"%s/misalignment_results_pr-%02d.csv",outDir,probeNumber);
+      sprintf(inpath,"%s/misalignment_results_pr-%02d.csv",outDir.c_str(),probeNumber);
       rc = LoadMisalignmentData(inpath,m);
       if(rc!=0) return 1;
       misalign.push_back(m);
       // load misalignment CORRECTION data 
-      sprintf(inpath,"%s/misalign-cor_pr-%02d.csv",outDir,probeNumber); 
+      sprintf(inpath,"%s/misalign-cor_pr-%02d.csv",outDir.c_str(),probeNumber); 
       rc = LoadMisalignmentCorData(inpath,mc); 
       if(rc!=0) return 1;
       mCor.push_back(mc);
@@ -188,22 +190,22 @@ int MakeTables_prod(int runPeriod,std::string theDate){
 
    // also print table of results to file 
    char outpath_res[200];
-   sprintf(outpath_res,"%s/results_all-probes.csv",outDir);
+   sprintf(outpath_res,"%s/results_all-probes.csv",outDir.c_str());
 
    char outpath_res_free[200];
-   sprintf(outpath_res_free,"%s/results_free-prot_all-probes.csv",outDir);
+   sprintf(outpath_res_free,"%s/results_free-prot_all-probes.csv",outDir.c_str());
 
    char outpath_db[200];
-   sprintf(outpath_db,"%s/results_db_all-probes.csv",outDir);
+   sprintf(outpath_db,"%s/results_db_all-probes.csv",outDir.c_str());
 
    char outpath_ig[200];
-   sprintf(outpath_ig,"%s/results_imposed-gradients_all-probes.csv",outDir);
+   sprintf(outpath_ig,"%s/results_imposed-gradients_all-probes.csv",outDir.c_str());
 
    char outpath_sg[200];
-   sprintf(outpath_sg,"%s/results_shimmed-gradients_all-probes.csv",outDir);
+   sprintf(outpath_sg,"%s/results_shimmed-gradients_all-probes.csv",outDir.c_str());
 
    char outpath_mis[200];
-   sprintf(outpath_mis,"%s/results_misalignments_all-probes.csv",outDir);
+   sprintf(outpath_mis,"%s/results_misalignments_all-probes.csv",outDir.c_str());
 
    const int NPROBES = probe.size(); 
 

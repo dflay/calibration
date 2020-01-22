@@ -28,7 +28,8 @@ int InputManager::Init(){
    fVarySwapTime_tr = false; 
    fVaryShimFit     = false; 
    fVaryImpGradFit  = false; 
-   fSyst            = false;  
+   fSyst            = false; 
+   fSystDirNum      = 0;  
    fTempCor_pp      = 0;
    fNumEventsToAvg  = 0;  
    fNumEventsTimeWindow = 0; 
@@ -208,6 +209,7 @@ int InputManager::Parse(){
       fVarySwapTime_tr  = (bool)( (int)fParams["syst"]["vary-swap-time"] ); 
       fVaryShimFit      = (bool)( (int)fParams["syst"]["vary-shim-fit"]  ); 
       fVaryImpGradFit   = (bool)( (int)fParams["syst"]["vary-igrad-fit"] );
+      fSystDirNum       = (int)fParams["syst"]["dir-num"]; 
       fDBDeltaTime_tr   = (double)fParams["syst"]["tr-db-delta"];  
       fSwapDeltaTime_tr = (double)fParams["syst"]["tr-swap-delta"];  
    }

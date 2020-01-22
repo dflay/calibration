@@ -607,33 +607,44 @@ def deleteDir(path):
 def createDir(path): 
    os.makedirs(path)
 #_______________________________________________________________________________
-def setupPaths(deleteDir,today,isBlind,blindLabel): 
+def setupPaths(deleteDir,today,isBlind,blindLabel,isSyst): 
    # set up directories and paths to inputs and outputs 
    if(isBlind):
-      outDir = "./output/blinded/" + blindLabel + "/" + today
+      outDir_base = "./output/blinded/" + blindLabel + "/" + today
    else:
-      outDir = "./output/unblinded/" + today
+      outDir_base = "./output/unblinded/" + today
    
    if deleteDir:
-      if os.path.exists(outDir):
-         print( "Removing existing output from {0}".format(outDir) )
-         deleteDir(outDir)
+      if os.path.exists(outDir_base):
+         print( "[setupPaths]: Removing existing output from {0}".format(outDir_base) )
+         deleteDir(outDir_base)
   
    # setup output directories 
    if(isBlind):
-      outDir  = "./output/blinded/" + blindLabel + "/" + today
-      plotDir = "./plots/blinded/" + blindLabel + "/" + today
+      outDir_base  = "./output/blinded/" + blindLabel + "/" + today
+      plotDir_base = "./plots/blinded/" + blindLabel + "/" + today
    else:
-      outDir  = "./output/unblinded/" + today
-      plotDir = "./plots/unblinded/"  + today
-   
+      outDir_base  = "./output/unblinded/" + today
+      plotDir_base = "./plots/unblinded/"  + today
+ 
+   # change the output directory if we're doing systematics  
+   dirNum = 1
+   if(isSyst): 
+      outDir  = outDir_base  + "/syst-{0:03d}".format(dirNum) 
+      plotDir = plotDir_base + "/syst-{0:03d}".format(dirNum) 
+      while( os.path.exists(outDir) ):
+          # while the directory exists, increment the directory name and make new paths  
+          dirNum  = dirNum + 1 
+	  outDir  = outDir_base  + "/syst-{0:03d}".format(dirNum) 
+          plotDir = plotDir_base + "/syst-{0:03d}".format(dirNum) 
+       
+   # now we have unique directories, create them 
    if not os.path.exists(outDir):
        os.makedirs(outDir)
-       print("[run_analysis]: Created directory: {0}".format(outDir) )
+       print("[setupPaths]: Created directory: {0}".format(outDir) )
    
    if not os.path.exists(plotDir):
        os.makedirs(plotDir)
-       print("[run_analysis]: Created directory: {0}".format(plotDir) )
+       print("[setupPaths]: Created directory: {0}".format(plotDir) )
 
-   return outDir,plotDir
-
+   return outDir,plotDir,dirNum

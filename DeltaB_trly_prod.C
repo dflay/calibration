@@ -74,6 +74,7 @@ int DeltaB_trly_prod(std::string configFile){
    // systematics 
    bool isSyst             = inputMgr->GetSystStatus(); 
    bool varyDB_time        = inputMgr->GetVaryTimeStatus("tr","db");
+   int systDirNum          = inputMgr->GetSystDirNum(); 
    double dB_delta         = inputMgr->GetDeltaTime("tr","db");  
 
    // update the analysis method according to Ran's guidance 
@@ -82,8 +83,8 @@ int DeltaB_trly_prod(std::string configFile){
    date_t theDate; 
    GetDate(theDate);
 
-   std::string plotDir = GetPath("plots" ,isBlind,blindLabel,theDate.getDateString());
-   std::string outDir  = GetPath("output",isBlind,blindLabel,theDate.getDateString());
+   std::string plotDir = GetPath("plots" ,isBlind,blindLabel,theDate.getDateString(),isSyst,systDirNum);
+   std::string outDir  = GetPath("output",isBlind,blindLabel,theDate.getDateString(),isSyst,systDirNum);
  
    std::string gradName;
    if(axis==0) gradName = "rad"; 

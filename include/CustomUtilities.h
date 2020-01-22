@@ -20,7 +20,7 @@ int PrintMessage(std::string label,std::string msg,int lineNumber=-1);
 int GetDate(date_t &aDate);
 int MakeDirectory(const char *path);
 
-std::string GetPath(std::string base,bool isBlind,std::string blindLabel,std::string date); 
+std::string GetPath(std::string base,bool isBlind,std::string blindLabel,std::string date,bool isSyst=false,int systDirNum=0); 
 
 TLine **GetLines(int color,double min,double max,std::vector<double> x); 
 

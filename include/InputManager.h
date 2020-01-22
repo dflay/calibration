@@ -17,7 +17,8 @@ class InputManager{
       bool fIsSimple,fIsFullAnalysis,fIsBlind,fUseP2PFit,fIsFinalLocation;
       bool fUseAxis,fIsFreeProton,fLoadSwapTime,fLoadSCCTime,fUseTimeWeight,fUseTempCor;
       bool fUseOscCor,fRemoveFXPRDrift,fUseMisalignCor,fUseTempCor_pp;
-      bool fSyst,fVaryDBTimeTR,fVarySwapTime_tr,fVaryShimFit,fVaryImpGradFit; 
+      bool fSyst,fVaryDBTime_tr,fVarySwapTime_tr,fVaryShimFit,fVaryImpGradFit;
+      int fSystDirNum; 
       int fTrolleyProbe,fAxis,fFXPRListTag,fBlindUnits,fRunPeriod,fNumEventsToAvg,fNumEventsTimeWindow,fImpGradFitDim,fImpGradFitOrder; 
       double fBlindScale,fTrolleyAngle,fDBZCurrent,fTempCor_pp,fDBDeltaTime_tr,fSwapDeltaTime_tr; 
       std::string fType,fDevice,fRunDate,fFitFunc,fBlindLabel,fProdTag,fNMRANATag,fCutFile,fPPID,fOscCorType;
@@ -81,7 +82,8 @@ class InputManager{
       int GetNumEventsToAvg()        const { return fNumEventsToAvg;  }  
       int GetNumEventsTimeWindow()   const { return fNumEventsTimeWindow; }  
       int GetImpGradFitDimension()   const { return fImpGradFitDim;   }  
-      int GetImpGradFitOrder()       const { return fImpGradFitOrder; }  
+      int GetImpGradFitOrder()       const { return fImpGradFitOrder; } 
+      int GetSystDirNum()            const { return fSystDirNum;      }  
 
       double GetBlindScale()         const { return fBlindScale;      }  
       double GetTrolleyAngle()       const { return fTrolleyAngle;    }  

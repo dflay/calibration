@@ -90,13 +90,14 @@ int Process_trly_prod(std::string configFile){
    // systematics 
    bool isSyst               = inputMgr->GetSystStatus();
    bool varySwap_time        = inputMgr->GetVaryTimeStatus("tr","swap");
+   int systDirNum            = inputMgr->GetSystDirNum();
    double swap_delta         = inputMgr->GetDeltaTime("tr","swap");   
 
    date_t theDate;
    GetDate(theDate);
 
-   std::string plotDir = GetPath("plots" ,isBlind,blindLabel,theDate.getDateString()); 
-   std::string outDir  = GetPath("output",isBlind,blindLabel,theDate.getDateString());
+   std::string plotDir = GetPath("plots" ,isBlind,blindLabel,theDate.getDateString(),isSyst,systDirNum); 
+   std::string outDir  = GetPath("output",isBlind,blindLabel,theDate.getDateString(),isSyst,systDirNum);
 
    char cutPath[200];
    sprintf(cutPath,"./input/json/run-%d/%s",runPeriod,cutFile.c_str());

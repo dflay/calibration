@@ -77,6 +77,7 @@ int LocalScanGrad_pp_prod(std::string configFile){
    // systematics 
    bool isSyst               = inputMgr->GetSystStatus();
    bool varyFit              = inputMgr->GetSystFitStatus("shim");
+   int systDirNum            = inputMgr->GetSystDirNum();
 
    double tempCorValue = 0;
    bool useTempCor_pp  = inputMgr->GetTempCorStatus_pp();
@@ -99,8 +100,8 @@ int LocalScanGrad_pp_prod(std::string configFile){
    if( Axis.compare("z")==0 ) gradType = "azi";
 
    // make output directories 
-   std::string plotDir = GetPath("plots" ,isBlind,blindLabel,theDate.getDateString());
-   std::string outDir  = GetPath("output",isBlind,blindLabel,theDate.getDateString());
+   std::string plotDir = GetPath("plots" ,isBlind,blindLabel,theDate.getDateString(),isSyst,systDirNum);
+   std::string outDir  = GetPath("output",isBlind,blindLabel,theDate.getDateString(),isSyst,systDirNum);
 
    int blindUnits  = inputMgr->GetBlindUnits(); 
    double blindMag = inputMgr->GetBlindScale(); 

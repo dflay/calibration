@@ -66,12 +66,16 @@ int ProcessResults_prod(std::string configFile){
    bool isMisalignCor     = inputMgr->GetMisalignCorStatus(); 
 
    int probeNumber        = inputMgr->GetTrolleyProbe(); 
-   int runPeriod          = inputMgr->GetRunPeriod(); 
+   int runPeriod          = inputMgr->GetRunPeriod();
+
+   // systematics 
+   bool isSyst            = inputMgr->GetSystStatus();
+   int systDirNum         = inputMgr->GetSystDirNum(); 
 
    date_t theDate;
    GetDate(theDate);
   
-   std::string outDir  = GetPath("output",isBlind,blindLabel,theDate.getDateString());
+   std::string outDir  = GetPath("output",isBlind,blindLabel,theDate.getDateString(),isSyst,systDirNum);
  
    // results  
    char outPath_result[500]; 

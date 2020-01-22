@@ -79,6 +79,9 @@ int Process_pp_prod(std::string configFile){
    int probeNumber           = inputMgr->GetTrolleyProbe();
    int runPeriod             = inputMgr->GetRunPeriod(); 
    int nev                   = inputMgr->GetNumEventsToAvg();
+   // systematics 
+   bool isSyst             = inputMgr->GetSystStatus();
+   int systDirNum          = inputMgr->GetSystDirNum();
 
    double tempCorValue = 0;
    bool useTempCor_pp  = inputMgr->GetTempCorStatus_pp(); 
@@ -91,8 +94,8 @@ int Process_pp_prod(std::string configFile){
    date_t theDate;
    GetDate(theDate);
 
-   std::string plotDir = GetPath("plots" ,isBlind,blindLabel,theDate.getDateString());
-   std::string outDir  = GetPath("output",isBlind,blindLabel,theDate.getDateString());
+   std::string plotDir = GetPath("plots" ,isBlind,blindLabel,theDate.getDateString(),isSyst,systDirNum);
+   std::string outDir  = GetPath("output",isBlind,blindLabel,theDate.getDateString(),isSyst,systDirNum);
 
    char outPath[500]; 
    sprintf(outPath,"%s/pp-swap-data_pr-%02d_%s.csv",outDir.c_str(),probeNumber,anaDate.c_str());

@@ -42,6 +42,7 @@
 #include "./src/MyFits.C"
 #include "./src/FitErr.C"
 #include "./src/TRLYFuncs.C"
+#include "./src/SystFuncs.C"
 
 double fitFunc(double *x,double *p); 
 int PrintToFile_trlyDBz(const char *outpath,double dB,double dB_err); 
@@ -66,13 +67,18 @@ int ImposedGrad_z_prod(std::string configFile){
    bool useOscCor            = inputMgr->GetOscCorStatus();
    int runPeriod             = inputMgr->GetRunPeriod();
    int nev                   = 10; // inputMgr->GetNumEventsToAvg(); 
-   int probeNumber           = inputMgr->GetTrolleyProbe(); 
+   int probeNumber           = inputMgr->GetTrolleyProbe();
+
+   // systematics 
+   bool isSyst               = inputMgr->GetSystStatus();
+   bool varyFit              = inputMgr->GetSystFitStatus("imp-grad");  
+   int systDirNum            = inputMgr->GetSystDirNum(); 
 
    date_t theDate;
    GetDate(theDate);
 
-   std::string plotDir = GetPath("plots" ,isBlind,blindLabel,theDate.getDateString());
-   std::string outDir  = GetPath("output",isBlind,blindLabel,theDate.getDateString());
+   std::string plotDir = GetPath("plots" ,isBlind,blindLabel,theDate.getDateString(),isSyst,systDirNum);
+   std::string outDir  = GetPath("output",isBlind,blindLabel,theDate.getDateString(),isSyst,systDirNum);
 
    // std::vector<int> run;
    // run.push_back(5455);  
@@ -278,7 +284,12 @@ int ImposedGrad_z_prod(std::string configFile){
 
    double sf       = 1./124.; // NOTE: Not dividing by current anymore!  
    double dBdz     = sf*theFit->Derivative(XX[0]);  
-   double dBdz_err = sf*GetFitError(theFit,fitResult,MyPolyFitFuncDerivative_impGradZ,XX);  
+   double dBdz_err = sf*GetFitError(theFit,fitResult,MyPolyFitFuncDerivative_impGradZ,XX); 
+
+   if(isSyst && varyFit){
+      std::cout << "[ImposedGrad_z_prod]: SYSTEMATIC VARIATION! Will vary fit result within (Gaussian) uncertainties" << std::endl;
+      rc = systFunc::RandomizeFitValue(dBdz,dBdz_err);
+   }
    std::cout << Form("dB/dz = %.3lf +/- %.3lf Hz/mm",dBdz,dBdz_err) << std::endl; 
 
    char outpath[200];
@@ -390,6 +401,11 @@ int ImposedGrad_z_prod(std::string configFile){
 
    double dBdz_bl     = sf*theFitBL->Derivative(XX[0]);  
    double dBdz_bl_err = sf*GetFitError(theFitBL,fitResultBL,MyPolyFitFuncDerivative_impGradZ,XX);  
+
+   if(isSyst && varyFit){
+      // std::cout << "[ImposedGrad_z_prod]: SYSTEMATIC VARIATION! Will vary fit result within (Gaussian) uncertainties" << std::endl;
+      rc = systFunc::RandomizeFitValue(dBdz_bl,dBdz_bl_err);
+   }
 
    // assume 100% uncertainty on probes 1, 3, 9, 11 
    if(probeNumber==1||probeNumber==3||probeNumber==9||probeNumber==11) dBdz_bl_err = TMath::Abs(dBdz_bl); 

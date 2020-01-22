@@ -77,6 +77,9 @@ int DeltaB_pp_prod(std::string configFile){
    int probeNumber           = inputMgr->GetTrolleyProbe();
    int axis                  = inputMgr->GetAxis();
    int runPeriod             = inputMgr->GetRunPeriod();
+   // systematics
+   bool isSyst               = inputMgr->GetSystStatus();
+   int systDirNum            = inputMgr->GetSystDirNum(); 
 
    double tempCorValue = 0;
    bool useTempCor_pp  = inputMgr->GetTempCorStatus_pp();
@@ -89,8 +92,8 @@ int DeltaB_pp_prod(std::string configFile){
    date_t theDate; 
    GetDate(theDate);
 
-   std::string plotDir = GetPath("plots" ,isBlind,blindLabel,theDate.getDateString());
-   std::string outDir  = GetPath("output",isBlind,blindLabel,theDate.getDateString());
+   std::string plotDir = GetPath("plots" ,isBlind,blindLabel,theDate.getDateString(),isSyst,systDirNum);
+   std::string outDir  = GetPath("output",isBlind,blindLabel,theDate.getDateString(),isSyst,systDirNum);
 
    int blindUnits  = inputMgr->GetBlindUnits(); 
    double blindMag = inputMgr->GetBlindScale(); 

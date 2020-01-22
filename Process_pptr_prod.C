@@ -44,7 +44,7 @@
 #include "./src/TRLYFuncs.C"
 // #include "./src/CalibFuncs.C"
 #include "./src/FreeProton.C"
-#include "SystFuncs.C"
+#include "./src/SystFuncs.C"
 
 double gMarkerSize = 0.8; 
 
@@ -94,6 +94,7 @@ int Process_pptr_prod(std::string configFile){
    // systematics 
    bool isSyst               = inputMgr->GetSystStatus();
    bool varySwap_time        = inputMgr->GetVaryTimeStatus("tr","swap");
+   int systDirNum            = inputMgr->GetSystDirNum();
    double swap_delta         = inputMgr->GetDeltaTime("tr","swap");
 
    double tempCorValue = 0;
@@ -107,8 +108,8 @@ int Process_pptr_prod(std::string configFile){
    date_t theDate;
    GetDate(theDate);
 
-   std::string plotDir = GetPath("plots" ,isBlind,blindLabel,theDate.getDateString());
-   std::string outDir  = GetPath("output",isBlind,blindLabel,theDate.getDateString());
+   std::string plotDir = GetPath("plots" ,isBlind,blindLabel,theDate.getDateString(),isSyst,systDirNum);
+   std::string outDir  = GetPath("output",isBlind,blindLabel,theDate.getDateString(),isSyst,systDirNum);
 
    char outPath[500]; 
    sprintf(outPath,"%s/pp-swap-data_pr-%02d_%s.csv",outDir.c_str(),probeNumber,anaDate.c_str());
