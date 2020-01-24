@@ -6,6 +6,7 @@ import sys
 import json
 import csv
 import shutil
+import datetime
 
 #_______________________________________________________________________________
 def writeConfigFile(data,tag,keyList,isFullAnalysis,isFinalLocation,axis,fitData,outpath): 
@@ -29,6 +30,7 @@ def writeConfigFile(data,tag,keyList,isFullAnalysis,isFinalLocation,axis,fitData
          labelList.append(key)  
    outData = {} 
    outData['date']       = data['date']
+   outData['ana-date']   = data['ana-date']
    outData['type']       = data['type'] 
    outData['blinding']   = data['blinding'] 
    outData['trly-probe'] = data['trly-probe'] 
@@ -72,23 +74,24 @@ def writeConfigFileProd_trlyDB(data,tag,keyList,axis,fitData,trlyProbe,outpath):
          labelList.append(key) 
    outData = {} 
    # config file data 
-   outData['type']                   = confData['type'] 
-   outData['blinding']               = confData['blinding'] 
-   outData['run-period']             = confData['run-period'] 
-   outData['prod-tag']               = confData['prod-tag'] 
-   outData['nmr-ana-tag']            = confData['nmr-ana-tag']
-   outData['load-trly-swap-times']   = confData['load-trly-swap-times'] 
-   outData['use-aba-time-weight']    = confData['use-aba-time-weight']
-   outData['use-trly-temp-cor']      = confData['use-trly-temp-cor'] 
-   outData['osc-cor']                = confData['osc-cor'] 
-   outData['cut-file']               = confData['cut-file'] 
-   outData['num-events-to-avg']      = confData['num-events-to-avg']  
-   outData['num-events-time-window'] = confData['num-events-time-window'] 
-   outData['use-misalign-cor']       = confData['use-misalign-cor']  
-   outData['syst']                   = confData['syst'] 
+   outData['type']                   = data['type'] 
+   outData['blinding']               = data['blinding'] 
+   outData['run-period']             = data['run-period'] 
+   outData['prod-tag']               = data['prod-tag'] 
+   outData['nmr-ana-tag']            = data['nmr-ana-tag']
+   outData['load-trly-swap-times']   = data['load-trly-swap-times'] 
+   outData['use-aba-time-weight']    = data['use-aba-time-weight']
+   outData['use-trly-temp-cor']      = data['use-trly-temp-cor'] 
+   outData['osc-cor']                = data['osc-cor'] 
+   outData['cut-file']               = data['cut-file'] 
+   outData['num-events-to-avg']      = data['num-events-to-avg']  
+   outData['num-events-time-window'] = data['num-events-time-window'] 
+   outData['use-misalign-cor']       = data['use-misalign-cor']  
+   outData['syst']                   = data['syst'] 
     
    # probe-specific data  
    outData['date']                   = data['date']
+   outData['ana-date']               = data['ana-date']
    outData['trly-probe']             = int(trlyProbe) 
 
    if(fitData): 
@@ -181,6 +184,7 @@ def writeConfigFileProd_ShimScan(data,confData,tag,keyList,axis,fitData,outpath)
  
    # probe-specific data  
    outData['date']                 = data['date']
+   outData['ana-date']             = confData['ana-date']
    outData['trly-probe']           = data['trly-probe'] 
    outData['trly_azi-angle']       = data['trly_azi-angle'] 
    outData['dBz-current']          = data['dBz-current'] 
@@ -249,7 +253,8 @@ def writeConfigFileProd_imposedGrad(confData,tag,keyList,axis,fitData,outpath):
    outData['nmr-ana-tag']            = confData['nmr-ana-tag']
    outData['pp']                     = confData['pp'] 
    outData['imp-grad']               = confData['imp-grad'] 
-   outData['syst']                   = confData['syst']  
+   outData['syst']                   = confData['syst'] 
+   outData['ana-date']               = confData['ana-date']  
 
    # outData['fxpr-set']               = confData['fxpr-set']
    # outData['load-trly-swap-times']   = confData['load-trly-swap-times'] 
@@ -309,6 +314,7 @@ def writeConfigFileProd(data,confData,tag,keyList,axis,fitData,outpath):
     
    # probe-specific data  
    outData['date']                 = data['date']
+   outData['ana-date']             = confData['ana-date']
    outData['trly-probe']           = data['trly-probe']
    outData['trly_azi-angle']       = data['trly_azi-angle'] 
    outData['dBz-current']          = data['dBz-current'] 
@@ -346,6 +352,7 @@ def writeConfigFileSingleRun(data,tag,label,runNumber,isFullAnalysis,isFinalLoca
    labelList.append(label)  
    outData = {} 
    outData['date']       = data['date']
+   outData['ana-date']   = data['ana-date']
    outData['type']       = data['type'] 
    outData['blinding']   = data['blinding'] 
    outData['trly-probe'] = data['trly-probe'] 
@@ -378,6 +385,7 @@ def writeConfigFileSimple(inData,tag,outpath):
    # build output object  
    outData = {} 
    outData['date']       = inData['date']
+   outData['ana-date']   = inData['ana-date']
    outData['blinding']   = inData['blinding']
    outData['type']       = inData['type'] 
    outData['trly-probe'] = inData['trly-probe'] 
@@ -648,3 +656,7 @@ def setupPaths(deleteDir,today,isBlind,blindLabel,isSyst):
        print("[setupPaths]: Created directory: {0}".format(plotDir) )
 
    return outDir,plotDir,dirNum
+#_______________________________________________________________________________
+def utcNow(): 
+   theTime = datetime.datetime.utcnow() 
+   return int(theTime.strftime("%s")) 

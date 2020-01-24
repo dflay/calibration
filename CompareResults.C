@@ -27,7 +27,6 @@ int AddToMultiGraph(int color,int marker,std::string label,std::string xAxis,std
 
 int CompareResults(){
 
-
    json input; 
 
    std::string inpath = "compare.json"; 

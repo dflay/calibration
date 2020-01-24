@@ -48,6 +48,7 @@ int InputManager::Init(){
    fType             = "NONE";
    fDevice           = "NONE";  
    fRunDate          = "NONE";  
+   fAnaDate          = "NONE";  
    fFitFunc          = "NONE";
    fProdTag          = "NONE"; 
    fNMRANATag        = "NONE";
@@ -176,11 +177,13 @@ int InputManager::Parse(){
    bool mcorStatus   = DoesKeyExist("use-misalign-cor");  
    bool ppStatus     = DoesKeyExist("pp");
    bool impStatus    = DoesKeyExist("imp-grad"); 
-   bool systStatus   = DoesKeyExist("syst");  
+   bool systStatus   = DoesKeyExist("syst"); 
+   bool adateStatus  = DoesKeyExist("ana-date");  
 
    // parameters common to all 
    std::string unitStr="";
    if(dateStatus)   fRunDate      = fParams["date"];
+   if(adateStatus)  fAnaDate      = fParams["ana-date"];
    if(prodStatus)   fProdTag      = fParams["prod-tag"]; 
    if(nmrAnaStatus) fNMRANATag    = fParams["nmr-ana-tag"]; 
    if(blindStatus){

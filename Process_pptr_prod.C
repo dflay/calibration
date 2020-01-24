@@ -80,10 +80,10 @@ int Process_pptr_prod(std::string configFile){
 
    std::string prodVersion   = inputMgr->GetProductionTag();
    std::string nmrAnaVersion = inputMgr->GetNMRANATag();
-   std::string anaDate       = inputMgr->GetAnalysisDate();
    std::string blindLabel    = inputMgr->GetBlindLabel();
    std::string cutFile       = inputMgr->GetCutFile();
-   std::string ppID          = inputMgr->GetPPID();  
+   std::string ppID          = inputMgr->GetPPID(); 
+   std::string runDate       = inputMgr->GetRunDate();  
  
    bool isBlind              = inputMgr->IsBlind();
    bool useOscCor            = inputMgr->GetOscCorStatus();
@@ -105,18 +105,19 @@ int Process_pptr_prod(std::string configFile){
    sprintf(cutPath,"./input/json/run-%d/%s",runPeriod,cutFile.c_str());
    std::string cutpath = cutPath;  
 
-   date_t theDate;
-   GetDate(theDate);
+   // date_t theDate;
+   // GetDate(theDate);
+   std::string theDate = inputMgr->GetAnaDate();  
 
-   std::string plotDir = GetPath("plots" ,isBlind,blindLabel,theDate.getDateString(),isSyst,systDirNum);
-   std::string outDir  = GetPath("output",isBlind,blindLabel,theDate.getDateString(),isSyst,systDirNum);
+   std::string plotDir = GetPath("plots" ,isBlind,blindLabel,theDate,isSyst,systDirNum);
+   std::string outDir  = GetPath("output",isBlind,blindLabel,theDate,isSyst,systDirNum);
 
    char outPath[500]; 
-   sprintf(outPath,"%s/pp-swap-data_pr-%02d_%s.csv",outDir.c_str(),probeNumber,anaDate.c_str());
+   sprintf(outPath,"%s/pp-swap-data_pr-%02d_%s.csv",outDir.c_str(),probeNumber,runDate.c_str());
    std::string outpath_raw = outPath;  
-   sprintf(outPath,"%s/pp-swap-data_free-prot_pr-%02d_%s.csv",outDir.c_str(),probeNumber,anaDate.c_str());
+   sprintf(outPath,"%s/pp-swap-data_free-prot_pr-%02d_%s.csv",outDir.c_str(),probeNumber,runDate.c_str());
    std::string outpath_free = outPath;  
-   sprintf(outPath,"%s/trly-swap-data_pr-%02d_%s.csv",outDir.c_str(),probeNumber,anaDate.c_str());
+   sprintf(outPath,"%s/trly-swap-data_pr-%02d_%s.csv",outDir.c_str(),probeNumber,runDate.c_str());
    std::string outpath_trly = outPath;  
 
    int blindUnits  = inputMgr->GetBlindUnits(); 

@@ -58,11 +58,12 @@ int ImposedGrad_xy_prod(std::string configFile){
    bool isBlind              = inputMgr->IsBlind();
    int runPeriod             = inputMgr->GetRunPeriod();
 
-   date_t theDate; 
-   GetDate(theDate); 
+   // date_t theDate; 
+   // GetDate(theDate);
+   std::string theDate = inputMgr->GetAnaDate();
 
-   std::string plotDir = GetPath("plots" ,isBlind,blindLabel,theDate.getDateString());
-   std::string outDir  = GetPath("output",isBlind,blindLabel,theDate.getDateString());
+   std::string plotDir = GetPath("plots" ,isBlind,blindLabel,theDate);
+   std::string outDir  = GetPath("output",isBlind,blindLabel,theDate);
 
    std::vector<double> db,db_err;
    std::vector< std::vector<double> > dB,dB_err;  

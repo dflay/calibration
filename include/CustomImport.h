@@ -12,6 +12,7 @@
 #include "gm2fieldImport.h"
 #include "gm2fieldRootHelper.h"
 #include "MovingAverage.h"
+#include "TemperatureSensor.h"
 
 #include "sccEvent.h"
 #include "runSummary.h"

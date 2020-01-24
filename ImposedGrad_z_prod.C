@@ -74,11 +74,12 @@ int ImposedGrad_z_prod(std::string configFile){
    bool varyFit              = inputMgr->GetSystFitStatus("imp-grad");  
    int systDirNum            = inputMgr->GetSystDirNum(); 
 
-   date_t theDate;
-   GetDate(theDate);
+   // date_t theDate;
+   // GetDate(theDate);
+   std::string theDate = inputMgr->GetAnaDate();
 
-   std::string plotDir = GetPath("plots" ,isBlind,blindLabel,theDate.getDateString(),isSyst,systDirNum);
-   std::string outDir  = GetPath("output",isBlind,blindLabel,theDate.getDateString(),isSyst,systDirNum);
+   std::string plotDir = GetPath("plots" ,isBlind,blindLabel,theDate,isSyst,systDirNum);
+   std::string outDir  = GetPath("output",isBlind,blindLabel,theDate,isSyst,systDirNum);
 
    // std::vector<int> run;
    // run.push_back(5455);  

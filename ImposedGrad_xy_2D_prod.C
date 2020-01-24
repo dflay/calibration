@@ -80,11 +80,12 @@ int ImposedGrad_xy_2D_prod(std::string configFile){
    bool varyFit              = inputMgr->GetSystFitStatus("imp-grad");
    int systDirNum            = inputMgr->GetSystDirNum();
 
-   date_t theDate; 
-   GetDate(theDate); 
+   // date_t theDate; 
+   // GetDate(theDate);
+   std::string theDate = inputMgr->GetAnaDate();
 
-   std::string plotDir = GetPath("plots" ,isBlind,blindLabel,theDate.getDateString(),isSyst,systDirNum);
-   std::string outDir  = GetPath("output",isBlind,blindLabel,theDate.getDateString(),isSyst,systDirNum);
+   std::string plotDir = GetPath("plots" ,isBlind,blindLabel,theDate,isSyst,systDirNum);
+   std::string outDir  = GetPath("output",isBlind,blindLabel,theDate,isSyst,systDirNum);
 
    std::vector<double> db,db_err;
    std::vector< std::vector<double> > dB,dB_err;  

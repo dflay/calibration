@@ -75,7 +75,7 @@ int Process_trly_prod(std::string configFile){
 
    std::string prodVersion   = inputMgr->GetProductionTag();  
    std::string nmrAnaVersion = inputMgr->GetNMRANATag();  
-   std::string anaDate       = inputMgr->GetAnalysisDate();
+   std::string runDate       = inputMgr->GetRunDate();
    std::string blindLabel    = inputMgr->GetBlindLabel();
    std::string cutFile       = inputMgr->GetCutFile();
  
@@ -93,11 +93,12 @@ int Process_trly_prod(std::string configFile){
    int systDirNum            = inputMgr->GetSystDirNum();
    double swap_delta         = inputMgr->GetDeltaTime("tr","swap");   
 
-   date_t theDate;
-   GetDate(theDate);
+   // date_t theDate;
+   // GetDate(theDate);
+   std::string theDate = inputMgr->GetAnaDate();
 
-   std::string plotDir = GetPath("plots" ,isBlind,blindLabel,theDate.getDateString(),isSyst,systDirNum); 
-   std::string outDir  = GetPath("output",isBlind,blindLabel,theDate.getDateString(),isSyst,systDirNum);
+   std::string plotDir = GetPath("plots" ,isBlind,blindLabel,theDate,isSyst,systDirNum); 
+   std::string outDir  = GetPath("output",isBlind,blindLabel,theDate,isSyst,systDirNum);
 
    char cutPath[200];
    sprintf(cutPath,"./input/json/run-%d/%s",runPeriod,cutFile.c_str());
@@ -199,7 +200,7 @@ int Process_trly_prod(std::string configFile){
    rc = GetTRLYStatsAtTime(useTempCor,useOscCor,probeNumber-1,nev,fLO,time,fxprData,trlyData,trlySwap,t0);
 
    char outPath[500];
-   sprintf(outPath,"%s/trly-swap-data_pr-%02d_%s.csv",outDir.c_str(),probeNumber,anaDate.c_str());
+   sprintf(outPath,"%s/trly-swap-data_pr-%02d_%s.csv",outDir.c_str(),probeNumber,runDate.c_str());
    std::string outpath = outPath;
 
    rc = PrintToFile(outpath,trlySwap); 

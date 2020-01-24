@@ -60,7 +60,6 @@ int DeltaB_trly_prod(std::string configFile){
    inputMgr->Print();
 
    std::string prodVersion = inputMgr->GetProductionTag(); 
-   std::string date        = inputMgr->GetAnalysisDate();
    std::string blindLabel  = inputMgr->GetBlindLabel();
 
    bool isBlind            = inputMgr->IsBlind();
@@ -80,11 +79,12 @@ int DeltaB_trly_prod(std::string configFile){
    // update the analysis method according to Ran's guidance 
    if(prodVersion.compare("v9_21_01")==0) method = gm2fieldUtil::Constants::kHilbertPhaseLinear;
 
-   date_t theDate; 
-   GetDate(theDate);
+   // date_t theDate; 
+   // GetDate(theDate);
+   std::string theDate = inputMgr->GetAnaDate();
 
-   std::string plotDir = GetPath("plots" ,isBlind,blindLabel,theDate.getDateString(),isSyst,systDirNum);
-   std::string outDir  = GetPath("output",isBlind,blindLabel,theDate.getDateString(),isSyst,systDirNum);
+   std::string plotDir = GetPath("plots" ,isBlind,blindLabel,theDate,isSyst,systDirNum);
+   std::string outDir  = GetPath("output",isBlind,blindLabel,theDate,isSyst,systDirNum);
  
    std::string gradName;
    if(axis==0) gradName = "rad"; 

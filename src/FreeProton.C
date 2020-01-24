@@ -68,7 +68,7 @@ int FreeProton::LoadData(std::string probeName,int runPeriod){
       fchi           *= 1E-9; 
       fchi_err       *= 1E-9; 
       feps           *= 1.; // this is already absolute 
-      feps_err       *= 1E-9; 
+      feps_err       *= 1.; // this is already absolute 
       fdelta_s       *= 1E-9; 
       fdelta_s_err   *= 1E-9; 
       fdelta_p       *= 1E-9; 
@@ -172,11 +172,11 @@ void FreeProton::CalculateBulkMagneticSusceptibility(double T,double &delta_b,do
    // units are ppb 
    double CHI=0,CHI_ERR=0;
    CalculateMagneticSusceptibility(T,CHI,CHI_ERR);
-   delta_b     = ( feps/(4.*TMath::Pi()) - 1./3. )*CHI;
+   delta_b     = (feps - 1./3.)*CHI;
    // calculate the uncertainty 
-   double DEPS = ( CHI/(4.*TMath::Pi()) )*feps_err;
-   double DCHI = ( feps/(4.*TMath::Pi()) - 1./3. )*CHI_ERR;
-   delta_b_err = TMath::Sqrt( DEPS*DEPS + DCHI*DCHI);
+   double DEPS = feps_err/(feps - 1./3.);
+   double DCHI = CHI_ERR/CHI;
+   delta_b_err = TMath::Abs(delta_b)*TMath::Sqrt(DEPS*DEPS + DCHI*DCHI);
 }
 //______________________________________________________________________________
 void FreeProton::CalculateMagneticSusceptibility(double T,double &CHI,double &CHI_ERR){
@@ -212,7 +212,7 @@ void FreeProton::Print(std::string units){
    std::cout << Form("delta_rd            = %.1lf ± %.1lf %s",fdelta_rd/sf,fdelta_rd_err/sf,unitStr.c_str() ) << std::endl;
    std::cout << Form("delta_d             = %.1lf ± %.1lf %s",fdelta_d /sf,fdelta_d_err /sf,unitStr.c_str() ) << std::endl;
    std::cout << Form("delta_v             = %.1lf ± %.1lf %s",fdelta_v /sf,fdelta_v_err /sf,unitStr.c_str() ) << std::endl;
-   std::cout << Form("eps                 = %.3lf ± %.3E"    ,feps,feps_err)                                  << std::endl;  
+   std::cout << Form("eps                 = %.8lf ± %.8lf" ,feps,feps_err)                                  << std::endl;  
    std::cout << Form("sigma(T = 25 deg C) = %.1lf ± %.1lf %s",fsigma/sf,fsigma_err/sf,unitStr.c_str() )       << std::endl;  
    std::cout << Form("chi(T = 20 deg C)   = %.1lf ± %.1lf %s",fchi/sf,fchi_err/sf,unitStr.c_str() )           << std::endl;  
    std::cout << "-------------------------------------------------" << std::endl;

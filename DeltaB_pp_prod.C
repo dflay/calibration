@@ -67,7 +67,6 @@ int DeltaB_pp_prod(std::string configFile){
 
    std::string prodVersion   = inputMgr->GetProductionTag();
    std::string nmrAnaVersion = inputMgr->GetNMRANATag();  
-   std::string date          = inputMgr->GetAnalysisDate();
    std::string blindLabel    = inputMgr->GetBlindLabel();
    std::string cutFile       = inputMgr->GetCutFile();
 
@@ -89,11 +88,12 @@ int DeltaB_pp_prod(std::string configFile){
    sprintf(cutPath,"./input/json/run-%d/%s",runPeriod,cutFile.c_str());
    std::string cutpath = cutPath;
 
-   date_t theDate; 
-   GetDate(theDate);
+   // date_t theDate; 
+   // GetDate(theDate);
+   std::string theDate = inputMgr->GetAnaDate();
 
-   std::string plotDir = GetPath("plots" ,isBlind,blindLabel,theDate.getDateString(),isSyst,systDirNum);
-   std::string outDir  = GetPath("output",isBlind,blindLabel,theDate.getDateString(),isSyst,systDirNum);
+   std::string plotDir = GetPath("plots" ,isBlind,blindLabel,theDate,isSyst,systDirNum);
+   std::string outDir  = GetPath("output",isBlind,blindLabel,theDate,isSyst,systDirNum);
 
    int blindUnits  = inputMgr->GetBlindUnits(); 
    double blindMag = inputMgr->GetBlindScale(); 

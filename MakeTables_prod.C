@@ -94,7 +94,7 @@ int MakeTables_prod(int runPeriod,std::string theDate,int isSyst,int systDirNum)
    bool isBlind            = configData["blinding"]["enable"];  
    bool isMisCor           = (bool)( (int)configData["use-misalign-cor"] );
 
-   std::string outDir = GetPath("output",isBlind,blindLabel,theDate.c_str(),isSyst,systDirNum); 
+   std::string outDir = GetPath("output",isBlind,blindLabel,theDate,isSyst,systDirNum); 
 
    // char outDir[200];
    // if(isBlind)  sprintf(outDir,"./output/blinded/%s",blindLabel.c_str());

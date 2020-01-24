@@ -21,7 +21,7 @@ class InputManager{
       int fSystDirNum; 
       int fTrolleyProbe,fAxis,fFXPRListTag,fBlindUnits,fRunPeriod,fNumEventsToAvg,fNumEventsTimeWindow,fImpGradFitDim,fImpGradFitOrder; 
       double fBlindScale,fTrolleyAngle,fDBZCurrent,fTempCor_pp,fDBDeltaTime_tr,fSwapDeltaTime_tr; 
-      std::string fType,fDevice,fRunDate,fFitFunc,fBlindLabel,fProdTag,fNMRANATag,fCutFile,fPPID,fOscCorType;
+      std::string fType,fDevice,fRunDate,fFitFunc,fBlindLabel,fProdTag,fNMRANATag,fCutFile,fPPID,fOscCorType,fAnaDate;
       std::vector<int> fRunList,fFXPRList; 
       std::vector<std::string> fRunLabel; 
 
@@ -100,7 +100,8 @@ class InputManager{
 
       std::string GetType()          const { return fType;            } 
       std::string GetDevice()        const { return fDevice;          } 
-      std::string GetAnalysisDate()  const { return fRunDate;         } 
+      std::string GetRunDate()       const { return fRunDate;         } 
+      std::string GetAnaDate()       const { return fAnaDate;         } 
       std::string GetFitFunction()   const { return fFitFunc;         } 
       std::string GetBlindLabel()    const { return fBlindLabel;      } 
       std::string GetProductionTag() const { return fProdTag;         }

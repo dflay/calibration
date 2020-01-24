@@ -59,7 +59,6 @@ int ProcessResults_prod(std::string configFile){
    inputMgr->Print();
 
    std::string ppID       = inputMgr->GetPPID(); 
-   std::string anaDate    = inputMgr->GetAnalysisDate();
    std::string blindLabel = inputMgr->GetBlindLabel();
 
    bool isBlind           = inputMgr->IsBlind();
@@ -72,10 +71,11 @@ int ProcessResults_prod(std::string configFile){
    bool isSyst            = inputMgr->GetSystStatus();
    int systDirNum         = inputMgr->GetSystDirNum(); 
 
-   date_t theDate;
-   GetDate(theDate);
+   // date_t theDate;
+   // GetDate(theDate);
+   std::string theDate = inputMgr->GetAnaDate();
   
-   std::string outDir  = GetPath("output",isBlind,blindLabel,theDate.getDateString(),isSyst,systDirNum);
+   std::string outDir  = GetPath("output",isBlind,blindLabel,theDate,isSyst,systDirNum);
  
    // results  
    char outPath_result[500]; 

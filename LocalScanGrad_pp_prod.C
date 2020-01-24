@@ -64,7 +64,7 @@ int LocalScanGrad_pp_prod(std::string configFile){
 
    std::string prodVersion   = inputMgr->GetProductionTag();
    std::string nmrAnaVersion = inputMgr->GetNMRANATag();
-   std::string date          = inputMgr->GetAnalysisDate(); 
+   std::string date          = inputMgr->GetRunDate(); 
    std::string fitFunc       = inputMgr->GetValue("fit");
    std::string blindLabel    = inputMgr->GetBlindLabel();
    std::string cutFile       = inputMgr->GetCutFile();
@@ -87,8 +87,9 @@ int LocalScanGrad_pp_prod(std::string configFile){
    sprintf(cutPath,"./input/json/run-%d/%s",runPeriod,cutFile.c_str());
    std::string cutpath = cutPath;
 
-   date_t theDate;
-   GetDate(theDate);
+   // date_t theDate;
+   // GetDate(theDate);
+   std::string theDate = inputMgr->GetAnaDate();
 
    std::string Axis,gradType; 
    if(axis==0) Axis = "x"; 
@@ -100,8 +101,8 @@ int LocalScanGrad_pp_prod(std::string configFile){
    if( Axis.compare("z")==0 ) gradType = "azi";
 
    // make output directories 
-   std::string plotDir = GetPath("plots" ,isBlind,blindLabel,theDate.getDateString(),isSyst,systDirNum);
-   std::string outDir  = GetPath("output",isBlind,blindLabel,theDate.getDateString(),isSyst,systDirNum);
+   std::string plotDir = GetPath("plots" ,isBlind,blindLabel,theDate,isSyst,systDirNum);
+   std::string outDir  = GetPath("output",isBlind,blindLabel,theDate,isSyst,systDirNum);
 
    int blindUnits  = inputMgr->GetBlindUnits(); 
    double blindMag = inputMgr->GetBlindScale(); 
