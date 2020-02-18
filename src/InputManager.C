@@ -28,7 +28,8 @@ int InputManager::Init(){
    fVarySwapTime_tr = false; 
    fVaryShimFit     = false; 
    fVaryImpGradFit  = false; 
-   fSyst            = false; 
+   fSyst            = false;
+   fTRLYFootprintStatus = false; 
    fSystDirNum      = 0;  
    fTempCor_pp      = 0;
    fNumEventsToAvg  = 0;  
@@ -37,6 +38,8 @@ int InputManager::Init(){
    fDBZCurrent       = 0;
    fDBDeltaTime_tr   = 0; 
    fSwapDeltaTime_tr = 0; 
+   fTRLYFootprint    = 0; 
+   fTRLYFootprintErr = 0; 
    fTrolleyProbe     = -1; 
    fAxis             = -1;
    fFXPRListTag      = -1;
@@ -178,7 +181,8 @@ int InputManager::Parse(){
    bool ppStatus     = DoesKeyExist("pp");
    bool impStatus    = DoesKeyExist("imp-grad"); 
    bool systStatus   = DoesKeyExist("syst"); 
-   bool adateStatus  = DoesKeyExist("ana-date");  
+   bool adateStatus  = DoesKeyExist("ana-date"); 
+   bool trfpStatus   = DoesKeyExist("trly-footprint");  
 
    // parameters common to all 
    std::string unitStr="";
@@ -195,6 +199,12 @@ int InputManager::Parse(){
       if( unitStr.compare("ppm")==0 ) fBlindUnits = gm2fieldUtil::Constants::ppm;  
       if( unitStr.compare("ppb")==0 ) fBlindUnits = gm2fieldUtil::Constants::ppb;  
    } 
+
+   if(trfpStatus){
+      fTRLYFootprintStatus = (bool)( (int)fParams["trly-footprint"]["enable"] ); 
+      fTRLYFootprint       = (double)fParams["trly-footprint"]["value"]; 
+      fTRLYFootprintErr    = (double)fParams["trly-footprint"]["uncertainty"]; 
+   }
 
    if(runStatus){ 
       NRUNS = (int)fParams["nruns"];
@@ -312,6 +322,11 @@ int InputManager::Print(){
 	 std::cout << "Axis:               " << fAxis            << " (" << axis << ")" << std::endl;
       }
    }
+ 
+   if(fTRLYFootprintStatus){
+      std::cout << "TRLY footprint = " << fTRLYFootprint << " +/- " << fTRLYFootprintErr << std::endl;  
+   }
+
    int N = fRunList.size(); 
    std::cout << "Number of runs:     " << N                << std::endl;
    for(int i=0;i<N;i++) std::cout << Form("run = %d, label = %s",fRunList[i],fRunLabel[i].c_str()) << std::endl;

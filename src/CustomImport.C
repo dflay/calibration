@@ -918,7 +918,7 @@ int LoadResultsProdFinalData(const char *inpath,result_prod_t &data){
    char buf[SIZE]; 
 
    int cntr=0;
-   std::string stype,sx,sShot,sMisalign,sFree;
+   std::string stype,sx,sShot,sMisalign,sFree,sSyst;
 
    ifstream infile;
    infile.open(inpath);
@@ -932,7 +932,8 @@ int LoadResultsProdFinalData(const char *inpath,result_prod_t &data){
          std::getline(infile,sx       ,','); 
          std::getline(infile,sShot    ,',');
          std::getline(infile,sMisalign,',');
-         std::getline(infile,sFree);
+         std::getline(infile,sFree    ,',');
+         std::getline(infile,sSyst);
 	 cntr++;
 	 if(cntr==1){
 	    data.diff    = std::atof( sx.c_str() ); 
@@ -949,7 +950,9 @@ int LoadResultsProdFinalData(const char *inpath,result_prod_t &data){
 	    data.diffErr_opt = std::atof( sShot.c_str() );
 	    data.mErr_opt    = std::atof( sMisalign.c_str() );
 	    data.pErr_opt    = std::atof( sFree.c_str() );
-         } 
+         }
+	 // systematic uncertainty is identical for raw, ABA, or opt  
+	 data.systErr        = std::atof( sSyst.c_str() );
       }
       infile.close();
    }

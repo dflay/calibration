@@ -29,7 +29,7 @@ int CompareResults(){
 
    json input; 
 
-   std::string inpath = "compare.json"; 
+   std::string inpath = "./input/json/compare.json"; 
    int rc = gm2fieldUtil::Import::ImportJSON(inpath,input);
 
    const int NT = input["ana-set"].size(); 

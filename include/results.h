@@ -59,7 +59,8 @@ typedef struct result_prod{
    double diffFree_opt;
    double diffErr_opt;
    double mErr_opt;
-   double pErr_opt;       
+   double pErr_opt;      
+   double systErr;  
 } result_prod_t; 
 
 // fill this struct and write to a ROOT file; 
@@ -77,14 +78,21 @@ typedef struct calib_result {
    double calibCoeffErr;          // [raw] shot uncertainty for calib coeff 
    double calibCoeff_aba;         // [ABA] calib coeff
    double calibCoeffErr_aba;      // [ABA] shot uncertainty  
+   double calibCoeff_opt;         // [opt] calib coeff
+   double calibCoeffErr_opt;      // [opt] shot uncertainty  
 
    double calibCoeffFree;         // [raw] free-proton calib coeff  
    double calibCoeffFreeErr;      // [raw] shot uncertainty  
    double calibCoeffFree_aba;     // [ABA] free-proton calib coeff   
    double calibCoeffFreeErr_aba;  // [ABA] shot uncertainty  
-   double freeErr;                // error from proton corrections (added in quadrature)  
+   double calibCoeffFree_opt;     // [opt] free-proton calib coeff   
+   double calibCoeffFreeErr_opt;  // [opt] shot uncertainty  
 
-   // these will always be opt results 
+   double freeErr;                // error from proton corrections (added in quadrature) 
+
+   double systErr;                // the total systematic uncertainty from other sources (TRLY footprint, cuts, etc)  
+
+   // misCor will always be opt results 
    double misCor;                 // misalignment correction along x axis in Hz        
    double misCor_err;             // misalignment correction uncertainty along x axis in Hz 
 
@@ -127,6 +135,6 @@ typedef struct calib_result {
 
 } calib_result_t;
 
-const char * const calib_result_str = "calibCoeff/D:calibCoeffErr/D:calibCoeff_aba/D:calibCoeffErr_aba:calibCoeffFree/D:calibCoeffFreeErr/D:calibCoeffFree_aba/D:calibCoeffFreeErr_aba:freeErr/D:dx/D:dy/D:dz/D:dr/D:deltaB_pp_x/D:deltaB_pp_y/D:deltaB_pp_z/D:deltaB_pp_xErr/D:deltaB_pp_yErr/D:deltaB_pp_zErr/D:deltaB_tr_x/D:deltaB_tr_y/D:deltaB_tr_z/D:deltaB_tr_xErr/D:deltaB_tr_yErr/D:deltaB_tr_zErr/D:dBdx_imp/D:dBdy_imp/D:dBdz_imp/D:dBdx_impErr/D:dBdy_impErr/D:dBdz_impErr/D:dBdx_shim/D:dBdy_shim/D:dBdz_shim/D:dBdx_shimErr/D:dBdy_shimErr/D:dBdz_shimErr/D"; 
+const char * const calib_result_str = "calibCoeff/D:calibCoeffErr/D:calibCoeff_aba/D:calibCoeffErr_aba/D:calibCoeff_opt/D:calibCoeffErr_opt/D:calibCoeffFree/D:calibCoeffFreeErr/D:calibCoeffFree_aba/D:calibCoeffFreeErr_aba/D:calibCoeffFree_opt/D:calibCoeffFreeErr_opt/D:freeErr/D:misCor/D:misCor_err/D:systErr/D:dx/D:dy/D:dz/D:dr/D:deltaB_pp_x/D:deltaB_pp_y/D:deltaB_pp_z/D:deltaB_pp_xErr/D:deltaB_pp_yErr/D:deltaB_pp_zErr/D:deltaB_tr_x/D:deltaB_tr_y/D:deltaB_tr_z/D:deltaB_tr_xErr/D:deltaB_tr_yErr/D:deltaB_tr_zErr/D:dBdx_imp/D:dBdy_imp/D:dBdz_imp/D:dBdx_impErr/D:dBdy_impErr/D:dBdz_impErr/D:dBdx_shim/D:dBdy_shim/D:dBdz_shim/D:dBdx_shimErr/D:dBdy_shimErr/D:dBdz_shimErr/D"; 
 
 #endif 

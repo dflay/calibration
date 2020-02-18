@@ -88,6 +88,7 @@ def writeConfigFileProd_trlyDB(data,tag,keyList,axis,fitData,trlyProbe,outpath):
    outData['num-events-time-window'] = data['num-events-time-window'] 
    outData['use-misalign-cor']       = data['use-misalign-cor']  
    outData['syst']                   = data['syst'] 
+   outData['trly-footprint']         = data['trly-footprint'] 
     
    # probe-specific data  
    outData['date']                   = data['date']
@@ -181,6 +182,7 @@ def writeConfigFileProd_ShimScan(data,confData,tag,keyList,axis,fitData,outpath)
    outData['use-misalign-cor']       = confData['use-misalign-cor']  
    outData['pp']                     = confData['pp']  
    outData['syst']                   = confData['syst'] 
+   outData['trly-footprint']         = confData['trly-footprint'] 
  
    # probe-specific data  
    outData['date']                 = data['date']
@@ -232,6 +234,7 @@ def writeConfigFileProd_params(confData,outpath):
    outData['pp']                     = confData['pp'] 
    outData['imp-grad']               = confData['imp-grad'] 
    outData['syst']                   = confData['syst']  
+   outData['trly-footprint']         = confData['trly-footprint'] 
    # write to file  
    if os.path.isfile(outpath): 
       print("[writeConfigFileProd_params]: File {0} exists, deleting first".format(outpath) )
@@ -255,6 +258,7 @@ def writeConfigFileProd_imposedGrad(confData,tag,keyList,axis,fitData,outpath):
    outData['imp-grad']               = confData['imp-grad'] 
    outData['syst']                   = confData['syst'] 
    outData['ana-date']               = confData['ana-date']  
+   outData['trly-footprint']         = confData['trly-footprint'] 
 
    # outData['fxpr-set']               = confData['fxpr-set']
    # outData['load-trly-swap-times']   = confData['load-trly-swap-times'] 
@@ -311,6 +315,7 @@ def writeConfigFileProd(data,confData,tag,keyList,axis,fitData,outpath):
    outData['pp']                     = confData['pp']  
    outData['imp-grad']               = confData['imp-grad']
    outData['syst']                   = confData['syst']  
+   outData['trly-footprint']         = confData['trly-footprint'] 
     
    # probe-specific data  
    outData['date']                 = data['date']
@@ -634,6 +639,9 @@ def setupPaths(deleteDir,today,isBlind,blindLabel,isSyst):
    else:
       outDir_base  = "./output/unblinded/" + today
       plotDir_base = "./plots/unblinded/"  + today
+
+   outDir  = outDir_base
+   plotDir = plotDir_base  
  
    # change the output directory if we're doing systematics  
    dirNum = 1

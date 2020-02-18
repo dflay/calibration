@@ -212,9 +212,8 @@ void FreeProton::Print(std::string units){
    std::cout << Form("delta_rd            = %.1lf ± %.1lf %s",fdelta_rd/sf,fdelta_rd_err/sf,unitStr.c_str() ) << std::endl;
    std::cout << Form("delta_d             = %.1lf ± %.1lf %s",fdelta_d /sf,fdelta_d_err /sf,unitStr.c_str() ) << std::endl;
    std::cout << Form("delta_v             = %.1lf ± %.1lf %s",fdelta_v /sf,fdelta_v_err /sf,unitStr.c_str() ) << std::endl;
-   std::cout << Form("eps                 = %.8lf ± %.8lf" ,feps,feps_err)                                  << std::endl;  
+   std::cout << Form("eps                 = %.8lf ± %.8lf"   ,feps,feps_err)                                  << std::endl;  
    std::cout << Form("sigma(T = 25 deg C) = %.1lf ± %.1lf %s",fsigma/sf,fsigma_err/sf,unitStr.c_str() )       << std::endl;  
    std::cout << Form("chi(T = 20 deg C)   = %.1lf ± %.1lf %s",fchi/sf,fchi_err/sf,unitStr.c_str() )           << std::endl;  
    std::cout << "-------------------------------------------------" << std::endl;
- 
 }

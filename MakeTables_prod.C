@@ -51,7 +51,7 @@ double gYSize      = 0.06;
 
 int ApplyShimmedGradEstimates(int probe,std::string prodVersion,std::vector<grad_meas_t> &data); 
 int PrintTableOfResults(const char *outpath,int probe,double diff,double diffFree,
-                        double swapErr,double mErr,double pErr);
+                        double swapErr,double mErr,double pErr,double systErr);
 
 int PrintTableOfResults_db(const char *outpath,int probe,
                            double dBx_pp,double dBx_pp_err,double dBx_tr,double dBx_tr_err,
@@ -133,6 +133,7 @@ int MakeTables_prod(int runPeriod,std::string theDate,int isSyst,int systDirNum)
 
    bool update = false;
 
+   double syst=0;
    double sum_sq=0;
    double sumf=0,sum_sf=0,sum=0;
    double sumf_ppb=0,sum_ppb=0;
@@ -212,17 +213,18 @@ int MakeTables_prod(int runPeriod,std::string theDate,int isSyst,int systDirNum)
    // PP-TRLY 
    std::cout << "===================================== PP-TRLY =====================================" << std::endl;
    for(int i=0;i<NPROBES;i++){
-      sum_sq   = res[i].diffErr_aba*res[i].diffErr_aba + res[i].mErr_opt*res[i].mErr_opt;
+      sum_sq   = res[i].diffErr_aba*res[i].diffErr_aba + res[i].mErr_opt*res[i].mErr_opt + res[i].systErr*res[i].systErr;
       sum      = TMath::Sqrt(sum_sq);  
-      sum_sq   = resFree[i].diffErr_aba*resFree[i].diffErr_aba + res[i].mErr_opt*res[i].mErr_opt + resFree[i].pErr*resFree[i].pErr;
+      sum_sq   = resFree[i].diffErr_aba*resFree[i].diffErr_aba + res[i].mErr_opt*res[i].mErr_opt + resFree[i].pErr*resFree[i].pErr 
+                 + resFree[i].systErr*resFree[i].systErr;
       sumf     = TMath::Sqrt(sum_sq); 
       sumf_ppb = sumf/0.06179;  
-      sum_sq   = resFree[i].diffErr_aba*resFree[i].diffErr_aba + res[i].mErr_opt*res[i].mErr_opt;
+      sum_sq   = resFree[i].diffErr_aba*resFree[i].diffErr_aba + res[i].mErr_opt*res[i].mErr_opt + resFree[i].systErr*resFree[i].systErr;
       sum_sf   = TMath::Sqrt(sum_sq);  
-      std::cout << Form("%02d,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf",
+      std::cout << Form("%02d,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf",
                         probe[i],res[i].diff_aba,resFree[i].diff_aba,res[i].diffErr_aba,
-                        resFree[i].diffErr_aba,res[i].mErr_opt,resFree[i].pErr,sum,sum_sf,sumf_ppb) << std::endl;
-      rc = PrintTableOfResults(outpath_res,probe[i],res[i].diff_aba,resFree[i].diff_aba,res[i].diffErr_aba,res[i].mErr,resFree[i].pErr);
+                        resFree[i].diffErr_aba,res[i].mErr_opt,resFree[i].pErr,res[i].systErr,sum,sum_sf,sumf_ppb) << std::endl;
+      rc = PrintTableOfResults(outpath_res,probe[i],res[i].diff_aba,resFree[i].diff_aba,res[i].diffErr_aba,res[i].mErr,resFree[i].pErr,res[i].systErr);
    }
 
    std::cout << "===================================== DELTA B =====================================" << std::endl;
@@ -304,11 +306,15 @@ int CollectData(std::vector<result_prod_t> r,std::vector<result_prod_t> rFree,
       dataPt.calibCoeffErr         = r[i].diffErr;  
       dataPt.calibCoeff_aba        = r[i].diff_aba; 
       dataPt.calibCoeffErr_aba     = r[i].diffErr_aba;
+      dataPt.calibCoeff_opt        = r[i].diff_opt; 
+      dataPt.calibCoeffErr_opt     = r[i].diffErr_opt;
       // free proton corrections applied 
       dataPt.calibCoeffFree        = rFree[i].diff;  
       dataPt.calibCoeffFreeErr     = rFree[i].diffErr;  
       dataPt.calibCoeffFree_aba    = rFree[i].diff_aba;  
       dataPt.calibCoeffFreeErr_aba = rFree[i].diffErr_aba; 
+      dataPt.calibCoeffFree_opt    = rFree[i].diff_opt;  
+      dataPt.calibCoeffFreeErr_opt = rFree[i].diffErr_opt; 
       dataPt.freeErr               = rFree[i].pErr;  
       // imposed gradient data 
       dataPt.dBdx_imp              = ig[i][0].grad;  
@@ -344,7 +350,9 @@ int CollectData(std::vector<result_prod_t> r,std::vector<result_prod_t> rFree,
       dataPt.dr                    = TMath::Sqrt( dataPt.dx*dataPt.dx + dataPt.dy*dataPt.dy + dataPt.dz*dataPt.dz ); 
       // misalignment CORRECTION. always use the opt result.  this is in Hz  
       dataPt.misCor                = mCor[i][2].val;  
-      dataPt.misCor_err            = mCor[i][2].err;  
+      dataPt.misCor_err            = mCor[i][2].err; 
+      // systematic uncertainty (this is identical for raw and free results)  
+      dataPt.systErr               = r[i].systErr;  
       // fill vector 
       data.push_back(dataPt);  
    }
@@ -394,12 +402,16 @@ int GetJSONObject(std::vector<calib_result_t> data,json &jData){
    for(int i=0;i<N;i++){
       jData["calibCoeff"][i]            = data[i].calibCoeff; 
       jData["calibCoeff_aba"][i]        = data[i].calibCoeff_aba; 
+      jData["calibCoeff_opt"][i]        = data[i].calibCoeff_opt; 
       jData["calibCoeffErr"][i]         = data[i].calibCoeffErr; 
       jData["calibCoeffErr_aba"][i]     = data[i].calibCoeffErr_aba;
+      jData["calibCoeffErr_opt"][i]     = data[i].calibCoeffErr_opt;
       jData["calibCoeffFree"][i]        = data[i].calibCoeffFree; 
       jData["calibCoeffFree_aba"][i]    = data[i].calibCoeffFree_aba; 
+      jData["calibCoeffFree_opt"][i]    = data[i].calibCoeffFree_opt; 
       jData["calibCoeffFreeErr"][i]     = data[i].calibCoeffFreeErr; 
       jData["calibCoeffFreeErr_aba"][i] = data[i].calibCoeffFreeErr_aba;
+      jData["calibCoeffFreeErr_opt"][i] = data[i].calibCoeffFreeErr_opt;
       jData["freeErr"][i]               = data[i].freeErr; 
       // imposed gradient data 
       jData["dBdx_imp"][i]              = data[i].dBdx_imp;      
@@ -435,7 +447,9 @@ int GetJSONObject(std::vector<calib_result_t> data,json &jData){
       jData["dr"][i]                    = data[i].dr;
       // misalignment CORRECTION data 
       jData["misCor"][i]                = data[i].misCor;   
-      jData["misCor_err"][i]            = data[i].misCor_err;   
+      jData["misCor_err"][i]            = data[i].misCor_err;  
+      // systematic uncertainty 
+      jData["systErr"][i]               = data[i].systErr;  
    }
    return 0; 
 }
@@ -535,7 +549,7 @@ int ApplyShimmedGradEstimates(int probe,std::string prodVersion,std::vector<grad
 }
 //______________________________________________________________________________
 int PrintTableOfResults(const char *outpath,int probe,double diff,double diffFree,
-                        double swapErr,double mErr,double pErr){
+                        double swapErr,double mErr,double pErr,double systErr){
    // printing the final results for ALL probes to a single file.  All values in Hz 
    // diff    = PP-TRLY 
    // swapErr = point-to-point error due to the multiple swaps (RMS) 
@@ -543,7 +557,7 @@ int PrintTableOfResults(const char *outpath,int probe,double diff,double diffFre
    // pErr    = free-proton error 
    // totErr  = in-quadrature sum of all errors  
    char myStr[500]; 
-   sprintf(myStr,"%02d,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf",probe,diff,diffFree,swapErr,mErr,pErr);  
+   sprintf(myStr,"%02d,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf",probe,diff,diffFree,swapErr,mErr,pErr,systErr);  
    std::ofstream outfile;
    outfile.open(outpath,std::ios::app);
    if( outfile.fail() ){ 

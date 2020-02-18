@@ -253,6 +253,7 @@ int GetTRLYStatsAtTime(bool UseTempCor,bool UseOscCor,int probe,int nev,double f
    int n=0;
    int M = trTime.size();
    const int NT = time.size();
+   double dSigdT = 5.45E-9;  // per deg C, from Martin C doc-db 2342; could be -2.5E-9
    double lastTime=0;
    double arg_freq=0,delta_t=0;
    double mean_freq=0,stdev_freq=0;
@@ -270,7 +271,7 @@ int GetTRLYStatsAtTime(bool UseTempCor,bool UseOscCor,int probe,int nev,double f
 	    if(UseTempCor){
 	       // FIXME: apply a temperature correction if necessary
 	       // accounts for the trolley being at a temperature other than 25 deg c  
-	       delta_t = (4.0E-9)*(temp[j]-25.0);
+	       delta_t = dSigdT*(temp[j]-25.0);
 	    }
 	    if(UseOscCor){
 	       arg_freq = (fLO + trFreq_cor[j])/(1.-delta_t);  
@@ -343,6 +344,7 @@ int GetTRLYStatsAtTime_hybrid(bool UseTempCor,bool UseOscCor,int probe,int nev,d
    int n=0;
    int M = trTime.size();
    const int NT = time.size();
+   double dSigdT = 5.45E-9;  // per deg C, from Martin C doc-db 2342; could be -2.5E-9
    double lastTime=0;
    double arg_freq=0,delta_t=0;
    double mean_freq=0,stdev_freq=0;
@@ -360,7 +362,7 @@ int GetTRLYStatsAtTime_hybrid(bool UseTempCor,bool UseOscCor,int probe,int nev,d
 	    if(UseTempCor){
 	       // FIXME: apply a temperature correction if necessary
 	       // accounts for the trolley being at a temperature other than 25 deg c  
-	       delta_t = (4.0E-9)*(temp[j]-25.0);
+	       delta_t = dSigdT*(temp[j]-25.0);
 	    }
 	    if(UseOscCor){
 	       arg_freq = (fLO + trFreq_cor[j])/(1.-delta_t);  

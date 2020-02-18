@@ -18,9 +18,10 @@ class InputManager{
       bool fUseAxis,fIsFreeProton,fLoadSwapTime,fLoadSCCTime,fUseTimeWeight,fUseTempCor;
       bool fUseOscCor,fRemoveFXPRDrift,fUseMisalignCor,fUseTempCor_pp;
       bool fSyst,fVaryDBTime_tr,fVarySwapTime_tr,fVaryShimFit,fVaryImpGradFit;
+      bool fTRLYFootprintStatus; 
       int fSystDirNum; 
       int fTrolleyProbe,fAxis,fFXPRListTag,fBlindUnits,fRunPeriod,fNumEventsToAvg,fNumEventsTimeWindow,fImpGradFitDim,fImpGradFitOrder; 
-      double fBlindScale,fTrolleyAngle,fDBZCurrent,fTempCor_pp,fDBDeltaTime_tr,fSwapDeltaTime_tr; 
+      double fBlindScale,fTrolleyAngle,fDBZCurrent,fTempCor_pp,fDBDeltaTime_tr,fSwapDeltaTime_tr,fTRLYFootprint,fTRLYFootprintErr; 
       std::string fType,fDevice,fRunDate,fFitFunc,fBlindLabel,fProdTag,fNMRANATag,fCutFile,fPPID,fOscCorType,fAnaDate;
       std::vector<int> fRunList,fFXPRList; 
       std::vector<std::string> fRunLabel; 
@@ -58,12 +59,13 @@ class InputManager{
       bool GetMisalignCorStatus()    const { return fUseMisalignCor;  }  
       bool GetTempCorStatus()        const { return fUseTempCor;      } 
       bool GetTempCorStatus_pp()     const { return fUseTempCor_pp;   }
-      bool GetSystStatus()           const { return fSyst;            } 
+      bool GetSystStatus()           const { return fSyst;            }
+      bool GetTRLYFootprintStatus()  const { return fTRLYFootprintStatus; }  
 
       bool GetVaryTimeStatus(std::string dev="NONE",std::string type="NONE") const {
 	 // determine if we will vary the times on event selection 
          if( dev.compare("tr")!=0 ) return false; // not the trolley
-         if( dev.compare("tr")==0 && type.compare("db")==0 ) return fVaryDBTime_tr;  
+         if( dev.compare("tr")==0 && type.compare("db")==0 )   return fVaryDBTime_tr;  
          if( dev.compare("tr")==0 && type.compare("swap")==0 ) return fVarySwapTime_tr; 
 	 return false;  // all other options failed, return false 
       }
@@ -84,6 +86,7 @@ class InputManager{
       int GetImpGradFitDimension()   const { return fImpGradFitDim;   }  
       int GetImpGradFitOrder()       const { return fImpGradFitOrder; } 
       int GetSystDirNum()            const { return fSystDirNum;      }  
+      int GetTRLYFootprint(double &x,double &e) { x = fTRLYFootprint; e = fTRLYFootprintErr; return 0; }  
 
       double GetBlindScale()         const { return fBlindScale;      }  
       double GetTrolleyAngle()       const { return fTrolleyAngle;    }  

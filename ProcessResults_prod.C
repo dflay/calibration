@@ -48,6 +48,7 @@ double gXSize      = 0.05;
 double gYSize      = 0.06;  
 
 int PrintResults(std::string outpath,result_prod_t result); 
+int LoadSystematicUncertainties(const char *inpath,int probe,std::vector<std::string> type,double &err); 
 
 int ProcessResults_prod(std::string configFile){
 
@@ -134,8 +135,26 @@ int ProcessResults_prod(std::string configFile){
    double T0 = 25.0; // use T = 25 deg for the uncertainty calculation -- weak T dependence, so this is OK  
    double freeProtErr = fp->GetDelta_t_err(T0)*(0.06179/1E-9);  // converts to Hz 
    // rc = GetOmegaP_err(ppPert,freeProtErr);
-
    delete fp; 
+
+   // apply the TRLY footprint correction 
+   bool applyTrlyFP = inputMgr->GetTRLYFootprintStatus();  
+   double trlyFP=0,trlyFPErr=0;
+   if(applyTrlyFP){
+      inputMgr->GetTRLYFootprint(trlyFP,trlyFPErr); 
+   }
+ 
+   // now load systematic uncertainty
+   double systErr=0;
+   char inpath_syst[200];
+   sprintf(inpath_syst,"./input/json/run-%d/syst-err.json",runPeriod); 
+   std::vector<std::string> systType; 
+   systType.push_back("dB-tr"); 
+   systType.push_back("pp-freq-swap"); 
+   systType.push_back("pp-freq-dB"); 
+   systType.push_back("tr-freq-swap"); 
+   systType.push_back("tr-freq-dB");
+   rc = LoadSystematicUncertainties(inpath_syst,probeNumber-1,systType,systErr);  
 
    char errStr[200],errStr_aba[200],errStr_opt[200];
    sprintf(errStr    ,"%.3lf +/- %.3lf",shot_err    ,tot_misalign_err); 
@@ -146,6 +165,29 @@ int ProcessResults_prod(std::string configFile){
    sprintf(errStr_free    ,"%.3lf +/- %.3lf +/- %.3lf",shot_err_free    ,tot_misalign_err    ,freeProtErr); 
    sprintf(errStr_free_aba,"%.3lf +/- %.3lf +/- %.3lf",shot_err_free_aba,tot_misalign_err_aba,freeProtErr); 
    sprintf(errStr_free_opt,"%.3lf +/- %.3lf +/- %.3lf",shot_err_free_opt,tot_misalign_err_opt,freeProtErr); 
+
+   // apply TRLY footprint if necessary 
+   if(applyTrlyFP){
+      std::cout << "[ProcessResults_prod]: Applying TRLY footprint! " << std::endl;
+      systErr               = TMath::Sqrt( systErr*systErr + trlyFPErr*trlyFPErr ); // update the systematic uncertainty
+      result.diff          += trlyFP;
+      result.diff_aba      += trlyFP;
+      result.diff_opt      += trlyFP;
+      result_free.diff     += trlyFP;
+      result_free.diff_aba += trlyFP;
+      result_free.diff_opt += trlyFP;
+   }
+
+   result.systErr        = systErr; 
+   result_free.systErr   = systErr;
+
+   // update error strings 
+   sprintf(errStr         ,"%s +/- %.3lf",errStr         ,systErr);  
+   sprintf(errStr_aba     ,"%s +/- %.3lf",errStr_aba     ,systErr);  
+   sprintf(errStr_opt     ,"%s +/- %.3lf",errStr_opt     ,systErr);  
+   sprintf(errStr_free    ,"%s +/- %.3lf",errStr_free    ,systErr);  
+   sprintf(errStr_free_aba,"%s +/- %.3lf",errStr_free_aba,systErr);  
+   sprintf(errStr_free_opt,"%s +/- %.3lf",errStr_free_opt,systErr);  
 
    result.mErr     = tot_misalign_err; 
    result.mErr_aba = tot_misalign_err_aba; 
@@ -188,17 +230,34 @@ int ProcessResults_prod(std::string configFile){
    return 0;
 }
 //______________________________________________________________________________
+int LoadSystematicUncertainties(const char *inpath,int probe,std::vector<std::string> type,double &err){
+
+  std::string path = inpath; 
+  json data; 
+  int rc = gm2fieldUtil::Import::ImportJSON(inpath,data);
+
+  double arg=0,sum_sq=0; 
+  const int N = 17;           // number of probes
+  const int NT = type.size(); // number of types 
+  for(int j=0;j<NT;j++){
+     arg     = (double)data[type[j]][probe]; 
+     sum_sq += arg*arg;
+  }
+  err = TMath::Sqrt(sum_sq); 
+  return 0;
+}
+//______________________________________________________________________________
 int PrintResults(std::string outpath,result_prod_t result){
 
    char header[500]; 
    // prepare the header 
-   sprintf(header,"#type,diff,shot-err,misalign-err,free-prot-err"); 
+   sprintf(header,"#type,diff,shot-err,misalign-err,free-prot-err,syst"); 
    char myStr[1000]; 
-   sprintf(myStr    ,"raw,%.3lf,%.3lf,%.3lf,%.3lf",result.diff,result.diffErr,result.mErr,result.pErr); 
+   sprintf(myStr    ,"raw,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf",result.diff,result.diffErr,result.mErr,result.pErr,result.systErr); 
    char myStr_aba[1000]; 
-   sprintf(myStr_aba,"ABA,%.3lf,%.3lf,%.3lf,%.3lf",result.diff_aba,result.diffErr_aba,result.mErr_aba,result.pErr_aba); 
+   sprintf(myStr_aba,"ABA,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf",result.diff_aba,result.diffErr_aba,result.mErr_aba,result.pErr_aba,result.systErr); 
    char myStr_opt[1000]; 
-   sprintf(myStr_opt,"opt,%.3lf,%.3lf,%.3lf,%.3lf",result.diff_opt,result.diffErr_opt,result.mErr_opt,result.pErr_opt); 
+   sprintf(myStr_opt,"opt,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf",result.diff_opt,result.diffErr_opt,result.mErr_opt,result.pErr_opt,result.systErr); 
 
    std::ofstream outfile;
    outfile.open(outpath.c_str());
