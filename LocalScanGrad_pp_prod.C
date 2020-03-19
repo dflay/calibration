@@ -139,13 +139,16 @@ int LocalScanGrad_pp_prod(std::string configFile){
    }
 
    int MR = mRun.size();
-   std::cout << "Found " << MR << " MIDAS runs" << std::endl; 
+   // std::cout << "Found " << MR << " MIDAS runs" << std::endl;
+   // for(int i=0;i<MR;i++) std::cout << mRun[i] << std::endl; 
 
    double ZERO[3] = {0,0,0}; 
 
    char msg[200];
    int NSR = subRun.size();
+   // std::cout << "Found " << NSR << " subruns" << std::endl;
    for(int i=0;i<NSR;i++){
+      // std::cout << subRun[i] << std::endl;
       if(subRun[i]==-1){
 	 sprintf(msg,"[LocalScanGrad_pp_prod]: Invalid subrun number %d for probe %02d!",subRun[i],probeNumber);
 	 Logger::PrintMessage(Logger::kERR,"default",msg,'a');
@@ -161,49 +164,72 @@ int LocalScanGrad_pp_prod(std::string configFile){
 
    // PP data 
    bool useNMRANA = true;
-   std::vector<plungingProbeAnaEvent_t> ppData,ppEvent,ppInput; 
-   std::cout << "Getting PP data for run " << midasRun << "..." << std::endl; 
-   for(int i=0;i<MR;i++) rc = GetPlungingProbeData(mRun[i],prMethod,ppMethod,ppInput,prodVersion,nmrAnaVersion,cutPath,useNMRANA,tempCorValue);
-   if(rc!=0){
-      std::cout << "No data!" << std::endl;
-      return 1;
+   std::vector<plungingProbeAnaEvent_t> ppEvent,ppInput,ppInput2; 
+   for(int i=0;i<MR;i++){
+      std::cout << "Getting PP data from MIDAS run " << mRun[i] << "..." << std::endl; 
+      rc = GetPlungingProbeData(mRun[i],prMethod,ppMethod,ppInput,prodVersion,nmrAnaVersion,cutPath,useNMRANA,tempCorValue);
+      if(rc!=0){
+	 std::cout << "No data!" << std::endl;
+	 return 1;
+      }
    }
-  
-   if(isBlind) ApplyBlindingPP(blindValue,ppInput); 
+
+   if(isBlind) ApplyBlindingPP(blindValue,ppInput);
+
+   // const int NI = ppInput.size();
+   // for(int i=0;i<NI;i++){
+   //    std::cout << Form("PP DAQ run %d, trace %d, freq = %.3lf Hz",ppInput[i].run,ppInput[i].traceNumber[0],ppInput[i].freq[0]) << std::endl;
+   // }
+ 
+   // now parse PP data using subrun list 
+   rc = FilterPlungingProbeData(subRun,ppInput,ppInput2); 
 
    // reference time for oscillation correction
    // need first time of first PP event  
-   double t0 = ppInput[0].time[0]/1E+9;
+   double t0_osc = ppInput2[0].time[0]/1E+9;
 
    std::vector<int> fxprList;
    inputMgr->GetFXPRList(fxprList);
 
+   // load special cut for Run 2 
+   bool isT0Max=false;
+   unsigned long long T0=0; // default reference time for FXPR data  
+   if(runPeriod==2){
+      sprintf(cutPath,"./input/json/run-%d/extra-cuts.json",runPeriod);
+      cutpath = cutPath;
+      T0 = GetFXPRCutTime(cutpath,probeNumber,axis,isT0Max);  
+   }
+
    bool subtractDrift = inputMgr->GetFXPRDriftStatus();  
-   int period = inputMgr->GetNumEventsTimeWindow(); // 10;
+   int period = inputMgr->GetNumEventsTimeWindow(); 
    std::vector<averageFixedProbeEvent_t> fxprData;
    for(int i=0;i<MR;i++){
-      rc = GetFixedProbeData_avg(mRun[i],prMethod,fxprList,fxprData,prodVersion,subtractDrift,period,0);
+      if(isT0Max){
+	 // T0 is an upper bound of the cut 
+	 rc = GetFixedProbeData_avg(mRun[i],prMethod,fxprList,fxprData,prodVersion,subtractDrift,period,0,T0);
+      }else{
+	 // T0 is a lower bound of the cut 
+	 rc = GetFixedProbeData_avg(mRun[i],prMethod,fxprList,fxprData,prodVersion,subtractDrift,period,T0);
+      }
       if(rc!=0){
          std::cout << "No data!" << std::endl;
          return 1;
       }
    }
 
-   // oscillation correction 
+   // oscillation correction
    if(useOscCor){
-      rc = CorrectOscillation_pp(fxprData,ppInput,ppData,t0);
+      rc = CorrectOscillation_pp(fxprData,ppInput2,ppEvent,t0_osc);
    }else{
-      CopyPlungingProbe(ppInput,ppData);
+      CopyPlungingProbe(ppInput2,ppEvent);
    }
 
    // trolley probe coordinates 
    // std::vector<calibSwap_t> trData; 
    // trolleyProbePosition_t trlyPos; 
    // rc = GetTrolleyProbePositions(trlyPos);
-   // double pos[2] = {trlyPos.r[probeNumber-1],trlyPos.y[probeNumber-1]}; 
-
-   // now parse PP data using subrun list 
-   rc = FilterPlungingProbeData(subRun,ppData,ppEvent); 
+   // double pos[2] = {trlyPos.r[probeNumber-1],trlyPos.y[probeNumber-1]};
+ 
    std::cout << "Filtered PP data to use NMR-DAQ runs: " << std::endl;
    int M=0;
    const int NPP = ppEvent.size();
@@ -224,7 +250,7 @@ int LocalScanGrad_pp_prod(std::string configFile){
       stdev   = gm2fieldUtil::Math::GetStandardDeviation<double>(F);
       if(max<mean) max = mean;  
       if(min>mean) min = mean;  
-      std::cout << Form("%d: x = %.3lf mm, y = %.3lf mm, z = %.3lf mm, F = %.3lf +/- %.3lf Hz",
+      std::cout << Form("PP DAQ Run %d: x = %.3lf mm, y = %.3lf mm, z = %.3lf mm, F = %.3lf +/- %.3lf Hz",
                         ppEvent[i].run,mean_x,mean_y,mean_z,mean,stdev) << std::endl;
       // clean up for next event 
       xx.clear();

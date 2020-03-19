@@ -46,7 +46,7 @@ int ModifyPlungingProbeData(int method,plungingProbeAnaEvent_t &data,std::string
 int GetFixedProbeData(int run,int method,int probe,std::vector<fixedProbeEvent_t> &data,std::string version);
 int GetFixedProbeData_avg(int run,int method,std::vector<int> probe,
                           std::vector<averageFixedProbeEvent_t> &data,std::string version,
-                          bool subtractDrift=false,int period=1,unsigned long long t0=0);
+                          bool subtractDrift=false,int period=1,unsigned long long t0=0,unsigned long long tMax=-1);
 
 int GetTrolleyData_avg(bool subtractDrift,int period,std::vector<trolleyAnaEvent_t> trly,std::vector<averageTrolleyAnaEvent_t> &data);  
 

@@ -7,6 +7,7 @@
 #include "TPad.h"
 #include "TCanvas.h"
 #include "TStyle.h"
+#include "TH1F.h"
 
 #include "gm2fieldMath.h"
 #include "gm2fieldImport.h"
@@ -17,7 +18,7 @@ TGraphErrors *GetTGraphErrors(std::string xAxis,std::string yAxis,std::string yA
 
 TMultiGraph *GetTMultiGraph_diff(std::vector< std::vector<double> > X,
                                  std::vector< std::vector<double> > Y,std::vector< std::vector<double> > EY,
-                                 std::vector<std::string> label,double sf=1.,double rho=0.); 
+                                 std::vector<std::string> label,double sf,double rho,TH1F *h); 
 
 int PrintToFile_csv(const char *outpath,std::string xAxis,std::string yAxis,std::string yAxisErr,json data); 
 
@@ -104,22 +105,32 @@ int CompareResults(){
    }   
 
    // load Ran's data
-   json rData;  
-   std::string inpath_ran = "./output/blinded/ran-hong/run-1_10-07-19.json"; 
+   json rData; 
+   std::string ran_fn     = input["compare-ran"]["filename"];  
+   std::string inpath_ran = "./output/blinded/bingzhi-li/" + ran_fn;
    rc = gm2fieldUtil::Import::ImportJSON(inpath_ran,rData);
+   if(rc!=0) return 1; 
+
+   // load Bingzhi's data
+   json bData;  
+   std::string bing_fn     = input["compare-bingzhi"]["filename"];  
+   std::string inpath_bing = "./output/blinded/bingzhi-li/" + bing_fn; 
+   rc = gm2fieldUtil::Import::ImportJSON(inpath_bing,bData);
    if(rc!=0) return 1; 
 
    int NL = label.size();
 
-   bool plotRan = (bool)( (int)input["compare-ran"] );
+   bool plotRan  = (bool)( (int)input["compare-ran"]["enable"] );
+   bool plotBing = (bool)( (int)input["compare-bingzhi"]["enable"] );
+
    if(plotRan){
       label.push_back("Ran"); 
       NL = label.size(); 
       std::cout << "Adding Ran's data to the plots..." << std::endl;
       AddToMultiGraph(kOrange+1,20,label[NL-1],xAxis,yAxis,yAxisErr,rData,mg,L);
-      if(yAxis.compare("calibCoeff_aba")==0){
-	 yAxis    = "calibCoeff"; 
-	 yAxisErr = "calibCoeffErr"; 
+      if(yAxis.compare("calibCoeff_opt")==0){
+	 yAxis    = "calibCoeff_cor"; 
+	 yAxisErr = "calibCoeffErr_cor"; 
       }
       // also gather all data we care about into three doubly-indexed vectors.  
       FillVector(xAxis,rData,x); 
@@ -131,9 +142,36 @@ int CompareResults(){
       std::cout << "--> Done!" << std::endl;
    } 
 
+   x.clear();
+   y.clear();
+   ey.clear();
+
+   yAxis    = "calibCoeff_opt"; 
+   yAxisErr = "calibCoeffErr_opt"; 
+
+   if(plotBing){
+      label.push_back("Bingzhi"); 
+      NL = label.size(); 
+      std::cout << "Adding Bingzhi's data to the plots..." << std::endl;
+      AddToMultiGraph(kCyan+1,20,label[NL-1],xAxis,yAxis,yAxisErr,bData,mg,L);
+      if(yAxis.compare("calibCoeff_opt")==0){
+	 yAxis    = "calibCoeff"; 
+	 yAxisErr = "calibCoeffErr"; 
+      }
+      // also gather all data we care about into three doubly-indexed vectors.  
+      FillVector(xAxis,bData,x); 
+      FillVector(yAxis,bData,y); 
+      FillVector(yAxisErr,bData,ey); 
+      X.push_back(x);  
+      Y.push_back(y);  
+      EY.push_back(ey); 
+      std::cout << "--> Done!" << std::endl;
+   } 
+
    double sf  = 1.; 
-   double rho = input["correlation"];  
-   TMultiGraph *mgDiff = GetTMultiGraph_diff(X,Y,EY,label,sf,rho);
+   double rho = input["correlation"]; 
+   TH1F *h = new TH1F("hDiff","hDiff",100,-10,10);  
+   TMultiGraph *mgDiff = GetTMultiGraph_diff(X,Y,EY,label,sf,rho,h);
    if(plotSim) mgDiff->Add(gSim,"lp");  
    
    TLegend *LD = new TLegend(0.6,0.6,0.8,0.8);
@@ -157,14 +195,21 @@ int CompareResults(){
    mgDiff->GetYaxis()->SetRangeUser(-10,10);  
    mgDiff->Draw("a");
    if(plotSim) LD->Draw("same"); 
-   c1->Update(); 
+   c1->Update();
+ 
+   TCanvas *c2 = new TCanvas("c2","Calibration Comparison Histo",1200,600);
+   c2->cd();
+
+   h->Draw("");
+   c2->Update();  
 
    return 0;
 }
 //______________________________________________________________________________
 TMultiGraph *GetTMultiGraph_diff(std::vector< std::vector<double> > X,
                                  std::vector< std::vector<double> > Y,std::vector< std::vector<double> > EY,
-				 std::vector<std::string> label,double sf,double rho){
+				 std::vector<std::string> label,double sf,double rho,
+                                 TH1F *h){
 
    TMultiGraph *mg = new TMultiGraph(); 
 
@@ -179,7 +224,7 @@ TMultiGraph *GetTMultiGraph_diff(std::vector< std::vector<double> > X,
       for(int j=0;j<M;j++){
 	 arg     = (Y[i][j] - Y[0][j])/sf; 
          arg_err = TMath::Sqrt( EY[i][j]*EY[i][j] + EY[0][j]*EY[0][j] - 2.*rho*EY[i][j]*EY[0][j])/sf; // estimate
-	 if(label[i].compare("Ran")==0){
+	 if(label[i].compare("Ran")==0 || label[i].compare("Bingzhi")==0 ){
 	    arg     = (Y[i][j] - Y[0][j])/sf; 
 	    arg_err = TMath::Sqrt( EY[i][j]*EY[i][j] + EY[0][j]*EY[0][j] - 2.*rho*EY[i][j]*EY[0][j])/sf; // estimate
 	 }
@@ -188,14 +233,17 @@ TMultiGraph *GetTMultiGraph_diff(std::vector< std::vector<double> > X,
 	 // std::cout << X[0][j] << " " << arg << " " << arg_err << std::endl;
 	 x.push_back(X[0][j]);  
          diff.push_back(arg); 
-         diff_err.push_back(arg_err); 
+         diff_err.push_back(arg_err);
+	 // fill histogram 
+	 h->Fill(arg); 
       }
       color = i+1; 
       if(color==3) color = kGreen+1; 
-      if(label[i].compare("Ran")==0 ) color = kOrange+1; 
+      if(label[i].compare("Ran")==0 )     color = kOrange+1; 
+      if(label[i].compare("Bingzhi")==0 ) color = kCyan+1; 
       TGraphErrors *g = gm2fieldUtil::Graph::GetTGraphErrors(x,diff,diff_err);
       gm2fieldUtil::Graph::SetGraphParameters(g,20,color); 
-      mg->Add(g,"lp"); 
+      mg->Add(g,"lp");
       // set up for next data 
       x.clear(); 
       diff.clear();
@@ -207,11 +255,13 @@ TMultiGraph *GetTMultiGraph_diff(std::vector< std::vector<double> > X,
 int AddToMultiGraph(int color,int marker,std::string label,std::string xAxis,std::string yAxis,std::string yAxisErr,
                     json data,TMultiGraph *mg,TLegend *L){
 
-   if( label.compare("Ran")==0 && yAxis.compare("calibCoeff_aba")==0 ){
+   std::cout << label << std::endl;
+   if( (label.compare("Ran")==0||label.compare("Bingzhi")==0) && yAxis.compare("calibCoeff_opt")==0 ){
       // Ran's numbers aren't necessarily ABA, but do have drift
-      yAxis    = "calibCoeff"; 
-      yAxisErr = "calibCoeffErr";
-      std::cout << "[AddToMultiGraph]: Adding Ran's data, using axis = " << yAxis << ", " << yAxisErr << std::endl; 
+      yAxis    = "calibCoeff_cor"; 
+      yAxisErr = "calibCoeffErr_cor";
+      std::cout << Form("[AddToMultiGraph]: Adding %s's data, using axes = %s, %s",
+                        label.c_str(),yAxis.c_str(),yAxisErr.c_str()) << std::endl; 
    }
 
    TGraphErrors *g = GetTGraphErrors(xAxis,yAxis,yAxisErr,data);

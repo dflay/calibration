@@ -184,7 +184,7 @@ int GetTrolleyData_avg(bool subtractDrift,int period,std::vector<trolleyAnaEvent
 //______________________________________________________________________________
 int GetFixedProbeData_avg(int run,int method,std::vector<int> probe,
                           std::vector<averageFixedProbeEvent_t> &data,std::string version,
-                          bool subtractDrift,int period,unsigned long long t0){
+                          bool subtractDrift,int period,unsigned long long t0,unsigned long long tMax){
    // gather AVERAGED fixed probe data according to the probe list input
 
    std::vector<gm2field::fixedProbeFrequency_v1_t> fxpr; 
@@ -201,10 +201,11 @@ int GetFixedProbeData_avg(int run,int method,std::vector<int> probe,
 
    averageFixedProbeEvent_t dataPt; 
    const int NPR = probe.size();
-   std::cout << "[GetFixedProbeData_avg]: Using " << NPR << " probes" << std::endl;
+   std::cout << Form("[GetFixedProbeData_avg]: Loading run %d.  Using %d probes",run,NPR) << std::endl;
 
    unsigned long long arg_t=0;
-   double t0d = t0/1E+9; 
+   double t0d   = t0/1E+9;
+   double tMaxd = tMax/1E+9;  
    double arg_f=0,mean_t=0,mean_f=0,stdev_f=0,f0=0;
    std::vector<double> tt,ff,T,F; 
 
@@ -227,9 +228,18 @@ int GetFixedProbeData_avg(int run,int method,std::vector<int> probe,
       mean_f  = gm2fieldUtil::Math::GetMean<double>(F);
       stdev_f = gm2fieldUtil::Math::GetStandardDeviation<double>(F);
       // store results and clear vectors
-      if(mean_t>=t0d){ 
-	 tt.push_back(mean_t); 
-	 ff.push_back(mean_f);
+      if(tMaxd>0){
+	 // valid stop time
+	 if(mean_t>=t0d && mean_t<tMaxd){
+	    tt.push_back(mean_t); 
+	    ff.push_back(mean_f);
+	 }
+      }else{
+	 // only using start time 
+	 if(mean_t>=t0d){
+	    tt.push_back(mean_t); 
+	    ff.push_back(mean_f);
+	 }
       }
       T.clear();
       F.clear();
@@ -687,6 +697,7 @@ int ModifyPlungingProbeData(int method,plungingProbeAnaEvent_t &data,std::string
 	    data.freq_RF[k]     = data.freq_RF[i];
 	    data.nzc[k]         = data.nzc[i]; 
 	    data.ampl[k]        = data.ampl[i]; 
+	    // std::cout << Form("[ModifyPlungingProbeData]: PP run %d, trace %d, freq = %.3lf Hz",data.run,data.traceNumber[k],data.freq[k]) << std::endl;
 	    k++; // move to next index of modified data set 
 	 }
       }

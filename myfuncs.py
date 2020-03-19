@@ -145,16 +145,21 @@ def writeConfigFileProd_ShimScan(data,confData,tag,keyList,axis,fitData,outpath)
    # build final runlist 
    fRunList   = []
    fLabelList = []
-   # choose midas run that corresponds to the axis we're using
-   NM = len(midasRunList) 
-   if(NM==1): 
-      # if we have a single MIDAS run, use that 
-      fRunList.append(midasRunList[0])
+   # add all MIDAS runs 
+   NM = len(midasRunList)
+   for i in xrange(0,NM): 
+      fRunList.append(midasRunList[i]) 
       fLabelList.append("midas-run")  
-   else: 
-      # otherwise, we choose the index that corresponds to the axis we want  
-      fRunList.append(midasRunList[axis])
-      fLabelList.append("midas-run")  
+ 
+   # if(NM==1): 
+   #    # if we have a single MIDAS run, use that 
+   #    fRunList.append(midasRunList[0])
+   #    fLabelList.append("midas-run")  
+   # else: 
+   #    # otherwise, we choose the index that corresponds to the axis we want  
+   #    fRunList.append(midasRunList[axis])
+   #    fLabelList.append("midas-run") 
+ 
    # add all NMR-ANA subruns -- these are determined from the key ppx, ppy, ppz
    # and hence should match the MIDAS run chosen  
    for sr in nmrAnaRunList: 

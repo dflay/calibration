@@ -84,3 +84,51 @@ TLine **GetLines(int color,double min,double max,std::vector<double> x){
    }
    return L;
 }
+//______________________________________________________________________________
+unsigned long long GetFXPRCutTime(std::string inpath,int probe,int index,bool &isMax){
+
+   json jData;
+   int rc = gm2fieldUtil::Import::ImportJSON(inpath,jData);
+   // create probe key 
+   char pr[20];
+   sprintf(pr,"probe-%02d",probe);
+   std::string probeStr = pr;
+   
+   auto it_key = jData.find(probeStr);  // this is an iterator 
+   if (it_key!=jData.end() ){
+      // not at the end of jData -- found the key 
+   }else{
+      std::cout << Form("[CustomUtilities::GetFXPRCutTime]: No key named: %s.  Returning 0.",probeStr.c_str()) << std::endl;
+      isMax = false;
+      return 0;
+   }
+   
+   // get values
+   std::string timeStr   = jData[probeStr]["fxpr"]["time"][index];
+   std::string state_str = jData[probeStr]["fxpr"]["state"][index];
+
+   // check for empty placeholders (that is, no cut) 
+   if( timeStr.compare("NONE")==0 || state_str.compare("NONE")==0 ){
+      isMax = false;
+      return 0;
+   }
+
+   // is this time an upper bound? 
+   isMax = false;
+   if( state_str.compare("before")==0 ) isMax = true;  
+
+  
+
+   // determine if STD or DST  
+   bool isDST = false;
+   int M = timeStr.size();
+   std::string substr = timeStr.substr(M-3,M-1);
+   if( substr.compare("CST")==0 ){
+      isDST = false; // standard time
+   }else{
+      isDST = true;  // daylight savings time 
+   }
+   unsigned long long TIME = 1E+9*gm2fieldUtil::GetUTCTimeStampFromString(timeStr,isDST);
+
+   return TIME;
+}

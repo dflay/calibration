@@ -22,6 +22,8 @@ int MakeDirectory(const char *path);
 
 std::string GetPath(std::string base,bool isBlind,std::string blindLabel,std::string date,bool isSyst=false,int systDirNum=0); 
 
-TLine **GetLines(int color,double min,double max,std::vector<double> x); 
+TLine **GetLines(int color,double min,double max,std::vector<double> x);
+
+unsigned long long GetFXPRCutTime(std::string inpath,int probe,int index,bool &isMax);  
 
 #endif 

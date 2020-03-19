@@ -100,10 +100,14 @@ int DeltaB_pp_prod(std::string configFile){
    gm2fieldUtil::Blinder *myBlind = new gm2fieldUtil::Blinder(blindLabel,blindMag,blindUnits);
    double blindValue = myBlind->GetBlinding(1); // in Hz
 
-   std::string gradName;
+   std::string gradName,axisName;
    if(axis==0) gradName = "rad"; 
    if(axis==1) gradName = "vert"; 
-   if(axis==2) gradName = "azi"; 
+   if(axis==2) gradName = "azi";
+
+   if(axis==0) axisName = "x"; 
+   if(axis==1) axisName = "y"; 
+   if(axis==2) axisName = "z";
 
    std::vector<int> run;
    std::vector<std::string> label;
@@ -188,7 +192,7 @@ int DeltaB_pp_prod(std::string configFile){
    // PP data
    bool useNMRANA = true; 
    const int N3 = run.size(); 
-   std::vector<plungingProbeAnaEvent_t> ppInput,ppEvent; 
+   std::vector<plungingProbeAnaEvent_t> ppInput,ppInput2,ppEvent; 
    for(int i=0;i<N3;i++){
       std::cout << "Getting PP data for run " << run[i] << "..." << std::endl; 
       rc = GetPlungingProbeData(run[i],prMethod,ppMethod,ppInput,prodVersion,nmrAnaVersion,cutpath,useNMRANA,tempCorValue);
@@ -200,6 +204,24 @@ int DeltaB_pp_prod(std::string configFile){
 
    if(isBlind) ApplyBlindingPP(blindValue,ppInput);
 
+   // cut on data based on whether it's a problem in run 2 details
+   Cut *myCut = new Cut();
+
+   char path[200];
+   sprintf(path,"./input/json/run-%d/extra-cuts.json",runPeriod);
+   cutpath = path; 
+
+   if(runPeriod==2){
+      std::cout << Form("[DeltaB_pp_prod]: Applying additional cut on PP data!") << std::endl;
+      rc = myCut->FilterPPData(runPeriod,probeNumber,"dB",axisName,ppInput,ppInput2,cutpath);
+      if(rc!=0) return 1;
+   }else{
+      // no extra cuts needed, copy over all data to ppInput2 
+      CopyPlungingProbe(ppInput,ppInput2);
+   }
+ 
+   delete myCut; 
+
    // for diagnostics 
 
    // reference time for oscillation correction
@@ -209,9 +231,9 @@ int DeltaB_pp_prod(std::string configFile){
    // oscillation correction 
    if(useOscCor){
       std::cout << "DOING OSCILLATION CORRECTION" << std::endl;
-      rc = CorrectOscillation_pp(fxprData,ppInput,ppEvent,t0);
+      rc = CorrectOscillation_pp(fxprData,ppInput2,ppEvent,t0);
    }else{
-      CopyPlungingProbe(ppInput,ppEvent);
+      CopyPlungingProbe(ppInput2,ppEvent);
    }
    
    const int NPP = ppEvent.size(); 
