@@ -27,7 +27,7 @@ int GetDate(date_t &aDate);
 int MakeDirectory(const char *path);
 int SplitString(std::string delim,std::string myStr,std::vector<std::string> &out); 
 int GetFXPRCutTime(std::string inpath,int probe,int index,
-                   std::vector<unsigned long long> &out,int &cutType);  
+                   unsigned long long &tMin,unsigned long long &tMax);  
 
 std::string GetPath(std::string base,bool isBlind,std::string blindLabel,std::string date,bool isSyst=false,int systDirNum=0); 
 

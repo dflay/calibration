@@ -100,10 +100,14 @@ TLine **GetLines(int color,double min,double max,std::vector<double> x){
 }
 //______________________________________________________________________________
 int GetFXPRCutTime(std::string inpath,int probe,int index,
-                   std::vector<unsigned long long> &out,int &cutType){
+                   unsigned long long &tMin,unsigned long long &tMax){
 
    // cut type: 0 = lower bound time stamp, 1 = upper bound time stamp, 2 = range
-   // out: vector of timestamps for cuts  
+   // output is a lower and upper bound of cuts
+    
+   // first set default values 
+   tMin = 0;
+   tMax = -1;    
 
    json jData;
    int rc = gm2fieldUtil::Import::ImportJSON(inpath,jData);
@@ -111,14 +115,15 @@ int GetFXPRCutTime(std::string inpath,int probe,int index,
    char pr[20];
    sprintf(pr,"probe-%02d",probe);
    std::string probeStr = pr;
-   
+  
+   int cutType = 0;
+ 
    auto it_key = jData.find(probeStr);  // this is an iterator 
    if (it_key!=jData.end() ){
       // not at the end of jData -- found the key 
    }else{
       std::cout << Form("[CustomUtilities::GetFXPRCutTime]: No key named: %s.  Returning 0.",probeStr.c_str()) << std::endl;
       cutType = 0;
-      out.push_back(0);
       return 0;
    }
    
@@ -128,8 +133,8 @@ int GetFXPRCutTime(std::string inpath,int probe,int index,
 
    // check for empty placeholders (that is, no cut) 
    if( timeStr.compare("NONE")==0 || state_str.compare("NONE")==0 ){
+      std::cout << Form("[CustomUtilities::GetFXPRCutTime]: No cut detected!  Returning 0.") << std::endl;
       cutType = 0;
-      out.push_back(0);
       return 0;
    }
 
@@ -161,11 +166,11 @@ int GetFXPRCutTime(std::string inpath,int probe,int index,
       std::cout << "[CustomUtilities::GetFXPRCutTime]: ERROR! Time vector size is > 1, state is not range!" << std::endl;
       std::cout << "                                   Assume lower bound of time = 0 and returning." << std::endl;
       cutType = 0;
-      out.push_back(0);
       return 0;
    }
 
    // convert to UTC
+   std::vector<unsigned long long> timeCut; 
    int M=0; 
    bool isDST=false;
    unsigned long long TIME=0;
@@ -182,7 +187,19 @@ int GetFXPRCutTime(std::string inpath,int probe,int index,
       }
       TIME = 1E+9*gm2fieldUtil::GetUTCTimeStampFromString(tsv[i],isDST);
       std::cout << Form("[CustomUtilities::GetFXPRCutTime]: time cut = %s (%.0lf)",tsv[i].c_str(),TIME/1E+9) << std::endl;
-      out.push_back(TIME); 
+      timeCut.push_back(TIME); 
+   }
+
+    if(cutType==kLowerBound){
+      // lower bound
+      tMin = timeCut[0];
+   }else if(cutType==kUpperBound){
+      // upper bound 
+      tMax = timeCut[0];
+   }else if(cutType==kRange){
+      // cut range
+      tMin = timeCut[0];
+      tMax = timeCut[1];
    }
 
    return 0;

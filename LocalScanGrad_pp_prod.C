@@ -164,7 +164,7 @@ int LocalScanGrad_pp_prod(std::string configFile){
 
    // PP data 
    bool useNMRANA = true;
-   std::vector<plungingProbeAnaEvent_t> ppEvent,ppInput,ppInput2; 
+   std::vector<plungingProbeAnaEvent_t> ppEvent,ppInput,ppInput2,ppInput3; 
    for(int i=0;i<MR;i++){
       std::cout << "Getting PP data from MIDAS run " << mRun[i] << "..." << std::endl; 
       rc = GetPlungingProbeData(mRun[i],prMethod,ppMethod,ppInput,prodVersion,nmrAnaVersion,cutPath,useNMRANA,tempCorValue);
@@ -184,34 +184,27 @@ int LocalScanGrad_pp_prod(std::string configFile){
    // now parse PP data using subrun list 
    rc = FilterPlungingProbeData(subRun,ppInput,ppInput2); 
 
-   // reference time for oscillation correction
-   // need first time of first PP event  
-   double t0_osc = ppInput2[0].time[0]/1E+9;
-
    std::vector<int> fxprList;
    inputMgr->GetFXPRList(fxprList);
 
    // special time cut for the FXPR data (run 2 only)
-   int cutType=-1;
-   std::vector<unsigned long long> timeCut;
+   // time cut for the FXPR data
+   cutpath = "./input/json/run-2/extra-cuts.json";
+   Cut *myCut = new Cut();
    unsigned long long tMin=0,tMax=-1;
-
    if(runPeriod==2){
-      sprintf(cutPath,"./input/json/run-%d/extra-cuts.json",runPeriod);
-      cutpath = cutPath;
-      rc = GetFXPRCutTime(cutpath,probeNumber,axis,timeCut,cutType);
-      if(cutType==kLowerBound){
-	 // lower bound
-	 tMin = timeCut[0];
-      }else if(cutType==kUpperBound){
-	 // upper bound 
-	 tMax = timeCut[0];
-      }else if(cutType==kRange){
-	 // cut range
-	 tMin = timeCut[0];
-	 tMax = timeCut[1];
+      rc = GetFXPRCutTime(cutpath,probeNumber,axis,tMin,tMax);
+      // filter PP data
+      if(probeNumber==8){
+	 rc = myCut->FilterPPData(runPeriod,probeNumber,"shim",Axis,ppInput2,ppInput3,cutpath);
+      }else{
+	 CopyPlungingProbe(ppInput2,ppInput3);
       }
+   }else{
+      // no additional cuts needed, copy to final input vector 
+      CopyPlungingProbe(ppInput2,ppInput3);
    }
+   delete myCut;
 
    bool subtractDrift = inputMgr->GetFXPRDriftStatus();  
    int period = inputMgr->GetNumEventsTimeWindow(); 
@@ -224,11 +217,15 @@ int LocalScanGrad_pp_prod(std::string configFile){
       }
    }
 
+   // reference time for oscillation correction
+   // need first time of first PP event  
+   double t0_osc = ppInput3[0].time[0]/1E+9;
+
    // oscillation correction
    if(useOscCor){
-      rc = CorrectOscillation_pp(fxprData,ppInput2,ppEvent,t0_osc);
+      rc = CorrectOscillation_pp(fxprData,ppInput3,ppEvent,t0_osc);
    }else{
-      CopyPlungingProbe(ppInput2,ppEvent);
+      CopyPlungingProbe(ppInput3,ppEvent);
    }
 
    // trolley probe coordinates 

@@ -66,6 +66,11 @@ int PlotPP(){
    int prMethod    = gm2fieldUtil::Constants::kPhaseDerivative;
    int ppMethod    = plungingProbeAnalysis::kLeastSquaresPhase;
 
+   std::string axisName; 
+   if(axis==0) axisName = "x"; 
+   if(axis==1) axisName = "y"; 
+   if(axis==2) axisName = "z"; 
+
    std::string cutFile = "cutData.json";
 
    char cutPath[200];
@@ -81,7 +86,7 @@ int PlotPP(){
    int probe = 1;
 
    const int N = run.size();
-   std::vector<plungingProbeAnaEvent_t> ppData;
+   std::vector<plungingProbeAnaEvent_t> ppData,ppEvent;
    for(int i=0;i<N;i++){
       std::cout << "Getting PP data for run " << run[i] << "..." << std::endl;
       rc = GetPlungingProbeData(run[i],prMethod,ppMethod,ppData,prodVersion,nmrAnaVersion,cutpath,useNMRANA,tempCorValue);
@@ -95,23 +100,9 @@ int PlotPP(){
    rc = gm2fieldUtil::Import::ImportData1<int>("./input/probe-lists/fxpr-list_set-1.csv","csv",fxprList); 
    
    // time cut for the FXPR data
-   int cutType=-1; 
    cutpath = "./input/json/run-2/extra-cuts.json";
-   std::vector<unsigned long long> timeCut;  
-   rc = GetFXPRCutTime(cutpath,probeNumber,axis,timeCut,cutType); 
-  
    unsigned long long tMin=0,tMax=-1;
-   if(cutType==kLowerBound){
-      // lower bound
-      tMin = timeCut[0]; 
-   }else if(cutType==kUpperBound){
-      // upper bound 
-      tMax = timeCut[0]; 
-   }else if(cutType==kRange){
-      // cut range
-      tMin = timeCut[0]; 
-      tMax = timeCut[1]; 
-   }
+   rc = GetFXPRCutTime(cutpath,probeNumber,axis,tMin,tMax); 
  
    bool subtractDrift = true;
    int period         = 10;
@@ -125,6 +116,11 @@ int PlotPP(){
       }
    }
 
+   // filter PP data
+   Cut *myCut = new Cut();
+   rc = myCut->FilterPPData(runPeriod,probeNumber,"shim",axisName,ppData,ppEvent,cutpath);
+   delete myCut;  
+
    // Fixed probe plot 
    TGraph *gFXPR = GetFXPRTGraph_avg("GpsTimeStamp","freq","NONE",fxprData);
    gm2fieldUtil::Graph::SetGraphParameters(gFXPR,21,kBlack);
@@ -136,17 +132,22 @@ int PlotPP(){
    TGraph *g1 = GetPPTGraph1("TimeStamp","freq",ppData);
    gm2fieldUtil::Graph::SetGraphParameters(g1,25,kBlack);
 
+   TGraph *g2 = GetPPTGraph1("TimeStamp","freq",ppEvent);
+   gm2fieldUtil::Graph::SetGraphParameters(g2,47,kRed);
+
    TLegend *L = new TLegend(0.6,0.6,0.8,0.8); 
    L->AddEntry(g1,"All Data","p"); 
+   L->AddEntry(g2,"Passed Cut Data","p"); 
 
    TMultiGraph *mg = new TMultiGraph();
    mg->Add(g1,"lp"); 
+   
+   AddPPMultiGraph("TimeStamp","freq",ppData,mg,L);   
+   mg->Add(g2,"lp"); 
 
    TMultiGraph *mgfp = new TMultiGraph();
    mgfp->Add(gFXPR ,"lp"); 
    mgfp->Add(gFXPRf,"lp"); 
-  
-   AddPPMultiGraph("TimeStamp","freq",ppData,mg,L);   
 
    const int NFP = fxprData.size(); 
    double xMin = fxprData[0].time/1E+9; 

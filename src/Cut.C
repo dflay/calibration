@@ -132,11 +132,11 @@ int Cut::FilterPPData(int runPeriod,int probe,std::string type,std::string axis,
    // FILTER PP DATA
    // we may have multiple runs with different data sets in them 
    // this function filters data based on an input file 
-   // type = data type we are analyzing.  Data type must be dB  
+   // type = data type we are analyzing.  Data type must be dB or shim 
    
    const int N = in.size();
 
-   if(type.compare("dB")!=0){
+   if(type.compare("dB")!=0 && type.compare("shim")!=0 ){
       std::cout << "[FilterData]: Invalid key type " << type << std::endl;
       return 1;
    }
@@ -233,13 +233,70 @@ int Cut::FilterPPData(int runPeriod,int probe,std::string type,std::string axis,
    // apply the cut 
    unsigned long theTime=0;
 
-   M = in[0].numTraces; 
+   plungingProbeAnaEvent_t d; 
+   std::vector<plungingProbeAnaEvent_t> data; 
+
+   // check every trace
+   bool passCut=false;
+   int k=0,l=0; 
    for(int i=0;i<N;i++){
-      theTime = in[i].time[M-1]; // use time of last event in a run 
-      if(cutType==kLOWER) if(theTime>timeCut[0]) out.push_back(in[i]);  
-      if(cutType==kUPPER) if(theTime<timeCut[0]) out.push_back(in[i]);  
-      if(cutType==kRANGE) if(theTime>timeCut[0]&&theTime<timeCut[1]) out.push_back(in[i]);  
+      M = in[i].numTraces;
+      for(int j=0;j<M;j++){
+	 theTime            = in[i].time[j];
+         d.run              = in[i].run;
+         d.midasRun         = in[i].midasRun;
+	 d.time[l]          = theTime;
+	 d.t2Time[l]        = in[i].t2Time[j];
+	 d.nzc[l]           = in[i].nzc[j];
+	 d.traceNumber[l]   = in[i].traceNumber[j];
+	 d.channelNumber[l] = in[i].channelNumber[j];
+	 d.freq_LO[l]       = in[i].freq_LO[j];
+	 d.freq_RF[l]       = in[i].freq_RF[j];
+	 d.freq[l]          = in[i].freq[j];
+	 d.freq_err[l]      = in[i].freq_err[j];
+	 d.r[l]             = in[i].r[j];
+	 d.y[l]             = in[i].y[j];
+	 d.phi[l]           = in[i].phi[j];
+	 d.temp[l]          = in[i].temp[j];
+	 d.temp_err[l]      = in[i].temp_err[j]; 
+	 if(cutType==kLOWER && theTime>timeCut[0]){
+	    // advance num traces k, and trace index l 
+	    passCut = true; 
+	 } 
+	 if(cutType==kUPPER && theTime<timeCut[0]){
+	    // advance num traces k, and trace index l 
+	    passCut = true; 
+	 } 
+	 if(cutType==kRANGE && theTime>timeCut[0] && theTime<timeCut[1]){
+	    // advance num traces k, and trace index l
+	    passCut = true; 
+	 }
+         if(passCut){
+	    k++;
+	    l++; 
+	    d.numTraces = k; 
+         }
+	 // reset for next event
+	 passCut = false; 
+      }
+      // push back on the data which is cut according to the above  
+      if(k>0) data.push_back(d);  // push back only if we've accumulated events 
+      // reset for next PP-DAQ run  
+      k = 0;
+      l = 0;
    }
+
+   // fill output vector
+   int ND = data.size();
+   for(int i=0;i<ND;i++) out.push_back(data[i]); 
+
+   // M = in[0].numTraces;
+   // for(int i=0;i<N;i++){
+   //    theTime = in[i].time[M-1];  // use last time stamp of PP-DAQ runs 
+   //    if(cutType==kLOWER) if(theTime>timeCut[0]) out.push_back(in[i]);  
+   //    if(cutType==kUPPER) if(theTime<timeCut[0]) out.push_back(in[i]);  
+   //    if(cutType==kRANGE) if(theTime>timeCut[0]&&theTime<timeCut[1]) out.push_back(in[i]);  
+   // }
 
    std::cout << "[Cut::FilterPPData]: Size of output vector = " << out.size() << std::endl;
 
