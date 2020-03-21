@@ -191,26 +191,33 @@ int LocalScanGrad_pp_prod(std::string configFile){
    std::vector<int> fxprList;
    inputMgr->GetFXPRList(fxprList);
 
-   // load special cut for Run 2 
-   bool isT0Max=false;
-   unsigned long long T0=0; // default reference time for FXPR data  
+   // special time cut for the FXPR data (run 2 only)
+   int cutType=-1;
+   std::vector<unsigned long long> timeCut;
+   unsigned long long tMin=0,tMax=-1;
+
    if(runPeriod==2){
       sprintf(cutPath,"./input/json/run-%d/extra-cuts.json",runPeriod);
       cutpath = cutPath;
-      T0 = GetFXPRCutTime(cutpath,probeNumber,axis,isT0Max);  
+      rc = GetFXPRCutTime(cutpath,probeNumber,axis,timeCut,cutType);
+      if(cutType==kLowerBound){
+	 // lower bound
+	 tMin = timeCut[0];
+      }else if(cutType==kUpperBound){
+	 // upper bound 
+	 tMax = timeCut[0];
+      }else if(cutType==kRange){
+	 // cut range
+	 tMin = timeCut[0];
+	 tMax = timeCut[1];
+      }
    }
 
    bool subtractDrift = inputMgr->GetFXPRDriftStatus();  
    int period = inputMgr->GetNumEventsTimeWindow(); 
    std::vector<averageFixedProbeEvent_t> fxprData;
    for(int i=0;i<MR;i++){
-      if(isT0Max){
-	 // T0 is an upper bound of the cut 
-	 rc = GetFixedProbeData_avg(mRun[i],prMethod,fxprList,fxprData,prodVersion,subtractDrift,period,0,T0);
-      }else{
-	 // T0 is a lower bound of the cut 
-	 rc = GetFixedProbeData_avg(mRun[i],prMethod,fxprList,fxprData,prodVersion,subtractDrift,period,T0);
-      }
+      rc = GetFixedProbeData_avg(mRun[i],prMethod,fxprList,fxprData,prodVersion,subtractDrift,period,tMin,tMax);
       if(rc!=0){
          std::cout << "No data!" << std::endl;
          return 1;

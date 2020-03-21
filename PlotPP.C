@@ -49,12 +49,20 @@ int PlotPP(){
    int rc=0;
 
    std::vector<int> run;
-   run.push_back(6734);
-   run.push_back(6735);
+   // run 2, probe 1 
+   // run.push_back(6078); 
+   // run.push_back(6079);
+   // run 2, probe 7  
+   // run.push_back(6734);
+   // run.push_back(6735);
+   // run 2, probe 8
+   run.push_back(6746);
+   run.push_back(6747);
+   run.push_back(6749);
 
    int runPeriod   = 2;
-   int probeNumber = 7;
-   int axis        = 2; 
+   int probeNumber = 8; 
+   int axis        = 1;  
    int prMethod    = gm2fieldUtil::Constants::kPhaseDerivative;
    int ppMethod    = plungingProbeAnalysis::kLeastSquaresPhase;
 
@@ -87,20 +95,30 @@ int PlotPP(){
    rc = gm2fieldUtil::Import::ImportData1<int>("./input/probe-lists/fxpr-list_set-1.csv","csv",fxprList); 
    
    // time cut for the FXPR data
-   bool isMax=false;
-   cutpath = "./input/json/run-2/extra-cuts.json"; 
-   unsigned long long t0 = GetFXPRCutTime(cutpath,probeNumber,axis,isMax); 
-   
+   int cutType=-1; 
+   cutpath = "./input/json/run-2/extra-cuts.json";
+   std::vector<unsigned long long> timeCut;  
+   rc = GetFXPRCutTime(cutpath,probeNumber,axis,timeCut,cutType); 
+  
+   unsigned long long tMin=0,tMax=-1;
+   if(cutType==kLowerBound){
+      // lower bound
+      tMin = timeCut[0]; 
+   }else if(cutType==kUpperBound){
+      // upper bound 
+      tMax = timeCut[0]; 
+   }else if(cutType==kRange){
+      // cut range
+      tMin = timeCut[0]; 
+      tMax = timeCut[1]; 
+   }
+ 
    bool subtractDrift = true;
    int period         = 10;
    std::vector<averageFixedProbeEvent_t> fxprData,fxprFltr;
    for(int i=0;i<N;i++){
       rc = GetFixedProbeData_avg(run[i],prMethod,fxprList,fxprData,prodVersion,subtractDrift,period);
-      if(isMax){
-	 rc = GetFixedProbeData_avg(run[i],prMethod,fxprList,fxprFltr,prodVersion,subtractDrift,period,0,t0);
-      }else{
-	 rc = GetFixedProbeData_avg(run[i],prMethod,fxprList,fxprFltr,prodVersion,subtractDrift,period,t0);
-      }
+      rc = GetFixedProbeData_avg(run[i],prMethod,fxprList,fxprFltr,prodVersion,subtractDrift,period,tMin,tMax);
       if(rc!=0){
          std::cout << "No data!" << std::endl;
          return 1;

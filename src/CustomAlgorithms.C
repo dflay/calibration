@@ -178,15 +178,15 @@ int FilterPlungingProbeData(std::vector<int> subRun,
    plungingProbeAnaEvent_t data;
    for(int i=0;i<N;i++){ // PP-DAQ run loop
       nmrDAQ_run = x[i].run; 
-      std::cout << "Looking for run " << nmrDAQ_run << std::endl;
+      // std::cout << "Looking for run " << nmrDAQ_run << std::endl;
       for(int j=0;j<M;j++){ // sub run loop 
          if(nmrDAQ_run==subRun[j]){
             CopyPlungingProbe(x[i],data);
             y.push_back(data);
-	    for(int k=0;k<L;k++){
-	       std::cout << Form("[FilterPlungingProbeData]: FOUND: run %d, trace %d, freq = %.3lf Hz",
-                              data.run,data.traceNumber[k],data.freq[k]) << std::endl;
-	    }
+	    // for(int k=0;k<L;k++){
+	    //    std::cout << Form("[FilterPlungingProbeData]: FOUND: run %d, trace %d, freq = %.3lf Hz",
+            //                   data.run,data.traceNumber[k],data.freq[k]) << std::endl;
+	    // }
          }
       }
    }

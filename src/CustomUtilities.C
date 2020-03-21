@@ -1,5 +1,19 @@
 #include "../include/CustomUtilities.h"
 //______________________________________________________________________________
+int SplitString(std::string delim,std::string myStr,std::vector<std::string> &out){
+   // split a string by a delimiter
+   stringstream ss(myStr);
+   std::vector<string> result;
+
+   while( ss.good() ){
+      std::string substr;
+      if(delim.compare(",")==0) std::getline(ss,substr,',');
+      if(delim.compare(" ")==0) std::getline(ss,substr,' ');
+      out.push_back(substr);
+   } 
+   return 0;
+}
+//______________________________________________________________________________
 int PrintMessage(std::string label,std::string msg,int lineNumber){
    if(lineNumber>=0){
       std::cout << "[" << label << "]: line " << lineNumber << ": " << msg << std::endl;
@@ -85,7 +99,11 @@ TLine **GetLines(int color,double min,double max,std::vector<double> x){
    return L;
 }
 //______________________________________________________________________________
-unsigned long long GetFXPRCutTime(std::string inpath,int probe,int index,bool &isMax){
+int GetFXPRCutTime(std::string inpath,int probe,int index,
+                   std::vector<unsigned long long> &out,int &cutType){
+
+   // cut type: 0 = lower bound time stamp, 1 = upper bound time stamp, 2 = range
+   // out: vector of timestamps for cuts  
 
    json jData;
    int rc = gm2fieldUtil::Import::ImportJSON(inpath,jData);
@@ -99,7 +117,8 @@ unsigned long long GetFXPRCutTime(std::string inpath,int probe,int index,bool &i
       // not at the end of jData -- found the key 
    }else{
       std::cout << Form("[CustomUtilities::GetFXPRCutTime]: No key named: %s.  Returning 0.",probeStr.c_str()) << std::endl;
-      isMax = false;
+      cutType = 0;
+      out.push_back(0);
       return 0;
    }
    
@@ -109,26 +128,62 @@ unsigned long long GetFXPRCutTime(std::string inpath,int probe,int index,bool &i
 
    // check for empty placeholders (that is, no cut) 
    if( timeStr.compare("NONE")==0 || state_str.compare("NONE")==0 ){
-      isMax = false;
+      cutType = 0;
+      out.push_back(0);
       return 0;
    }
 
-   // is this time an upper bound? 
-   isMax = false;
-   if( state_str.compare("before")==0 ) isMax = true;  
-
-  
-
-   // determine if STD or DST  
-   bool isDST = false;
-   int M = timeStr.size();
-   std::string substr = timeStr.substr(M-3,M-1);
-   if( substr.compare("CST")==0 ){
-      isDST = false; // standard time
+   // check if the time string is actually more than one timestamp (i.e., defines a cut range)
+   bool isCutRange=false;
+   std::vector<std::string> tsv; 
+   std::string::size_type n; 
+   n = timeStr.find(',');  // search for a comma character from beginning of string  
+   if(n==std::string::npos){
+      // no comma, this is a single timestamp
+      tsv.push_back(timeStr); 
    }else{
-      isDST = true;  // daylight savings time 
-   }
-   unsigned long long TIME = 1E+9*gm2fieldUtil::GetUTCTimeStampFromString(timeStr,isDST);
+      // comma found, is a cut range 
+      isCutRange = true;
+      rc = SplitString(",",timeStr,tsv); // split to a vector 
+   } 
 
-   return TIME;
+   // verify cut type  
+   if( state_str.compare("lower")==0 ){
+      cutType = kLowerBound;
+   }else if( state_str.compare("upper")==0){
+      cutType = kUpperBound; 
+   }else if( state_str.compare("range")==0){
+      cutType = kRange; 
+   } 
+
+   // consistency check
+   if(isCutRange==true && cutType!=2){
+      std::cout << "[CustomUtilities::GetFXPRCutTime]: ERROR! Time vector size is > 1, state is not range!" << std::endl;
+      std::cout << "                                   Assume lower bound of time = 0 and returning." << std::endl;
+      cutType = 0;
+      out.push_back(0);
+      return 0;
+   }
+
+   // convert to UTC
+   int M=0; 
+   bool isDST=false;
+   unsigned long long TIME=0;
+   const int NT = tsv.size();
+   std::string substr; 
+   for(int i=0;i<NT;i++){
+      // determine if STD or DST  
+      M = tsv[i].size();
+      substr = tsv[i].substr(M-3,M-1);
+      if( substr.compare("CST")==0 ){
+	 isDST = false; // standard time
+      }else{
+	 isDST = true;  // daylight savings time 
+      }
+      TIME = 1E+9*gm2fieldUtil::GetUTCTimeStampFromString(tsv[i],isDST);
+      std::cout << Form("[CustomUtilities::GetFXPRCutTime]: time cut = %s (%.0lf)",tsv[i].c_str(),TIME/1E+9) << std::endl;
+      out.push_back(TIME); 
+   }
+
+   return 0;
 }

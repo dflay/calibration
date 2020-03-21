@@ -1,6 +1,9 @@
 #include "../include/Cut.h"
 //______________________________________________________________________________
 Cut::Cut(std::string filepath,int verbosity){
+   // kLOWER = 0;
+   // kUPPER = 1;
+   // kRANGE = 2;
    fVerbosity = verbosity;
    if( filepath.compare("UNKNOWN.json")!=0 ){
       LoadData(filepath);
@@ -129,11 +132,11 @@ int Cut::FilterPPData(int runPeriod,int probe,std::string type,std::string axis,
    // FILTER PP DATA
    // we may have multiple runs with different data sets in them 
    // this function filters data based on an input file 
-   // type = data type we are analyzing.  Can be either dB or shim 
+   // type = data type we are analyzing.  Data type must be dB  
    
    const int N = in.size();
 
-   if(type.compare("dB")!=0 && type.compare("shim")!=0 ){
+   if(type.compare("dB")!=0){
       std::cout << "[FilterData]: Invalid key type " << type << std::endl;
       return 1;
    }
@@ -158,7 +161,7 @@ int Cut::FilterPPData(int runPeriod,int probe,std::string type,std::string axis,
    }
 
    // get values
-   std::string timeStr   = jData[probeStr]["time"];
+   std::string timeStr   = jData[probeStr][type]["time"];
    std::string state_str = jData[probeStr][type]["state"]; 
    std::string axis_str  = jData[probeStr][type]["axis"]; 
 
@@ -172,35 +175,70 @@ int Cut::FilterPPData(int runPeriod,int probe,std::string type,std::string axis,
 
    // now we will actually make the cut; start with the timestamp 
 
-   // determine if STD or DST  
-   bool isDST = false;
-   int M = timeStr.size();
-   std::string substr = timeStr.substr(M-3,M-1);
-   // std::cout << st << "," << substr << std::endl; 
-   if( substr.compare("CST")==0 ){
-      isDST = false; // standard time
+   // check if the time string is actually more than one timestamp (i.e., defines a cut range)
+   int cutType=-1;
+   bool isCutRange=false;
+   std::vector<std::string> tsv;
+   std::string::size_type n;
+   n = timeStr.find(',');  // search for a comma character from beginning of string  
+   if(n==std::string::npos){
+      // no comma, this is a single timestamp
+      tsv.push_back(timeStr);
    }else{
-      isDST = true;  // daylight savings time 
+      // comma found, is a cut range 
+      isCutRange = true;
+      rc = SplitString(",",timeStr,tsv); // split to a vector 
    }
-   unsigned long TIME = gm2fieldUtil::GetUTCTimeStampFromString(timeStr,isDST);
 
-   // if(fVerbosity>0){
-      std::cout << Form("[Cut::FilterPPData]: Applying the cut to run %d, probe %02d data: time = %s (%lu), %s = cut %s",
-	                runPeriod,probe,timeStr.c_str(),TIME,type.c_str(),state_str.c_str()) << std::endl;
-   // }
+   // verify cut type  
+   if( state_str.compare("lower")==0 ){
+      cutType = kLOWER;
+   }else if( state_str.compare("upper")==0){
+      cutType = kUPPER;
+   }else if( state_str.compare("range")==0){
+      cutType = kRANGE;
+   }
+
+   // consistency check
+   if(isCutRange==true && cutType!=2){
+      std::cout << "[Cut::FilterPPData]: ERROR! Time vector size is > 1, state is not range!" << std::endl;
+      std::cout << "                                   Keeping all data and returning." << std::endl;
+      for(int i=0;i<N;i++) out.push_back(in[i]);  
+      return 0;
+   }
+
+   // convert to UTC
+   int M=0;
+   bool isDST=false;
+   unsigned long long TIME=0;
+   const int NT = tsv.size();
+   std::vector<unsigned long long> timeCut;
+   std::string substr;
+   for(int i=0;i<NT;i++){
+      // determine if STD or DST  
+      M = tsv[i].size();
+      substr = tsv[i].substr(M-3,M-1);
+      if( substr.compare("CST")==0 ){
+         isDST = false; // standard time
+      }else{
+         isDST = true;  // daylight savings time 
+      }
+      TIME = 1E+9*gm2fieldUtil::GetUTCTimeStampFromString(tsv[i],isDST); // convert to ns
+      timeCut.push_back(TIME);
+   }
+
+   std::cout << Form("[Cut::FilterPPData]: Applying the cut to run %d, probe %02d data: time = %s, %s cut = %s",
+	             runPeriod,probe,timeStr.c_str(),type.c_str(),state_str.c_str()) << std::endl;
 
    // apply the cut 
    unsigned long theTime=0;
 
    M = in[0].numTraces; 
-
    for(int i=0;i<N;i++){
-      theTime = in[i].time[M-1]/1E+9; // input time is in ns, convert to sec.  use time of last event in a run  
-      if( state_str.compare("before")==0 ){
-	 if( theTime<TIME ) out.push_back(in[i]);
-      }else if( state_str.compare("after")==0 ){
-	 if( theTime>TIME ) out.push_back(in[i]);
-      }
+      theTime = in[i].time[M-1]; // use time of last event in a run 
+      if(cutType==kLOWER) if(theTime>timeCut[0]) out.push_back(in[i]);  
+      if(cutType==kUPPER) if(theTime<timeCut[0]) out.push_back(in[i]);  
+      if(cutType==kRANGE) if(theTime>timeCut[0]&&theTime<timeCut[1]) out.push_back(in[i]);  
    }
 
    std::cout << "[Cut::FilterPPData]: Size of output vector = " << out.size() << std::endl;

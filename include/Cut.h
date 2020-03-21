@@ -18,6 +18,7 @@
 class Cut { 
 
    private:
+      static const int kLOWER=0,kUPPER=1,kRANGE=2;
       int fVerbosity;  
       json fData;
 
