@@ -45,6 +45,7 @@
 #include "./src/SystFuncs.C"
 
 int GetAziGrad(TGraph *g,double &grad,double &gradErr);
+int GetLinearGrad(TGraph *g,double &grad,double &gradErr); 
 int GetCoordinates(std::vector<calibSwap_t> data,std::vector<double> &r); 
 int RedefineOrigin(std::vector<plungingProbeAnaEvent_t> &data,std::vector<double> r0); 
 
@@ -365,26 +366,42 @@ int LocalScanGrad_pp_prod(std::string configFile){
    double sum_sq=0;
 
    double XX[3] = {X,0.,0.}; 
- 
-   if(axis!=2){
-      std::cout << "The trolley coordinate is " << X << " mm" << std::endl;
+   
+   int NPTS = ppEvent.size(); // how many data points do we have? 
+
+   // std::cout << "The trolley coordinate is " << X << " mm" << std::endl;
+   if(NPTS>2){
       dBdr     = myFit->Derivative(X);  // evaluate at the trolley probe position of interest 
       dBdr_err = GetFitError(myFit,fitResult,MyPolyFitFuncDerivative,XX);   
-      // if( fitFunc.compare("pol1")==0 ){
-      //    dBdr_err = parErr[1]; 
-      // }else if( fitFunc.compare("pol2")==0 ){
-      //    sum_sq   = TMath::Power(parErr[1],2.)  
-      //             + TMath::Power(2.*parErr[2]*X,2.);   
-      //    dBdr_err = TMath::Sqrt(sum_sq);  
-      // }else if( fitFunc.compare("pol3")==0 ){
-      //    sum_sq   = TMath::Power(parErr[1],2.)  
-      //             + TMath::Power(2.*parErr[2]*X,2.)  
-      //             + TMath::Power(9.*parErr[3]*X*X,2.); 
-      //    dBdr_err = TMath::Sqrt(sum_sq);  
-      // }
-   }else{
-      rc = GetAziGrad(g,dBdr,dBdr_err);
-   }
+    }else if(NPTS==2){
+       // two or less points, use a linear fit 
+       rc = GetLinearGrad(g,dBdr,dBdr_err);
+    }else{
+       std::cout << "[LocalScanGrad_pp_prod]: ERROR! Insufficient data points = " 
+                 << NPTS << "!  Assuming 1000 Hz/mm" << std::endl;
+       dBdr     = 1000.; 
+       dBdr_err = 1000.; 
+    }
+ 
+   // if(axis!=2){
+   //    // std::cout << "The trolley coordinate is " << X << " mm" << std::endl;
+   //    dBdr     = myFit->Derivative(X);  // evaluate at the trolley probe position of interest 
+   //    dBdr_err = GetFitError(myFit,fitResult,MyPolyFitFuncDerivative,XX);   
+   //    // if( fitFunc.compare("pol1")==0 ){
+   //    //    dBdr_err = parErr[1]; 
+   //    // }else if( fitFunc.compare("pol2")==0 ){
+   //    //    sum_sq   = TMath::Power(parErr[1],2.)  
+   //    //             + TMath::Power(2.*parErr[2]*X,2.);   
+   //    //    dBdr_err = TMath::Sqrt(sum_sq);  
+   //    // }else if( fitFunc.compare("pol3")==0 ){
+   //    //    sum_sq   = TMath::Power(parErr[1],2.)  
+   //    //             + TMath::Power(2.*parErr[2]*X,2.)  
+   //    //             + TMath::Power(9.*parErr[3]*X*X,2.); 
+   //    //    dBdr_err = TMath::Sqrt(sum_sq);  
+   //    // }
+   // }else{
+   //    rc = GetAziGrad(g,dBdr,dBdr_err);
+   // }
 
    // WARNING: not using the drift-corrected result.  Those probes are too far away!  
    PR[0] = dBdr; 
@@ -451,6 +468,23 @@ int GetCoordinates(std::vector<calibSwap_t> data,std::vector<double> &r){
 
    return 0;
 
+}
+//______________________________________________________________________________
+int GetLinearGrad(TGraph *g,double &grad,double &gradErr){
+   // for the case where we have two data points 
+   const int N = g->GetN(); 
+   double *x   = g->GetX();
+   double *y   = g->GetY();
+   double *ey  = g->GetEY();
+
+   double df   = y[1]-y[0]; 
+   double dx   = x[1]-x[0];
+
+   // compute gradient 
+   grad    = df/dx; 
+   gradErr = TMath::Abs(grad);   // take absolute value 
+
+   return 0; 
 }
 //______________________________________________________________________________
 int GetAziGrad(TGraph *g,double &grad,double &gradErr){

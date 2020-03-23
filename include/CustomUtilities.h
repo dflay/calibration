@@ -22,10 +22,10 @@ enum cutType_util{
    kRange      = 2
 };
  
+// int SplitString(std::string delim,std::string myStr,std::vector<std::string> &out); 
 int PrintMessage(std::string label,std::string msg,int lineNumber=-1);
 int GetDate(date_t &aDate);
 int MakeDirectory(const char *path);
-int SplitString(std::string delim,std::string myStr,std::vector<std::string> &out); 
 int GetFXPRCutTime(std::string inpath,int probe,int index,
                    unsigned long long &tMin,unsigned long long &tMax);  
 

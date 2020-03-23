@@ -187,7 +187,7 @@ int Cut::FilterPPData(int runPeriod,int probe,std::string type,std::string axis,
    }else{
       // comma found, is a cut range 
       isCutRange = true;
-      rc = SplitString(",",timeStr,tsv); // split to a vector 
+      rc = gm2fieldUtil::SplitString(',',timeStr,tsv); // split to a vector 
    }
 
    // verify cut type  

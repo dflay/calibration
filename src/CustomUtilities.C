@@ -1,18 +1,18 @@
 #include "../include/CustomUtilities.h"
-//______________________________________________________________________________
-int SplitString(std::string delim,std::string myStr,std::vector<std::string> &out){
-   // split a string by a delimiter
-   stringstream ss(myStr);
-   std::vector<string> result;
-
-   while( ss.good() ){
-      std::string substr;
-      if(delim.compare(",")==0) std::getline(ss,substr,',');
-      if(delim.compare(" ")==0) std::getline(ss,substr,' ');
-      out.push_back(substr);
-   } 
-   return 0;
-}
+// //______________________________________________________________________________
+// int SplitString(std::string delim,std::string myStr,std::vector<std::string> &out){
+//    // split a string by a delimiter
+//    stringstream ss(myStr);
+//    std::vector<string> result;
+// 
+//    while( ss.good() ){
+//       std::string substr;
+//       if(delim.compare(",")==0) std::getline(ss,substr,',');
+//       if(delim.compare(" ")==0) std::getline(ss,substr,' ');
+//       out.push_back(substr);
+//    } 
+//    return 0;
+// }
 //______________________________________________________________________________
 int PrintMessage(std::string label,std::string msg,int lineNumber){
    if(lineNumber>=0){
@@ -149,7 +149,7 @@ int GetFXPRCutTime(std::string inpath,int probe,int index,
    }else{
       // comma found, is a cut range 
       isCutRange = true;
-      rc = SplitString(",",timeStr,tsv); // split to a vector 
+      rc = gm2fieldUtil::SplitString(',',timeStr,tsv); // split to a vector 
    } 
 
    // verify cut type  
