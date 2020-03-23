@@ -472,25 +472,41 @@ int GetTRLYStats_sccToggle(bool useOscCor,int probe,int nev,std::vector<double> 
 
    // do oscillation correction and obtain ALL data associated with toggle times in time vector 
    std::vector<double> trTime,trFreq,trFreq_cor; 
-   int rc = CorrectOscillation_trly(probe,nev,time,fxpr,Data,trTime,trFreq,trFreq_cor,"time",t0);
-
+   int rc=0;
    const int NT = time.size();
-   int M = trTime.size();
-   if(useOscCor){ 
+   if(useOscCor){
       std::cout << "[GetTRLYStats_sccToggle]: USING OSCILLATION CORRECTION" << std::endl;
-      // for(int i=0;i<M;i++) std::cout << Form("Event %d, change = %.3lf Hz",i+1,trFreq[i]-trFreq_cor[i]) << std::endl;
-   }   
-       
-   // now need to average over each toggle 
+      CorrectOscillation_trly(probe,nev,time,fxpr,Data,trTime,trFreq,trFreq_cor,"time",t0);
+   }else{
+      // no oscillation correction; gather all events relevant for each time stamp
+      for(int i=0;i<NT;i++){
+	 rc = FilterSingle("time",probe,nev,time[i],Data,trTime);
+	 rc = FilterSingle("freq",probe,nev,time[i],Data,trFreq);
+      }
+   }
+   if(rc!=0) return 1;
 
+   const int ND = trTime.size();
+   // std::cout << "[GetTRLYStats_sccToggle]: Found " << ND << " events associated with SCC cut times" << std::endl;
+
+   int M = trTime.size();
+   // if(useOscCor){ 
+   //    for(int i=0;i<M;i++) std::cout << Form("Event %d, change = %.3lf Hz",i+1,trFreq[i]-trFreq_cor[i]) << std::endl;
+   // }   
+       
+   // now need to average over each toggle
+
+   std::string timeStr; 
    int n=0;
    double lastTime=0,mean=0,stdev=0;
    std::vector<double> tt,ff; 
    for(int i=0;i<NT;i++){
+      timeStr = gm2fieldUtil::GetStringTimeStampFromUTC(time[i]);  
       // find events that satisfy the timestamp
       // WARNING: must be careful to not accumulate events from previous toggles!  
       for(int j=0;j<M;j++){
 	 if(trTime[j]>lastTime && trTime[j]<time[i]){
+	    // std::cout << "event " << j << " passed the cut, LINE " << __LINE__ << std::endl; 
 	    tt.push_back(trTime[j]);
 	    if(useOscCor){
 	       ff.push_back(trFreq_cor[j]);
@@ -499,16 +515,23 @@ int GetTRLYStats_sccToggle(bool useOscCor,int probe,int nev,std::vector<double> 
             }
 	 }
       }
-      // get stats
-      mean  = gm2fieldUtil::Math::GetMean<double>(ff); 
-      stdev = gm2fieldUtil::Math::GetStandardDeviation<double>(ff);
-      // store results  
-      TIME.push_back(time[i]); 
-      MEAN.push_back(mean); 
-      STDEV.push_back(stdev);
-      // set up for next time 
       n = tt.size();
-      lastTime = tt[n-1]; 
+      if(n==0){
+	 // no events passed the cut! 
+	 lastTime = time[i];
+	 std::cout << "[GetTRLYStats_sccToggle]: WARNING!  No events passed cut at " << timeStr << std::endl; 
+      }else{
+	 // events passed the cut! 
+	 lastTime = tt[n-1];
+	 // get stats
+	 mean  = gm2fieldUtil::Math::GetMean<double>(ff); 
+	 stdev = gm2fieldUtil::Math::GetStandardDeviation<double>(ff);
+	 // store results  
+	 TIME.push_back(time[i]); 
+	 MEAN.push_back(mean); 
+	 STDEV.push_back(stdev);
+      } 
+      // set up for next time 
       tt.clear();
       ff.clear();
    } 

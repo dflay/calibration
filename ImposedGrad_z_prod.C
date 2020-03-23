@@ -29,12 +29,12 @@
 #include "./include/trolleyAnaEvent.h"
 #include "./include/fixedProbeEvent.h"
 
+#include "./src/CustomUtilities.C"
 #include "./src/CustomMath.C"
 #include "./src/CustomImport.C"
 #include "./src/CustomExport.C"
 #include "./src/CustomGraph.C"
 #include "./src/CustomAlgorithms.C"
-#include "./src/CustomUtilities.C"
 #include "./src/InputManager.C" 
 #include "./src/BlindFuncs.C"
 #include "./src/OscFuncs.C"

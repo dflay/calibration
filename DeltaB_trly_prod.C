@@ -218,7 +218,7 @@ int DeltaB_trly_prod(std::string configFile){
    bool subtractDrift = inputMgr->GetFXPRDriftStatus();  
    int period = inputMgr->GetNumEventsTimeWindow();
    for(int i=0;i<NRUN;i++){
-      rc = GetFixedProbeData_avg(run[i],fxprMethod,fxprList,fxprData,prodVersion,subtractDrift,period,0);
+      rc = GetFixedProbeData_avg(run[i],fxprMethod,fxprList,fxprData,prodVersion,subtractDrift,period,0,-1);
       if(rc!=0){
 	 std::cout << "No data!" << std::endl;
 	 return 1;
@@ -272,9 +272,17 @@ int DeltaB_trly_prod(std::string configFile){
    // get the mean field with SCC off and on 
    std::vector<double> bareTime,bare,bareErr,sccTime,scc,sccErr;  
    if(useOscCor) std::cout << "[DeltaB_trly_prod]: Bare field data" << std::endl;
-   rc = GetTRLYStats_sccToggle(useOscCor,probeNumber-1,nev,sccOff,fxprData,trlyData,bareTime,bare,bareErr,t0); 
+   rc = GetTRLYStats_sccToggle(useOscCor,probeNumber-1,nev,sccOff,fxprData,trlyData,bareTime,bare,bareErr,t0);
+   if(rc!=0){
+      std::cout << "[DeltaB_trly_prod]: ERROR at line " << __LINE__ << std::endl;
+      return 1;
+   } 
    if(useOscCor) std::cout << "[DeltaB_trly_prod]: Grad field data" << std::endl;
    rc = GetTRLYStats_sccToggle(useOscCor,probeNumber-1,nev,sccOn ,fxprData,trlyData,sccTime ,scc ,sccErr ,t0); 
+   if(rc!=0){
+      std::cout << "[DeltaB_trly_prod]: ERROR at line " << __LINE__ << std::endl;
+      return 1;
+   } 
 
    // do delta B calcs
    // raw difference 
@@ -284,7 +292,7 @@ int DeltaB_trly_prod(std::string configFile){
    double mean=0,stdev=0,err=0; 
    rc = GetWeightedAverageStats(diff,diffErr,mean,err,stdev); 
 
-   int NN = bare.size(); 
+   int NN = bare.size();
 
    // ABA difference 
    double mean_aba=0,stdev_aba=0; 
@@ -301,6 +309,7 @@ int DeltaB_trly_prod(std::string configFile){
       }
       rc = GetWeightedAverageStats(diff_aba,diffErr_aba,mean_aba,err,stdev_aba); 
    }else{
+      std::cout << "[DeltaB_trly_prod]: ERROR!  No events for bare vector!" << std::endl;
       // not enough events!
       mean_aba  = 0;
       stdev_aba = 0; 

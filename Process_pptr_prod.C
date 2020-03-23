@@ -234,6 +234,10 @@ int Process_pptr_prod(std::string configFile){
    TGraph **gTemp = new TGraph*[NL];
    rc = GetTRLYSwapPlots(useOscCor,probeNumber-1,nev,time,T0,fxprData,trlyData,gFreq,gTemp);
 
+   // Fixed probe plot 
+   TGraph *gFXPR = GetFXPRTGraph_avg("GpsTimeStamp","freq","NONE",fxprData);
+   gm2fieldUtil::Graph::SetGraphParameters(gFXPR,20,kBlack);
+
    TMultiGraph *mgf = new TMultiGraph();
    TMultiGraph *mgt = new TMultiGraph();
    for(int i=0;i<NL;i++){
@@ -324,6 +328,21 @@ int Process_pptr_prod(std::string configFile){
    ppPlotPath = Form("%s/pp-swap-data_pr-%02d.png",plotDir.c_str(),probeNumber);
    c2->Print(ppPlotPath);
    delete c2; 
+
+   TCanvas *c3 = new TCanvas("c3","FXPR Data",1200,600); 
+
+   c3->cd();
+   gFXPR->Draw("alp"); 
+   gm2fieldUtil::Graph::SetGraphLabels(gFXPR,Form("TRLY-%02d FXPR Data",probeNumber),"","Frequency (Hz)"); 
+   gm2fieldUtil::Graph::UseTimeDisplay(gFXPR); 
+   gFXPR->Draw("alp"); 
+   c3->Update(); 
+
+   // save the plot  
+   c3->cd(); 
+   TString fxprPlotPath = Form("%s/fxpr-data_swap-data_pr-%02d.png",plotDir.c_str(),probeNumber);
+   c3->Print(fxprPlotPath);
+   delete c3; 
 
    return 0;
 }
