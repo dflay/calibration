@@ -17,7 +17,7 @@ class InputManager{
       bool fIsSimple,fIsFullAnalysis,fIsBlind,fUseP2PFit,fIsFinalLocation;
       bool fUseAxis,fIsFreeProton,fLoadSwapTime,fLoadSCCTime,fUseTimeWeight,fUseTempCor;
       bool fUseOscCor,fRemoveFXPRDrift,fUseMisalignCor,fUseTempCor_pp;
-      bool fSyst,fVaryDBTime_tr,fVarySwapTime_tr,fVaryShimFit,fVaryImpGradFit;
+      bool fSyst,fVaryDBTime_tr,fVarySwapTime_tr,fVaryShimFit,fVaryImpGradFit,fShimGradAltEnable;
       bool fTRLYFootprintStatus; 
       int fSystDirNum; 
       int fTrolleyProbe,fAxis,fFXPRListTag,fBlindUnits,fRunPeriod,fNumEventsToAvg,fNumEventsTimeWindow,fImpGradFitDim,fImpGradFitOrder; 
@@ -60,6 +60,7 @@ class InputManager{
       bool GetTempCorStatus()        const { return fUseTempCor;      } 
       bool GetTempCorStatus_pp()     const { return fUseTempCor_pp;   }
       bool GetSystStatus()           const { return fSyst;            }
+      bool GetShimGradAltStatus()    const { return fShimGradAltEnable; } 
       bool GetTRLYFootprintStatus()  const { return fTRLYFootprintStatus; }  
 
       bool GetVaryTimeStatus(std::string dev="NONE",std::string type="NONE") const {

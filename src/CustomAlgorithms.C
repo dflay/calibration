@@ -21,7 +21,7 @@ int CheckShimGrad(int probe,std::vector<grad_meas_t> &data){
 
    bool isBad = gm2fieldUtil::Math::IsInfOrNaN<double>(max);
    if(isBad){
-      sprintf(msg,"[CheckShimGrad]: Warning for maximum gradients (probe %02d)! inf or NaN.  Using 1000 Hz...",probe);
+      sprintf(msg,"[CustomAlgorithms::CheckShimGrad]: Warning for maximum gradients (probe %02d)! inf or NaN.  Using 1000 Hz...",probe);
       Logger::PrintMessage(Logger::kINFO,"default",msg,'a');
       max          = 1E+3;
       max_err      = 1E+3;
@@ -35,13 +35,14 @@ int CheckShimGrad(int probe,std::vector<grad_meas_t> &data){
          // things are good, do nothing
       }else{
          // invalid gradient.  Make an update using the worst gradient we have 
-         sprintf(msg,"[CheckShimGrad]: Warning for probe %02d, axis %d! Using worst gradient of %.3lf +/- %.3lf Hz (ABA %.3lf +/- %.3lf Hz)",
-                           probe,i,max,max_err,max_fxpr,max_fxpr_err);
+         sprintf(msg,"[CustomAlgorithms::CheckShimGrad]: Warning for probe %02d, axis %d! Using worst gradient of %.3lf +/- %.3lf Hz (ABA %.3lf +/- %.3lf Hz)",
+                           probe,i,max,max,max_fxpr,max_fxpr);
          Logger::PrintMessage(Logger::kINFO,"default",msg,'a');
+	 // use 100% uncertainty 
          data[i].grad          = max;
-         data[i].grad_err      = max_err;
+         data[i].grad_err      = TMath::Abs(max);
          data[i].grad_fxpr     = max_fxpr;
-         data[i].grad_fxpr_err = max_fxpr_err;
+         data[i].grad_fxpr_err = TMath::Abs(max_fxpr);
       }
    }
    return 0;
@@ -52,7 +53,7 @@ int CopyTrolleyProbe(std::vector<trolleyAnaEvent_t> x,std::vector<trolleyAnaEven
    trolleyAnaEvent_t data;
    const int N = x.size();
    if(N==0){
-      std::cout << "[CopyTrolleyProbe]: No data!" << std::endl;
+      std::cout << "[CustomAlgorithms::CopyTrolleyProbe]: No data!" << std::endl;
       return 1;
    }
    for(int i=0;i<N;i++){

@@ -188,6 +188,7 @@ def writeConfigFileProd_ShimScan(data,confData,tag,keyList,axis,fitData,outpath)
    outData['pp']                     = confData['pp']  
    outData['syst']                   = confData['syst'] 
    outData['trly-footprint']         = confData['trly-footprint'] 
+   outData['shim-grad']              = confData['shim-grad'] 
  
    # probe-specific data  
    outData['date']                 = data['date']
@@ -238,6 +239,7 @@ def writeConfigFileProd_params(confData,outpath):
    outData["num-events-time-window"] = confData["num-events-time-window"]   
    outData['pp']                     = confData['pp'] 
    outData['imp-grad']               = confData['imp-grad'] 
+   outData['shim-grad']              = confData['shim-grad'] 
    outData['syst']                   = confData['syst']  
    outData['trly-footprint']         = confData['trly-footprint'] 
    # write to file  
@@ -261,6 +263,7 @@ def writeConfigFileProd_imposedGrad(confData,tag,keyList,axis,fitData,outpath):
    outData['nmr-ana-tag']            = confData['nmr-ana-tag']
    outData['pp']                     = confData['pp'] 
    outData['imp-grad']               = confData['imp-grad'] 
+   outData['shim-grad']              = confData['shim-grad'] 
    outData['syst']                   = confData['syst'] 
    outData['ana-date']               = confData['ana-date']  
    outData['trly-footprint']         = confData['trly-footprint'] 
@@ -319,6 +322,7 @@ def writeConfigFileProd(data,confData,tag,keyList,axis,fitData,outpath):
    outData['use-misalign-cor']       = confData['use-misalign-cor'] 
    outData['pp']                     = confData['pp']  
    outData['imp-grad']               = confData['imp-grad']
+   outData['shim-grad']              = confData['shim-grad'] 
    outData['syst']                   = confData['syst']  
    outData['trly-footprint']         = confData['trly-footprint'] 
     

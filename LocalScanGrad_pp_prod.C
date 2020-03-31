@@ -49,6 +49,10 @@ int GetLinearGrad(TGraph *g,double &grad,double &gradErr);
 int GetCoordinates(std::vector<calibSwap_t> data,std::vector<double> &r); 
 int RedefineOrigin(std::vector<plungingProbeAnaEvent_t> &data,std::vector<double> r0); 
 
+int GetShimmedGradient_alt(int probe,int axis,std::string outDir,
+                           std::vector<double> par,std::vector<double> parErr,
+                           double &grad,double &grad_err); 
+
 int LocalScanGrad_pp_prod(std::string configFile){
 
    std::cout << "------------------------------------" << std::endl;
@@ -72,6 +76,7 @@ int LocalScanGrad_pp_prod(std::string configFile){
 
    bool isBlind              = inputMgr->IsBlind();
    bool useOscCor            = inputMgr->GetOscCorStatus();
+   bool shimGradAlt          = inputMgr->GetShimGradAltStatus(); 
    int probeNumber           = inputMgr->GetTrolleyProbe(); 
    int axis                  = inputMgr->GetAxis();
    int runPeriod             = inputMgr->GetRunPeriod();
@@ -279,14 +284,17 @@ int LocalScanGrad_pp_prod(std::string configFile){
    sprintf(inpath_tr,"%s/trly-swap-data_pr-%02d_%s.csv",outDir.c_str(),probeNumber,date.c_str());
    rc = LoadCalibSwapData(inpath_tr,trlyCalib_data);  
 
-   // get the coordinates of the PP and trly probe during rapid swapping  
+   // get the AVG coordinates of the PP and trly probe during rapid swapping  
    std::vector<double> ppCoord,trlyCoord;
    rc = GetCoordinates(ppCalib_data  ,ppCoord  );  
    rc = GetCoordinates(trlyCalib_data,trlyCoord);  
-   
+ 
    // redefine PP origin based on average location in rapid swapping.  We want
    // the gradient at this point   
    rc = RedefineOrigin(ppEvent,ppCoord);
+
+   // std::cout << "[LocalScanGrad_pp_prod]: Coordinates during rapid swapping:" << std::endl;
+   // std::cout << Form("                         PP: %.3lf mm, TRLY = %.3lf mm",ppCoord[axis],trlyCoord[axis]) << std::endl;
 
    // Want to evaluate the gradient at the average location of the PP. 
    // not sure if this is right... 
@@ -294,6 +302,7 @@ int LocalScanGrad_pp_prod(std::string configFile){
    // double X = (-1.)*(ppCoord[axis] - trlyCoord[axis]);  // WARNING: we impose a NEGATIVE gradient, so our convention flips here
    // if(axis!=2) X = 0;
    // std::cout << "[LocalScanGrad_pp_prod]: Evaluating gradient at z = " << X << std::endl;
+
    // this seems like the most obvious choice, since we redefine the origin according the PP swap location (average)  
    double X = 0;
    
@@ -351,12 +360,19 @@ int LocalScanGrad_pp_prod(std::string configFile){
 
    std::cout << "Fit Parameters: " << std::endl;
    const int NPAR = myFit->GetNpar();
-   double par[NPAR],parErr[NPAR]; 
+   std::vector<std::string> parLabel; 
+   std::vector<double> par,parErr; 
    for(int i=0;i<NPAR;i++){
-      par[i]       = myFit->GetParameter(i); 
-      parErr[i]    = myFit->GetParError(i);
-      std::cout << Form("p[%d] = %.3lf +/- %.3lf",i,par[i],parErr[i]) << std::endl; 
+      parLabel.push_back( "p"+std::to_string(i) ); 
+      par.push_back( myFit->GetParameter(i) ); 
+      parErr.push_back( myFit->GetParError(i) );
+      std::cout << Form("%s = %.3lf +/- %.3lf",parLabel[i].c_str(),par[i],parErr[i]) << std::endl; 
    }
+
+   // save parameters to file
+   char outpath_par[200]; 
+   sprintf(outpath_par,"%s/shimmed-grad-%s_pars_pr-%02d.csv",outDir.c_str(),Axis.c_str(),probeNumber); 
+   rc = PrintToFile(outpath_par,parLabel,par,parErr);  
 
    // get gradient based on fit type and which trolley probe we're looking at  
    double dBdr=0,dBdr_err=0,dBdr_cor=0,dBdr_cor_err=0;
@@ -382,6 +398,17 @@ int LocalScanGrad_pp_prod(std::string configFile){
        dBdr     = 1000.; 
        dBdr_err = 1000.; 
     }
+
+   double dBdr_alt=0,dBdr_alt_err=0;
+   if(shimGradAlt){
+      std::cout << "[LocalScanGrad_pp_prod]: Using ALTERNATE evaluation!" << std::endl;
+      rc = GetShimmedGradient_alt(probeNumber,axis,outDir,par,parErr,dBdr_alt,dBdr_alt_err);
+      if(dBdr_alt==-1000){
+	 // fall back to old method if this one fails
+	 dBdr_alt     = dBdr; 
+	 dBdr_alt_err = dBdr_err; 
+       }
+   }
  
    // if(axis!=2){
    //    // std::cout << "The trolley coordinate is " << X << " mm" << std::endl;
@@ -411,6 +438,13 @@ int LocalScanGrad_pp_prod(std::string configFile){
    ER[0] = dBdr_err; 
    ER[1] = dBdr_err; 
    ER[2] = 0;
+
+   if(shimGradAlt){
+      PR[0] = dBdr_alt; 
+      PR[1] = dBdr_alt;  
+      ER[0] = dBdr_alt_err; 
+      ER[1] = dBdr_alt_err; 
+   }
 
    if(isSyst && varyFit){
       std::cout << "[LocalScanGrad_pp_prod]: SYSTEMATIC VARIATION! Will vary fit result within (Gaussian) uncertainties" << std::endl;
@@ -503,4 +537,96 @@ int GetAziGrad(TGraph *g,double &grad,double &gradErr){
    gradErr = TMath::Abs(grad);   // take absolute value 
 
    return 0; 
+}
+//______________________________________________________________________________
+int GetShimmedGradient_alt(int probe,int axis,std::string outDir,
+                           std::vector<double> par,std::vector<double> parErr,
+                           double &grad,double &grad_err){
+   // alternative way of getting the shimmed gradient
+   // evaluate shimmed gradient using shimmed field fit parameters of polynomial form 
+   // f(q) = p0 + p1*q + p2*q^2
+   // evaluate at q0 = delta dB/imp_grad  
+
+   int rc=0;
+
+   std::string gradName="none"; 
+   if(axis==0) gradName = "rad"; 
+   if(axis==1) gradName = "vert"; 
+   if(axis==2) gradName = "azi"; 
+     
+   // load PP, TRLY delta-B data
+   std::vector<deltab_t> pp,trly;
+   char inpath[200];
+   sprintf(inpath,"%s/dB-pp_final-location_%s-grad_pr-%02d.csv",outDir.c_str(),gradName.c_str(),probe); 
+   LoadDeltaBData(inpath,pp); 
+
+   sprintf(inpath,"%s/dB-trly_final-location_%s-grad_pr-%02d.csv",outDir.c_str(),gradName.c_str(),probe); 
+   LoadDeltaBData(inpath,trly);
+
+   // load imposed gradient data 
+   // x and y (all probes) 
+   // radial
+   std::vector<double> igx,igxe;
+   sprintf(inpath,"%s/imposed-grad-x_2D.csv",outDir.c_str());
+   std::string path = inpath;
+   rc = gm2fieldUtil::Import::ImportData2<double,double>(path,"csv",igx,igxe);
+   // vertical 
+   std::vector<double> igy,igye;
+   sprintf(inpath,"%s/imposed-grad-y_2D.csv",outDir.c_str());
+   path = inpath;
+   rc = gm2fieldUtil::Import::ImportData2<double,double>(path,"csv",igy,igye); 
+   // azi 
+   double azi_grad=0,azi_grad_err=0;
+   sprintf(inpath,"%s/imposed-grad_z_pr-%02d.csv",outDir.c_str(),probe);
+   rc = LoadImposedAziGradData(inpath,azi_grad,azi_grad_err);
+
+   double dB_tr=0,dB_pp=0,dB_tr_err=0,dB_pp_err=0;
+   double dBdq_imp=0,dBdq_imp_err=0; 
+ 
+   // delta-B (ABA is default)  
+   dB_pp     = pp[axis].dB_fxpr;
+   dB_pp_err = pp[axis].dB_fxpr_err;
+   dB_tr     = trly[axis].dB_fxpr; 
+   dB_tr_err = trly[axis].dB_fxpr_err; 
+   // use raw if necessary
+   if(dB_tr==0){
+      dB_tr     = trly[axis].dB;  
+      dB_tr_err = trly[axis].dB_err;
+   }  
+   if(dB_pp==0){
+      dB_pp     = pp[axis].dB; 
+      dB_pp_err = pp[axis].dB_err; 
+   } 
+
+   // imposed gradient 
+   if(axis==0){
+      dBdq_imp     = igx[probe-1]; 
+      dBdq_imp_err = igxe[probe-1]; 
+   }else if(axis==1){
+      dBdq_imp     = igy[probe-1]; 
+      dBdq_imp_err = igye[probe-1]; 
+   }else if(axis==2){
+      dBdq_imp     = azi_grad; 
+      dBdq_imp_err = azi_grad_err; 
+   }
+
+   double q0     = (dB_tr-dB_pp)/dBdq_imp;  // NOTE the Delta dB order! We evaluate where the TRLY is!  
+   double q0_err = 0.;                      // FIXME: probably need an uncertainty due to q0... 
+                                            // error on Delta-B is supressed by dB/dq, and dB/dq is usually very good.  
+
+   const int NP = par.size();
+   if(NP<2){
+      std::cout << "[Misalignment_prod::GetShimmedGradient_alt]: ERROR!  Number of fit parameters < 2!" << std::endl;
+      grad     = -1000; 
+      grad_err =  1000; 
+   }else if(NP==2){
+      // linear fit 
+      grad     = par[1];
+      grad_err = parErr[1];
+   }else if(NP==3){
+      // polynomial fit, order 2
+      grad     = par[1] + 2.*par[2]*q0;
+      grad_err = TMath::Sqrt( parErr[1]*parErr[1] + 2.*2.*parErr[2]*parErr[2] );
+   }
+   return 0;
 }

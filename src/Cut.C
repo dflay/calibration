@@ -44,6 +44,10 @@ bool Cut::CheckEvent_nmrAna(int run,int trace,int nzc,double ampl,double freq){
    // if it's a specific run or event, reject it 
    int NTR=0,theRun=0,theTrace=0;
    const int NRUNS = fData["nmr-ana"]["runs"].size();
+   if(fVerbosity>0){
+      std::cout << "[Cut::CheckEvent_nmrAna]: NMR-ANA runs to cut: " << std::endl;
+      for(int i=0;i<NRUNS;i++) std::cout << fData["nmr-ana"]["runs"][i]["number"] << std::endl;
+   }
 
    for(int i=0;i<NRUNS;i++){
       theRun = fData["nmr-ana"]["runs"][i]["number"]; 

@@ -308,7 +308,11 @@ int DeltaB_trly_prod(std::string configFile){
 	 for(int i=0;i<NN;i++) diff_aba[i] *= -1.;  
       }
       rc = GetWeightedAverageStats(diff_aba,diffErr_aba,mean_aba,err,stdev_aba); 
-   }else{
+   }else if(NN==1){
+      std::cout << "[DeltaB_trly_prod]: WARNING!  No ABA data!" << std::endl;
+      mean_aba  = 0;
+      stdev_aba = 0; 
+   }else if(NN==0){
       std::cout << "[DeltaB_trly_prod]: ERROR!  No events for bare vector!" << std::endl;
       // not enough events!
       mean_aba  = 0;

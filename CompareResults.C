@@ -14,12 +14,15 @@
 #include "gm2fieldExport.h"
 #include "gm2fieldGraph.h"
 
+#include "./include/Color.h"
+
 TGraphErrors *GetTGraphErrors(std::string xAxis,std::string yAxis,std::string yAxisErr,json data);
 
 TMultiGraph *GetTMultiGraph_diff(std::vector< std::vector<double> > X,
                                  std::vector< std::vector<double> > Y,std::vector< std::vector<double> > EY,
                                  std::vector<std::string> label,double sf,double rho,TH1F *h); 
 
+int PrintToScreen(std::string label,std::string axis,std::string axisErr,json data); 
 int PrintToFile_csv(const char *outpath,std::string xAxis,std::string yAxis,std::string yAxisErr,json data); 
 
 int FillVector(std::string axis,json data,std::vector<double> &v); 
@@ -33,20 +36,23 @@ int CompareResults(){
    std::string inpath = "./input/json/compare.json"; 
    int rc = gm2fieldUtil::Import::ImportJSON(inpath,input);
 
-   const int NT = input["ana-set"].size(); 
+   const int NT = input["ana-set"].size();
 
    bool isBlind           = (bool)input["blinding"]["enable"];
    bool plotBand          = (bool)input["blinding"]["plot-band"];  
    std::string blindLabel = input["blinding"]["label"]; 
-   std::string date       = input["date"]; 
+   
+   std::string date="NONE";
+   const int ND = input["date"].size(); 
+   if(ND==0) date = input["date"][0];  
    
    bool plotSim = (bool)( (int)input["plot-sim"] ); 
 
-   std::string prefix; 
+   std::string bl_prefix; 
    if(isBlind){
-      prefix = "./output/blinded/" + blindLabel + "/" + date + "/"; 
+      bl_prefix = "./output/blinded/" + blindLabel; 
    }else{
-      prefix = "./output/unblinded/" + date + "/"; 
+      bl_prefix = "./output/unblinded"; 
    }
 
    std::string xAxis    = "probe";
@@ -75,21 +81,26 @@ int CompareResults(){
    std::vector<double> x,y,ey;  
    std::vector< std::vector<double> > X,Y,EY; 
  
-   char filename[200]; 
-   std::vector<std::string> label;  
-   int color=0,marker=19;
+   char filename[200],alabel[200];
+   std::string dateStr,anaStr; 
+   std::vector<std::string> label; 
+   int mkColor=0,marker=19;
    json result; 
    for(int i=0;i<NT;i++){
-      color++;
+      mkColor = color_df::color[i];
       marker++;
-      if(color==3) color = kGreen+1;
-      label.push_back( input["ana-set"][i] ); 
-      sprintf(filename,"%s.csv",label[i].c_str() ); 
-      inpath = prefix + label[i] + "/calibData_" + date + ".json"; 
+      if(ND>1) date = input["date"][i];
+      dateStr = input["date"][i]; 
+      anaStr  = input["ana-set"][i]; 
+      sprintf(alabel,"%s, %s",anaStr.c_str(),dateStr.c_str() );  
+      label.push_back(alabel); 
+      sprintf(filename,"%s_%s.csv",anaStr.c_str(),dateStr.c_str() ); 
+      inpath = bl_prefix + "/" + date + "/" + anaStr + "/calibData_" + date + ".json"; 
       std::cout << "Processing data set: " << label[i] << std::endl; 
       rc = gm2fieldUtil::Import::ImportJSON(inpath,result);
-      AddToMultiGraph(color,marker,label[i],xAxis,yAxis,yAxisErr,result,mg,L);
+      AddToMultiGraph(mkColor,marker,label[i],xAxis,yAxis,yAxisErr,result,mg,L);
       rc = PrintToFile_csv(filename,xAxis,yAxis,yAxisErr,result);
+      rc = PrintToScreen(label[i],yAxis,yAxisErr,result); 
       // also gather all data we care about into three doubly-indexed vectors.  
       FillVector(xAxis,result,x); 
       FillVector(yAxis,result,y); 
@@ -215,7 +226,7 @@ TMultiGraph *GetTMultiGraph_diff(std::vector< std::vector<double> > X,
 
    // now get differences
    const int N = X.size(); 
-   int M=0,color=0;
+   int M=0,mkColor=0;
    double arg=0,arg_err=0; 
    std::vector<double> x,diff,diff_err; 
    std::vector< std::vector<double> > DIFF,DIFF_ERR;
@@ -237,12 +248,11 @@ TMultiGraph *GetTMultiGraph_diff(std::vector< std::vector<double> > X,
 	 // fill histogram 
 	 h->Fill(arg); 
       }
-      color = i+1; 
-      if(color==3) color = kGreen+1; 
-      if(label[i].compare("Ran")==0 )     color = kOrange+1; 
-      if(label[i].compare("Bingzhi")==0 ) color = kCyan+1; 
+      mkColor = color_df::color[i]; 
+      if(label[i].compare("Ran")==0 )     mkColor = kOrange+1; 
+      if(label[i].compare("Bingzhi")==0 ) mkColor = kCyan+1; 
       TGraphErrors *g = gm2fieldUtil::Graph::GetTGraphErrors(x,diff,diff_err);
-      gm2fieldUtil::Graph::SetGraphParameters(g,20,color); 
+      gm2fieldUtil::Graph::SetGraphParameters(g,20,mkColor); 
       mg->Add(g,"lp");
       // set up for next data 
       x.clear(); 
@@ -299,6 +309,23 @@ int FillVector(std::string axis,json data,std::vector<double> &v){
    return 0;
 }
 //______________________________________________________________________________
+int PrintToScreen(std::string label,std::string axis,std::string axisErr,json data){
+   std::cout << Form("%s for data set %s",axis.c_str(),label.c_str()) << std::endl;
+   double x=0,dx1=0,dx2=0,dx3=0,dx4=0,dx5=0;
+   const int N = data[axis].size();
+   for(int i=0;i<N;i++){
+      x   = data[axis][i]; 
+      dx1 = data[axisErr][i];
+      dx2 = data["misCor_err"][i];    
+      dx3 = data["freeErr"][i];    
+      dx4 = data["systErr"][i];   
+      dx5 = TMath::Sqrt( dx1*dx1 + dx2*dx2 + dx3*dx3 + dx4*dx4);  
+      std::cout << Form("%02d: %.3lf ± %.3lf ± %.3lf ± %.3lf ± %.3lf (tot = %.3lf)",
+                        i+1,x,dx1,dx2,dx3,dx4,dx5) << std::endl; 
+   }
+   return 0;
+}
+//______________________________________________________________________________
 int PrintToFile_csv(const char *outpath,std::string xAxis,std::string yAxis,std::string yAxisErr,json data){
 
    char outStr[200];
@@ -321,6 +348,7 @@ int PrintToFile_csv(const char *outpath,std::string xAxis,std::string yAxis,std:
          y  = data[yAxis][i]; 
          ey = data[yAxisErr][i]; 
 	 sprintf(outStr,"%02d,%.3lf,%.3lf",(int)x,y,ey);
+         // std::cout << outStr << std::endl;
 	 outfile << outStr << std::endl;      
       }
       outfile.close();

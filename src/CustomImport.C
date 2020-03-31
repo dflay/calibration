@@ -613,13 +613,34 @@ int GetPlungingProbeData(int run,int prMethod,int ppMethod,std::vector<plungingP
    subRun.numTraces = cntr;
    data.push_back(subRun);
 
-   const int NN = data.size();
+   std::vector<int> emptyRun;
+
+   int N3=0;
+   int NN = data.size();
    if(useNMRANA){
-      std::cout << "[GetPlungingProbeData]: Using NMR-ANA results... " << endl;
+      std::cout << "[GetPlungingProbeData]: Using NMR-ANA results for runs: ";
+      for(int i=0;i<NN-1;i++) std::cout << data[i].run << ", ";
+      std::cout << data[NN-1].run << std::endl;
       for(int i=0;i<NN;i++){
 	 rc = ModifyPlungingProbeData(ppMethod,data[i],nmrAnaVersion,cutFile);
-         if(rc==2) data.erase(data.begin()+i); // erase the entry with no data in it 
+         if(rc==2) emptyRun.push_back(data[i].run); // empty run (fully cut); will modify run list below  
       }
+      // delete empty runs 
+      N3 = emptyRun.size();
+      for(int i=0;i<N3;i++){
+	 for(int j=0;j<NN;j++){
+	    if(emptyRun[i]==data[j].run){
+	       data.erase(data.begin()+j);
+	    }
+	 }
+      }
+
+      if(N3!=0){
+	 std::cout << "[GetPlungingProbeData]: Run list after modifications: " << std::endl;
+	 NN = data.size();
+	 for(int i=0;i<NN;i++) std::cout << data[i].run << std::endl;
+      }
+
       std::cout << "[GetPlungingProbeData]: --> Done." << std::endl;
    }
 
@@ -635,7 +656,7 @@ int ModifyPlungingProbeData(int method,plungingProbeAnaEvent_t &data,std::string
 
    int runNumber = data.run;
    std::vector<nmrAnaEvent_t> inData;
-   // std::cout << "Trying NMR-DAQ run " << runNumber << std::endl; 
+   // std::cout << "[ModifyPlungingProbeData]: Trying NMR-DAQ run " << runNumber << std::endl; 
    char inpath[512];
    sprintf(inpath,"./input/NMR-ANA/%s/run-%05d/results_pulse-stats.dat",nmrAnaVersion.c_str(),runNumber);
    int rc = ImportNMRANAData(inpath,inData,cutFile);
@@ -725,7 +746,7 @@ int ModifyPlungingProbeData(int method,plungingProbeAnaEvent_t &data,std::string
 	 rc = Logger::PrintMessage(Logger::kINFO,"default",MSG,'a'); 
       }
       if(k==0){
-	 MSG = "No events"; 
+	 MSG = "No events for NMR-ANA run " + std::to_string(runNumber); 
 	 rc = Logger::PrintMessage(Logger::kINFO,"default",MSG,'a');
 	 rc = 2; 
       } 
@@ -1393,7 +1414,7 @@ int LoadTrolleyPositionData(const char *inpath,trolleyProbePosition_t &data){
 //______________________________________________________________________________
 int ImportNMRANAData(const char *inpath,std::vector<nmrAnaEvent_t> &Data,std::string cutFile){
    // load cuts 
-   Cut *myCuts = new Cut(cutFile); 
+   Cut *myCuts = new Cut(cutFile);
 
    // load data from the NMR-ANA framework 
    nmrAnaEvent_t inData;
@@ -1455,7 +1476,7 @@ int ImportNMRANAData(const char *inpath,std::vector<nmrAnaEvent_t> &Data,std::st
    return 0;
 }
 //______________________________________________________________________________
-int ImportNMRANAData_new(int run,std::string version,std::vector<nmrAnaEvent_t> &data,std::string cutFile){
+int ImportNMRANAData_new(const char *inpath,int run,std::vector<nmrAnaEvent_t> &data,std::string cutFile){
   // a new way to load NMR-ANA results
   // need the temperature sensor 
   // ppRunSummary_t myRunSummary;
@@ -1473,8 +1494,6 @@ int ImportNMRANAData_new(int run,std::string version,std::vector<nmrAnaEvent_t> 
   std::string sp,sch,stime,szc,snc,sampl,snoise,st2,stemp,slo,srf;
   std::string sfmid,sflin,sflsq,sfmid_ph,sflin_ph,sflsq_ph;
 
-  char inpath[512];
-  sprintf(inpath,"./input/NMR-ANA/%s/run-%05d/results.csv",version.c_str(),run);
   std::ifstream infile;
   infile.open(inpath);
   if( infile.fail() ){
@@ -2381,6 +2400,30 @@ int LoadShimmedGrad_opt(const char *inpath,std::vector<grad_meas_t> &data){
 	 inData.grad_fxpr     = std::atof( sg_aba.c_str() );
 	 inData.grad_fxpr_err = std::atof( sg_aba_e.c_str() );
 	 data.push_back(inData);  
+      }
+      infile.close();
+   }
+   return 0;
+}
+//______________________________________________________________________________
+int LoadShimmedFieldFitPars(const char *inpath,std::vector<double> &x,std::vector<double> &dx){
+   double ix=0,idx=0;
+   std::string label,sx,sdx;
+
+   std::ifstream infile; 
+   infile.open(inpath); 
+   if( infile.fail() ){
+      std::cout << "[LoadShimmedGradientFitPars]: Cannot open the file: " << inpath << std::endl;
+      return 1; 
+   }else{
+      while( !infile.eof() ){
+	 std::getline(infile,label,','); 
+	 std::getline(infile,sx   ,','); 
+	 std::getline(infile,sdx  ); 
+	 ix  = std::atof( sx.c_str() );
+	 idx = std::atof( sdx.c_str() );
+         x.push_back(ix); 
+         dx.push_back(idx); 
       }
       infile.close();
    }

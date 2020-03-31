@@ -29,6 +29,7 @@ int InputManager::Init(){
    fVaryShimFit     = false; 
    fVaryImpGradFit  = false; 
    fSyst            = false;
+   fShimGradAltEnable = false;
    fTRLYFootprintStatus = false; 
    fSystDirNum      = 0;  
    fTempCor_pp      = 0;
@@ -182,7 +183,8 @@ int InputManager::Parse(){
    bool impStatus    = DoesKeyExist("imp-grad"); 
    bool systStatus   = DoesKeyExist("syst"); 
    bool adateStatus  = DoesKeyExist("ana-date"); 
-   bool trfpStatus   = DoesKeyExist("trly-footprint");  
+   bool trfpStatus   = DoesKeyExist("trly-footprint"); 
+   bool shimStatus   = DoesKeyExist("shim-grad");  
 
    // parameters common to all 
    std::string unitStr="";
@@ -226,6 +228,7 @@ int InputManager::Parse(){
       fDBDeltaTime_tr   = (double)fParams["syst"]["tr-db-delta"];  
       fSwapDeltaTime_tr = (double)fParams["syst"]["tr-swap-delta"];  
    }
+
  
    // calibration: production 
    if( fType.compare("calib-prod")==0 ){
@@ -259,6 +262,7 @@ int InputManager::Parse(){
 	 fImpGradFitDim   = (int)fParams["imp-grad"]["fit-dimension"]; 
 	 fImpGradFitOrder = (int)fParams["imp-grad"]["fit-order"]; 
       } 
+      if(shimStatus) fShimGradAltEnable = (bool)( (int)fParams["shim-grad"]["alt-enable"] ); 
    }
 
    // trolley Delta-B measurements
@@ -296,16 +300,17 @@ int InputManager::Print(){
    if(fAxis==1) axis = 'y'; 
    if(fAxis==2) axis = 'z'; 
    std::cout << "------------------- Input Manager -------------------" << std::endl;
-   std::cout << "Plunging Probe SN:  " << fPPID            << std::endl; 
-   std::cout << "Trolley probe:      " << fTrolleyProbe    << std::endl;
-   std::cout << "Is blinded:         " << fIsBlind         << std::endl;
-   std::cout << "Blind label:        " << fBlindLabel      << std::endl;
-   std::cout << "Production tag:     " << fProdTag         << std::endl; 
-   std::cout << "NMR-ANA tag:        " << fNMRANATag       << std::endl; 
-   std::cout << "Oscillation cor:    " << fUseOscCor       << std::endl;
-   std::cout << "Misalignment cor:   " << fUseMisalignCor  << std::endl; 
-   std::cout << "Trolley angle:      " << fTrolleyAngle    << std::endl; 
-   std::cout << "dBz current:        " << fDBZCurrent      << std::endl; 
+   std::cout << "Plunging Probe SN:  " << fPPID              << std::endl; 
+   std::cout << "Trolley probe:      " << fTrolleyProbe      << std::endl;
+   std::cout << "Is blinded:         " << fIsBlind           << std::endl;
+   std::cout << "Blind label:        " << fBlindLabel        << std::endl;
+   std::cout << "Production tag:     " << fProdTag           << std::endl; 
+   std::cout << "NMR-ANA tag:        " << fNMRANATag         << std::endl; 
+   std::cout << "Oscillation cor:    " << fUseOscCor         << std::endl;
+   std::cout << "Misalignment cor:   " << fUseMisalignCor    << std::endl; 
+   std::cout << "Shim grad alt:      " << fShimGradAltEnable << std::endl;
+   std::cout << "Trolley angle:      " << fTrolleyAngle      << std::endl; 
+   std::cout << "dBz current:        " << fDBZCurrent        << std::endl; 
    if(fType.compare("calib-prod")==0){
          std::cout << "Run period:         " << fRunPeriod    << std::endl;
 	 std::cout << "Axis:               " << fAxis << " (" << axis << ")" << std::endl;
@@ -324,7 +329,7 @@ int InputManager::Print(){
    }
  
    if(fTRLYFootprintStatus){
-      std::cout << "TRLY footprint = " << fTRLYFootprint << " +/- " << fTRLYFootprintErr << std::endl;  
+      std::cout << Form("TRLY footprint:     %.3lf +/- %.3lf",fTRLYFootprint,fTRLYFootprintErr) << std::endl;  
    }
 
    int N = fRunList.size(); 

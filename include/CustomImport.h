@@ -63,7 +63,7 @@ int LoadImageParameters(std::string inpath,std::string type,std::vector<imagePar
 int LoadRunSummaryData(const char *inpath,runSummary_t &x); 
 int LoadNMRDAQEventData(const char *inpath,std::vector<NMRDAQEvent_t> &event); 
 int ImportNMRANAData(const char *inpath,std::vector<nmrAnaEvent_t> &Data,std::string cutFile);
-int ImportNMRANAData_new(int run,std::string version,std::vector<nmrAnaEvent_t> &data,std::string cutFile); 
+int ImportNMRANAData_new(const char *inpath,int run,std::vector<nmrAnaEvent_t> &data,std::string cutFile); 
 int ImportDeltaBFileList_csv(const char *inpath,
                     std::vector<int> &x1,std::vector<std::string> &x2,
                     std::vector<double> &x3); 
@@ -112,6 +112,7 @@ int SortRunsAlt(std::vector<std::string> label,std::vector<int> allRuns,
              std::vector<int> &run,std::vector<int> &index);
 
 int ImportResults(std::string inpath,result_t &data); 
+int LoadShimmedFieldFitPars(const char *inpath,std::vector<double> &x,std::vector<double> &dx);
 
 // templated functions
 // trolley  

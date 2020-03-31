@@ -56,13 +56,17 @@ int PlotPP(){
    // run.push_back(6734);
    // run.push_back(6735);
    // run 2, probe 8
-   run.push_back(6746);
-   run.push_back(6747);
-   run.push_back(6749);
+   // run.push_back(6746);
+   // run.push_back(6747);
+   // run.push_back(6749);
+   // run.push_back(8032);  // run 2, probe 14 
+   // run.push_back(6124);  // run 2, probe 15 (dB) 
+   // run.push_back(6464);  // run 2, probe 6 (dBy)
+   run.push_back(5522);     // run 1, probe 4 swap  
 
-   int runPeriod   = 2;
-   int probeNumber = 8; 
-   int axis        = 1;  
+   int runPeriod   = 1;
+   int probeNumber = 4; 
+   int axis        = 0;  
    int prMethod    = gm2fieldUtil::Constants::kPhaseDerivative;
    int ppMethod    = plungingProbeAnalysis::kLeastSquaresPhase;
 
@@ -79,6 +83,8 @@ int PlotPP(){
 
    std::string prodVersion   = "v9_30_00_dev";
    std::string nmrAnaVersion = "v02_02";
+
+   if(runPeriod==1) prodVersion = "v9_21_04_dev"; 
 
    double tempCorValue = -0.340;
 
