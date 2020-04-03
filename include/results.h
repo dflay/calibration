@@ -197,6 +197,8 @@ typedef struct calib_result {
    double misCor_yErr;            // misalignment correction along y [uncertainty]   
    double misCor_z;               // misalignment correction along z  
    double misCor_zErr;            // misalignment correction along z [uncertainty]   
+   double misCor_z_bar;           // misalignment correction along z (barcode corrected) 
+   double misCor_zErr_bar;        // misalignment correction along z (barcode corrected) [uncertainty]  
 
    double mis_x;                  // misalignment along x in mm  
    double mis_xErr;               // misalignment along x in mm [uncertainty]   
@@ -204,6 +206,8 @@ typedef struct calib_result {
    double mis_yErr;               // misalignment along y in mm [uncertainty]   
    double mis_z;                  // misalignment along z in mm  
    double mis_zErr;               // misalignment along z in mm [uncertainty]  
+   double mis_z_bar;              // misalignment along z in mm (barcode corrected) 
+   double mis_zErr_bar;           // misalignment along z in mm (barcode corrected) [uncertainty]  
 
    double fpCor;                  // free-proton correction in ppb 
    double fpCorErr;               // free-proton correction in ppb [uncertainty]  

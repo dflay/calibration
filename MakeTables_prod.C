@@ -72,7 +72,9 @@ int GetImposedGradients(const char *inpath,std::vector<imposed_gradient_t> &imp_
 int GetShimmedGradients(const char *prefix,int probe,std::string prodVersion,std::vector<std::string> gradName,
                         std::vector<grad_meas_t> &shim_grad);
 
-int PrintResults(const char *outpath,std::vector<calib_result_t> data,bool toROOT=true,bool toJSON=true); 
+int PrintResults(const char *outpath,std::vector<calib_result_t> data,bool toROOT=true,bool toJSON=true,bool toCSV=true); 
+
+int PrintToFile_csv(const char *outpath,std::vector<calib_result_t> data); 
 
 int PrintToFile_json(const char *outpath,std::vector<calib_result_t> data); 
 int GetJSONObject(std::vector<calib_result_t> data,json &jData);
@@ -402,9 +404,16 @@ int CollectData(std::vector<result_prod_t> r,std::vector<result_prod_t> rFree,
       dataPt.dB_y                  = mis[i].dB_y_opt; 
       dataPt.dB_z                  = mis[i].dB_z_opt;
       dataPt.dB_r_tot              = TMath::Sqrt( dataPt.dx*dataPt.dx + dataPt.dy*dataPt.dy + dataPt.dz*dataPt.dz ); 
-      // misalignment CORRECTION. always use the opt result.  this is in Hz  
-      dataPt.misCor                = mCor[i][2].val;  
-      dataPt.misCor_err            = mCor[i][2].err;
+      // misalignment CORRECTION. always use the opt result.  this is in Hz 
+      // FIXME: Add the individual axis corrections!  
+      dataPt.misCor                = mCor[i][2].val; // this is a sum over all axes, opt result     
+      dataPt.misCor_err            = mCor[i][2].err; // this is a sum over all axes, opt result 
+      dataPt.misCor_x              = 0.;
+      dataPt.misCor_xErr           = 0.;
+      dataPt.misCor_y              = 0.;
+      dataPt.misCor_yErr           = 0.;
+      dataPt.misCor_z              = 0.;
+      dataPt.misCor_zErr           = 0.;
       // misalignment in mm; TODO: uncertainties? 
       dataPt.mis_x                 = mis[i].dx_opt;  
       dataPt.mis_xErr              = 0;  
@@ -412,6 +421,8 @@ int CollectData(std::vector<result_prod_t> r,std::vector<result_prod_t> rFree,
       dataPt.mis_yErr              = 0;  
       dataPt.mis_z                 = mis[i].dz_opt;  
       dataPt.mis_zErr              = 0;  
+      dataPt.mis_z_bar             = 0;  
+      dataPt.mis_zErr_bar          = 0;  
       // systematic uncertainty (this is identical for raw and free results)  
       dataPt.systErr               = r[i].systErr;  
       // fill vector 
@@ -525,12 +536,15 @@ int GetTemperatures(const char *outdir,int probeNumber,result_prod_t &res,result
    
 }
 //______________________________________________________________________________
-int PrintResults(const char *filename,std::vector<calib_result_t> data,bool toROOT,bool toJSON){
-   // ROOT file parameters 
-   char outpath_root[200],outpath_json[200];
+int PrintResults(const char *filename,std::vector<calib_result_t> data,bool toROOT,bool toJSON,bool toCSV){
+   // print results to multiple formats 
+
+   char outpath_root[200],outpath_json[200],outpath_csv[200];
    sprintf(outpath_root,"%s.root",filename); 
    sprintf(outpath_json,"%s.json",filename); 
+   sprintf(outpath_csv ,"%s.csv" ,filename); 
 
+   // ROOT file parameters 
    gm2fieldUtil::rootData_t rd;
    rd.fileName      = outpath_root;
    rd.treeName      = "CAL";
@@ -540,8 +554,86 @@ int PrintResults(const char *filename,std::vector<calib_result_t> data,bool toRO
    int rc=0;
    if(toROOT) rc = gm2fieldUtil::Export::PrintToROOTFile<calib_result_t>(rd,data); 
    if(toJSON) rc = PrintToFile_json(outpath_json,data); 
+   if(toCSV)  rc = PrintToFile_csv(outpath_csv,data); 
    
    return rc;
+}
+//______________________________________________________________________________
+int PrintTiFile_csv(const char *outpath,std::vector<calib_result_t> data){
+
+   char outStr[1000]; 
+   const int N = data.size();
+
+   std::string header = "Probe,calibCoeff,calibCoeffErr,calibCoeff_cor,calibCoeffErr_cor,calibCoeffFree,calibCoeffFreeErr,calibCoeffFree_cor,calibCoeffFreeErr_cor,deltaB_tr_x,deltaB_tr_xErr,deltaB_tr_y,deltaB_tr_yErr,deltaB_tr_z,deltaB_tr_zErr,deltaB_pp_x,deltaB_pp_xErr,deltaB_pp_y,deltaB_pp_yErr,deltaB_pp_zErr,dBdx_imp,dBdx_impErr,dBdy_imp,dBdy_impErr,dBdz_imp,dBdz_impErr,dBdx_shim,dBdx_shimErr,dBdy_shim,dBdy_shimErr,dBdz_shim,dBdz_shimErr,mis_x,mis_xErr,mis_y,mis_yErr,mis_z,mis_zErr,misCor_x,misCor_xErr,misCor_y,misCor_yErr,misCor_z,misCor_zErr,shim_x_a,shim_x_aErr,shim_x_b,shim_x_bErr,shim_x_c,shim_x_cErr,shim_y_a,shim_y_aErr,shim_y_b,shim_y_bErr,shim_y_c,shim_y_cErr,shim_z_a,shim_z_aErr,shim_z_b,shim_z_bErr,shim_z_c,shim_z_cErr,mis_z_bar,mis_zErr_bar,misCor_z_bar,misCor_zErr_bar";
+
+   std::ofstream outfile; 
+   outfile.open(outpath);
+   if( outfile.fail() ){
+      std::cout << "Cannot open the file: " << outpath << std::endl;
+      return 1;
+   }else{
+      outfile << header << std::endl;
+      for(int i=0;i<Ni++){
+	 sprintf(outStr,"%02d,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf.%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf.%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf",
+	       // data[i].calibCoeff            ,data[i].calibCoeffErr        ,
+	       // data[i].calibCoeff_aba        ,data[i].calibCoeffErr_aba    ,
+	       data[i].calibCoeff_opt        ,data[i].calibCoeffErr_opt    ,
+	       // data[i].calibCoeffCor         ,data[i].calibCoeffCorErr     ,
+	       // data[i].calibCoeffCor_aba     ,data[i].calibCoeffCorErr_aba ,
+	       data[i].calibCoeffCor_opt     ,data[i].calibCoeffCorErr_opt ,
+	       // data[i].calibCoeffFree        ,data[i].calibCoeffFreeErr        ,
+	       // data[i].calibCoeffFree_aba    ,data[i].calibCoeffFreeErr_aba    ,
+	       data[i].calibCoeffFree_opt    ,data[i].calibCoeffFreeErr_opt    ,
+	       // data[i].calibCoeffCorFree     ,data[i].calibCoeffCorFreeErr     ,
+	       // data[i].calibCoeffCorFree_aba ,data[i].calibCoeffCorFreeErr_aba ,
+	       data[i].calibCoeffCorFree_opt ,data[i].calibCoeffCorFreeErr_opt ,
+
+	       data[i].deltaB_tr_x           ,data[i].deltaB_tr_xErr,
+	       data[i].deltaB_tr_y           ,data[i].deltaB_tr_yErr,
+	       data[i].deltaB_tr_z           ,data[i].deltaB_tr_zErr,
+
+	       data[i].deltaB_pp_x           ,data[i].deltaB_pp_xErr,
+	       data[i].deltaB_pp_y           ,data[i].deltaB_pp_yErr,
+	       data[i].deltaB_pp_z           ,data[i].deltaB_pp_zErr,
+
+	       data[i].dBdx_imp              ,data[i].dBdx_impErr,
+	       data[i].dBdy_imp              ,data[i].dBdy_impErr,
+	       data[i].dBdz_imp              ,data[i].dBdz_impErr,
+
+	       data[i].dBdx_shim             ,data[i].dBdx_shimErr,
+	       data[i].dBdy_shim             ,data[i].dBdy_shimErr,
+	       data[i].dBdz_shim             ,data[i].dBdz_shimErr,
+
+	       data[i].mis_x                 ,data[i].mis_xErr,
+	       data[i].mis_y                 ,data[i].mis_yErr,
+	       data[i].mis_z                 ,data[i].mis_zErr,
+
+	       data[i].misCor_x              ,data[i].misCor_xErr,
+	       data[i].misCor_y              ,data[i].misCor_yErr,
+	       data[i].misCor_z              ,data[i].misCor_zErr,
+
+	       data[i].shim_x_a              ,data[i].shim_x_aErr,
+	       data[i].shim_x_b              ,data[i].shim_x_bErr,
+	       data[i].shim_x_c              ,data[i].shim_x_cErr,
+
+	       data[i].shim_y_a              ,data[i].shim_y_aErr,
+	       data[i].shim_y_b              ,data[i].shim_y_bErr,
+	       data[i].shim_y_c              ,data[i].shim_y_cErr,
+
+	       data[i].shim_z_a              ,data[i].shim_z_aErr,
+	       data[i].shim_z_b              ,data[i].shim_z_bErr,
+	       data[i].shim_z_c              ,data[i].shim_z_cErr,
+
+	       data[i].mis_z_bar             ,data[i].mis_zErr_bar,
+	       data[i].misCor_z_bar          ,data[i].misCor_zErr_bar); 
+
+	 outfile << outStr << std::endl;
+      }
+      outfile.close();
+      std::cout << "The data has been written to the file: " << outpath << std::endl;
+   }
+   return 0;
+
 }
 //______________________________________________________________________________
 int PrintToFile_json(const char *outpath,std::vector<calib_result_t> data){
