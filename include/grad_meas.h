@@ -3,6 +3,8 @@
 
 // a gradient measurement
 
+#define NUM_SHIM_FIT_PAR 10
+
 typedef struct grad_meas {
    std::string name;         // rad, vert, or azi 
    double grad;              // measured gradient 
@@ -17,6 +19,8 @@ typedef struct grad_meas {
    double drift_trly_err;
    double p2p_err;           // point-to-point drift correction error 
    double r2r_err;           // run-to-run drift correction error 
+   double par[NUM_SHIM_FIT_PAR];    // fit parameters
+   double parErr[NUM_SHIM_FIT_PAR]; // fit parameter uncertainties
 } grad_meas_t;
 
 // imposed gradient 

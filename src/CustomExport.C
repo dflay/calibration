@@ -97,6 +97,28 @@ int PrintToFile(const char *outpath,std::vector<std::string> label,std::vector<d
 }
 //______________________________________________________________________________
 int PrintToFile(const char *outpath,std::vector<std::string> label,
+                std::vector<double> x1,std::vector<double> x2,std::vector<double> x3){
+
+   char outStr[200]; 
+   const int N = label.size(); 
+
+   std::ofstream outfile;
+   outfile.open(outpath);
+   if( outfile.fail() ){
+      std::cout << "Cannot open the file: " << outpath << std::endl;
+      return 1;
+   }else{
+      for(int i=0;i<N;i++){
+	 sprintf(outStr,"%s,%.3lf,%.3lf,%.3lf",label[i].c_str(),x1[i],x2[i],x3[i]);
+	 outfile << outStr << std::endl;
+      }
+      outfile.close();
+      std::cout << "The data has been written to the file: " << outpath << std::endl;
+   }
+   return 0;
+}
+//______________________________________________________________________________
+int PrintToFile(const char *outpath,std::vector<std::string> label,
                 std::vector<double> x1,std::vector<double> x2,
                 std::vector<double> x3,std::vector<double> x4){
 
@@ -238,6 +260,42 @@ int PrintToFile(const char *outpath,std::string label,const int N,double *x,doub
       outfile << outStr << std::endl;
       outfile.close();
       std::cout << "The data has been written to the file: " << outpath << std::endl;
+   }
+   return 0;
+}
+//______________________________________________________________________________
+int PrintToFile(const char *outpath,std::vector<double> x){
+   char outStr[200];
+   const int N = x.size();
+
+   std::ofstream outfile;
+   outfile.open(outpath);
+   if( outfile.fail() ){
+      std::cout << "Cannot open the file: " << outpath << std::endl;
+      return 1;
+   }else{
+      for(int i=0;i<N;i++){
+         sprintf(outStr,"%.3lf",x[i]);
+         outfile << outStr << std::endl;
+      }
+   }
+   return 0;
+}
+//______________________________________________________________________________
+int PrintToFile(const char *outpath,std::vector<double> x1,std::vector<double> x2){
+   char outStr[200];
+   const int N = x1.size();
+
+   std::ofstream outfile;
+   outfile.open(outpath);
+   if( outfile.fail() ){
+      std::cout << "Cannot open the file: " << outpath << std::endl;
+      return 1;
+   }else{
+      for(int i=0;i<N;i++){
+         sprintf(outStr,"%.3lf,%.3lf",x1[i],x2[i]);
+         outfile << outStr << std::endl;
+      }
    }
    return 0;
 }

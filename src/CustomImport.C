@@ -950,7 +950,7 @@ int LoadResultsProdFinalData(const char *inpath,result_prod_t &data){
    char buf[SIZE]; 
 
    int cntr=0;
-   std::string stype,sx,sShot,sMisalign,sFree,sSyst;
+   std::string stype,sx,sxmc,sShot,sMisalign,sFree,sSyst;
 
    ifstream infile;
    infile.open(inpath);
@@ -962,23 +962,27 @@ int LoadResultsProdFinalData(const char *inpath,result_prod_t &data){
       while( !infile.eof() ){
          std::getline(infile,stype    ,',');
          std::getline(infile,sx       ,','); 
+         std::getline(infile,sxmc     ,','); 
          std::getline(infile,sShot    ,',');
          std::getline(infile,sMisalign,',');
          std::getline(infile,sFree    ,',');
          std::getline(infile,sSyst);
 	 cntr++;
 	 if(cntr==1){
-	    data.diff    = std::atof( sx.c_str() ); 
-	    data.diffErr = std::atof( sShot.c_str() );
-	    data.mErr    = std::atof( sMisalign.c_str() );
-	    data.pErr    = std::atof( sFree.c_str() );
+	    data.diff        = std::atof( sx.c_str() ); 
+	    data.diffCor     = std::atof( sxmc.c_str() );
+	    data.diffErr     = std::atof( sShot.c_str() );
+	    data.mErr        = std::atof( sMisalign.c_str() );
+	    data.pErr        = std::atof( sFree.c_str() );
          }else if(cntr==2){
 	    data.diff_aba    = std::atof( sx.c_str() ); 
+	    data.diffCor_aba = std::atof( sxmc.c_str() );
 	    data.diffErr_aba = std::atof( sShot.c_str() );
 	    data.mErr_aba    = std::atof( sMisalign.c_str() );
 	    data.pErr_aba    = std::atof( sFree.c_str() );
          }else if(cntr==3){
 	    data.diff_opt    = std::atof( sx.c_str() ); 
+	    data.diffCor_opt = std::atof( sxmc.c_str() );
 	    data.diffErr_opt = std::atof( sShot.c_str() );
 	    data.mErr_opt    = std::atof( sMisalign.c_str() );
 	    data.pErr_opt    = std::atof( sFree.c_str() );
@@ -1026,7 +1030,7 @@ int LoadResultsProdData(const char *inpath,result_prod_t &data){
    char buf[SIZE]; 
 
    int cntr=0;
-   std::string sx,sdx;
+   std::string sx1,sx2,sdx;
 
    ifstream infile;
    infile.open(inpath);
@@ -1036,18 +1040,25 @@ int LoadResultsProdData(const char *inpath,result_prod_t &data){
    }else{
       for(int i=0;i<NLines;i++) infile.getline(buf,SIZE); 
       while( !infile.eof() ){
-         std::getline(infile,sx,',');
+         std::getline(infile,sx1,',');
+         std::getline(infile,sx2,',');
          std::getline(infile,sdx);
 	 cntr++;
 	 if(cntr==1){
-	    data.diff    = std::atof( sx.c_str() ); 
-	    data.diffErr = std::atof( sdx.c_str() );
+	    data.diff           = std::atof( sx1.c_str() ); 
+	    data.diffCor        = std::atof( sx2.c_str() ); 
+	    data.diffErr        = std::atof( sdx.c_str() );
+	    data.diffCorErr     = std::atof( sdx.c_str() );
          }else if(cntr==2){
-	    data.diff_aba    = std::atof( sx.c_str() ); 
-	    data.diffErr_aba = std::atof( sdx.c_str() );
+	    data.diff_aba       = std::atof( sx1.c_str() ); 
+	    data.diffCor_aba    = std::atof( sx2.c_str() ); 
+	    data.diffErr_aba    = std::atof( sdx.c_str() );
+	    data.diffCorErr_aba = std::atof( sdx.c_str() );
          }else if(cntr==3){
-	    data.diff_opt    = std::atof( sx.c_str() ); 
-	    data.diffErr_opt = std::atof( sdx.c_str() );
+	    data.diff_opt       = std::atof( sx1.c_str() ); 
+	    data.diffCor_opt    = std::atof( sx2.c_str() ); 
+	    data.diffErr_opt    = std::atof( sdx.c_str() );
+	    data.diffCorErr_opt = std::atof( sdx.c_str() );
          } 
       }
       infile.close();

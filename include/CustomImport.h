@@ -114,6 +114,8 @@ int SortRunsAlt(std::vector<std::string> label,std::vector<int> allRuns,
 int ImportResults(std::string inpath,result_t &data); 
 int LoadShimmedFieldFitPars(const char *inpath,std::vector<double> &x,std::vector<double> &dx);
 
+int ImportData3(const char *inpath,std::vector<std::string> label,std::vector<double> &x1,std::vector<double> &x2);
+
 // templated functions
 // trolley  
 //______________________________________________________________________________

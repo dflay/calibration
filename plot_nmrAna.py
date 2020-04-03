@@ -40,7 +40,7 @@ runList = myParser.fList
 # directory where runs are stored
 dirName = sys.argv[2]
 
-headerNames = ["trace","channel","time_ns","zc","nc","ampl","rms_noise","t2_time","temp","freq_LO","freq_pi2",
+headerNames = ["trace","channel","time_ns","zc","nc","ampl","rms_noise","t2_time","temp_ohms","freq_LO","freq_pi2",
                "freq_mid","freq_lin","freq_lsq","freq_mid_ph","freq_lin_ph","freq_lsq_ph"]
 
 prefix = "./input/NMR-ANA/{0}".format(dirName)
@@ -60,7 +60,7 @@ for i in xrange(1,NR):
    for j in xrange(0,10): 
       rList.append(runList[i]) 
    df_new = pd.read_csv(csv_path,names=headerNames)
-   df = df.append(df_new)
+   df     = df.append(df_new)
 
 # print rList
 NRR = len(rList) 
@@ -81,13 +81,13 @@ df.rename(columns = {'time_ns':'time'}, inplace=True)
 
 # convert temperature from Ohms to deg C
 # get list of temperatures 
-theTMP_ohms = df['temp'].tolist() # in Ohms
+TMP_ohms = df['temp_ohms'].tolist() # in Ohms
 TMP = []
-NT = len(theTMP_ohms)
+NT = len(TMP_ohms)
 # calculate value in deg C
 for i in xrange(0,NT):  
-   tmp = convTemp(df_temp_table['Temperature'],df_temp_table['Resistance (Ohms)'],theTMP_ohms[i])
-   # print("{0:.3f}, {1:.3f}".format(theTMP_ohms[i],tmp) )
+   tmp = convTemp(df_temp_table['Temperature'],df_temp_table['Resistance (Ohms)'],TMP_ohms[i])
+   # print("{0:.3f}, {1:.3f}".format(TMP_ohms[i],tmp) )
    TMP.append(tmp)
 # add a new column with temp in deg C 
 df.insert(0,"temp_degC",TMP) 
@@ -99,12 +99,12 @@ df['time'] = df['time'].astype("datetime64[s]")
 print df
 
 # create the figure
-NROW = 3
+NROW = 3 
 NCOL = 1 
 fig, ax = plt.subplots(nrows=NROW, ncols=NCOL)
 ax[0].set_title("PP Data")
 
-yAxisName  = ["freq_lsq_ph","temp_degC","ampl"]
+yAxisName  = ["freq_lsq_ph"   ,"temp_degC"          ,"ampl"]
 yAxisLabel = ["Frequency (Hz)","Temperature (deg C)","Amplitude (V)"]
 
 # create the plot
@@ -135,15 +135,15 @@ for i in xrange(0,NP):
       yhi = mean + 0.2 
    # set graph limits
    plt.ylim(bottom=ylo,top=yhi)
-   # set up labels -- DOES NOT WORK
+   # set up labels
    plt.xlabel('')
    plt.ylabel(yAxisLabel[i])
-   # ax[i].label_outer() # for stacked plots, only label the outer ones
    # format the time axis -- DOES NOT WORK
-   xfmt = md.DateFormatter('%Y-%m-%d %H:%M:%S')
-   ax[i].xaxis.set_major_formatter(xfmt)
-   # puts the date on an angle -- THIS WORKS 
-   plt.gcf().autofmt_xdate()
+   # ax[i].label_outer() # for stacked plots, only label the outer ones
+   xfmt = md.DateFormatter('%Y-%m-%d\n%H:%M:%S')
+   plt.gca().xaxis.set_major_formatter(xfmt)
+   # puts the date on an angle 
+   # plt.gcf().autofmt_xdate()
 
 plt.show()
  

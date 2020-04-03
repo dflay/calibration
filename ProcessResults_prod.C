@@ -115,13 +115,13 @@ int ProcessResults_prod(std::string configFile){
    // index 0 = raw, 1 = ABA, 2 = opt 
    std::vector<misalignCor_t> mCor;  
    sprintf(outPath_misalign,"%s/misalign-cor_pr-%02d.csv",outDir.c_str(),probeNumber);
-   if(isMisalignCor) rc = LoadMisalignmentCorData(outPath_misalign,mCor);
+   rc = LoadMisalignmentCorData(outPath_misalign,mCor);
 
-   if(isMisalignCor){
+   // if(isMisalignCor){
       tot_misalign_err     = mCor[0].err;
       tot_misalign_err_aba = mCor[1].err;
       tot_misalign_err_opt = mCor[2].err;
-   } 
+   // } 
 
    // load in perturbation data (just in case we need it) 
    // char inpath_pert[200];
@@ -157,14 +157,24 @@ int ProcessResults_prod(std::string configFile){
    rc = LoadSystematicUncertainties(inpath_syst,probeNumber-1,systType,systErr);  
 
    char errStr[200],errStr_aba[200],errStr_opt[200];
-   sprintf(errStr    ,"%.3lf +/- %.3lf",shot_err    ,tot_misalign_err); 
-   sprintf(errStr_aba,"%.3lf +/- %.3lf",shot_err_aba,tot_misalign_err_aba); 
-   sprintf(errStr_opt,"%.3lf +/- %.3lf",shot_err_opt,tot_misalign_err_opt); 
+   sprintf(errStr    ,"%.3lf",shot_err    ); 
+   sprintf(errStr_aba,"%.3lf",shot_err_aba); 
+   sprintf(errStr_opt,"%.3lf",shot_err_opt); 
+
+   char errStr_cor[200],errStr_cor_aba[200],errStr_cor_opt[200];
+   sprintf(errStr_cor    ,"%.3lf +/- %.3lf",shot_err    ,tot_misalign_err); 
+   sprintf(errStr_cor_aba,"%.3lf +/- %.3lf",shot_err_aba,tot_misalign_err_aba); 
+   sprintf(errStr_cor_opt,"%.3lf +/- %.3lf",shot_err_opt,tot_misalign_err_opt); 
 
    char errStr_free[200],errStr_free_aba[200],errStr_free_opt[200];
-   sprintf(errStr_free    ,"%.3lf +/- %.3lf +/- %.3lf",shot_err_free    ,tot_misalign_err    ,freeProtErr); 
-   sprintf(errStr_free_aba,"%.3lf +/- %.3lf +/- %.3lf",shot_err_free_aba,tot_misalign_err_aba,freeProtErr); 
-   sprintf(errStr_free_opt,"%.3lf +/- %.3lf +/- %.3lf",shot_err_free_opt,tot_misalign_err_opt,freeProtErr); 
+   sprintf(errStr_free    ,"%.3lf +/- %.3lf",shot_err_free    ,freeProtErr); 
+   sprintf(errStr_free_aba,"%.3lf +/- %.3lf",shot_err_free_aba,freeProtErr); 
+   sprintf(errStr_free_opt,"%.3lf +/- %.3lf",shot_err_free_opt,freeProtErr);
+ 
+   char errStr_cor_free[200],errStr_cor_free_aba[200],errStr_cor_free_opt[200];
+   sprintf(errStr_cor_free    ,"%.3lf +/- %.3lf +/- %.3lf",shot_err_free    ,tot_misalign_err    ,freeProtErr); 
+   sprintf(errStr_cor_free_aba,"%.3lf +/- %.3lf +/- %.3lf",shot_err_free_aba,tot_misalign_err_aba,freeProtErr); 
+   sprintf(errStr_cor_free_opt,"%.3lf +/- %.3lf +/- %.3lf",shot_err_free_opt,tot_misalign_err_opt,freeProtErr); 
 
    // apply TRLY footprint if necessary 
    if(applyTrlyFP){
@@ -189,6 +199,13 @@ int ProcessResults_prod(std::string configFile){
    sprintf(errStr_free_aba,"%s +/- %.3lf",errStr_free_aba,systErr);  
    sprintf(errStr_free_opt,"%s +/- %.3lf",errStr_free_opt,systErr);  
 
+   sprintf(errStr_cor         ,"%s +/- %.3lf",errStr_cor         ,systErr);  
+   sprintf(errStr_cor_aba     ,"%s +/- %.3lf",errStr_cor_aba     ,systErr);  
+   sprintf(errStr_cor_opt     ,"%s +/- %.3lf",errStr_cor_opt     ,systErr);  
+   sprintf(errStr_cor_free    ,"%s +/- %.3lf",errStr_cor_free    ,systErr);  
+   sprintf(errStr_cor_free_aba,"%s +/- %.3lf",errStr_cor_free_aba,systErr);  
+   sprintf(errStr_cor_free_opt,"%s +/- %.3lf",errStr_cor_free_opt,systErr);  
+
    result.mErr     = tot_misalign_err; 
    result.mErr_aba = tot_misalign_err_aba; 
    result.mErr_opt = tot_misalign_err_opt; 
@@ -205,6 +222,7 @@ int ProcessResults_prod(std::string configFile){
   
    std::cout << Form("******************************************************************") << std::endl;
    std::cout << Form("************************* PROBE %02d RESULTS ***********************",probeNumber) << std::endl;
+   std::cout << "WITHOUT Misalignment correction" << std::endl;
    std::cout << "Bare" << std::endl;
    std::cout << Form("[RAW]: %.3lf +/- %s Hz",result.diff    ,errStr)     << std::endl;
    std::cout << Form("[ABA]: %.3lf +/- %s Hz",result.diff_aba,errStr_aba) << std::endl;
@@ -213,6 +231,15 @@ int ProcessResults_prod(std::string configFile){
    std::cout << Form("[RAW]: %.3lf +/- %s Hz",result_free.diff    ,errStr_free)     << std::endl;
    std::cout << Form("[ABA]: %.3lf +/- %s Hz",result_free.diff_aba,errStr_free_aba) << std::endl;
    std::cout << Form("[opt]: %.3lf +/- %s Hz",result_free.diff_opt,errStr_free_opt) << std::endl;
+   std::cout << "WITH Misalignment correction" << std::endl;
+   std::cout << "Bare" << std::endl;
+   std::cout << Form("[RAW]: %.3lf +/- %s Hz",result.diffCor    ,errStr_cor)     << std::endl;
+   std::cout << Form("[ABA]: %.3lf +/- %s Hz",result.diffCor_aba,errStr_cor_aba) << std::endl;
+   std::cout << Form("[opt]: %.3lf +/- %s Hz",result.diffCor_opt,errStr_cor_opt) << std::endl;
+   std::cout << "Free proton" << std::endl;
+   std::cout << Form("[RAW]: %.3lf +/- %s Hz",result_free.diffCor    ,errStr_cor_free)     << std::endl;
+   std::cout << Form("[ABA]: %.3lf +/- %s Hz",result_free.diffCor_aba,errStr_cor_free_aba) << std::endl;
+   std::cout << Form("[opt]: %.3lf +/- %s Hz",result_free.diffCor_opt,errStr_cor_free_opt) << std::endl;
    std::cout << Form("******************************************************************") << std::endl;
    std::cout << Form("******************************************************************") << std::endl;
 
@@ -251,13 +278,13 @@ int PrintResults(std::string outpath,result_prod_t result){
 
    char header[500]; 
    // prepare the header 
-   sprintf(header,"#type,diff,shot-err,misalign-err,free-prot-err,syst"); 
+   sprintf(header,"#type,diff,diff-mis-cor,shot-err,misalign-err,free-prot-err,syst"); 
    char myStr[1000]; 
-   sprintf(myStr    ,"raw,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf",result.diff,result.diffErr,result.mErr,result.pErr,result.systErr); 
+   sprintf(myStr    ,"raw,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf",result.diff    ,result.diffCor    ,result.diffErr    ,result.mErr    ,result.pErr    ,result.systErr); 
    char myStr_aba[1000]; 
-   sprintf(myStr_aba,"ABA,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf",result.diff_aba,result.diffErr_aba,result.mErr_aba,result.pErr_aba,result.systErr); 
+   sprintf(myStr_aba,"ABA,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf",result.diff_aba,result.diffCor_aba,result.diffErr_aba,result.mErr_aba,result.pErr_aba,result.systErr); 
    char myStr_opt[1000]; 
-   sprintf(myStr_opt,"opt,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf",result.diff_opt,result.diffErr_opt,result.mErr_opt,result.pErr_opt,result.systErr); 
+   sprintf(myStr_opt,"opt,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf",result.diff_opt,result.diffCor_opt,result.diffErr_opt,result.mErr_opt,result.pErr_opt,result.systErr); 
 
    std::ofstream outfile;
    outfile.open(outpath.c_str());

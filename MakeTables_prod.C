@@ -49,6 +49,10 @@ double gMarkerSize = 0.8;
 double gXSize      = 0.05;  
 double gYSize      = 0.06;  
 
+int GetTemperatures(const char *outdir,int probeNumber,result_prod_t &res,result_prod_t &resFree); 
+int GetFreeProtonCorrection(const char *outdir,int probeNumber,result_prod_t &resFree); 
+int GetShimmedGradientFitPars(const char *outdir,int probeNumber,std::vector<grad_meas_t> &data); 
+
 int ApplyShimmedGradEstimates(int probe,std::string prodVersion,std::vector<grad_meas_t> &data); 
 int PrintTableOfResults(const char *outpath,int probe,double diff,double diffFree,
                         double swapErr,double mErr,double pErr,double systErr);
@@ -137,6 +141,8 @@ int MakeTables_prod(int runPeriod,std::string theDate,int isSyst,int systDirNum)
    double sum_sq=0;
    double sumf=0,sum_sf=0,sum=0;
    double sumf_ppb=0,sum_ppb=0;
+   double ppt=0,ppt_err=0; 
+   double trt=0,trt_err=0; 
 
    int k=0; 
    int probeNumber = 0; 
@@ -148,12 +154,18 @@ int MakeTables_prod(int runPeriod,std::string theDate,int isSyst,int systDirNum)
       sprintf(inpath,"%s/results_final_pr-%02d.csv",outDir.c_str(),probeNumber);
       rc = LoadResultsProdFinalData(inpath,result);
       if(rc!=0) continue;
-      probe.push_back(probeNumber);  
       res.push_back(result); 
       // load free-proton result 
       sprintf(inpath,"%s/results_final_free-prot_pr-%02d.csv",outDir.c_str(),probeNumber);
       rc = LoadResultsProdFinalData(inpath,result);
-      resFree.push_back(result); 
+      resFree.push_back(result);
+      // load temperatures 
+      rc = GetTemperatures(outDir.c_str(),probeNumber,res[i],resFree[i]);
+      // load free proton correction 
+      rc = GetFreeProtonCorrection(outDir.c_str(),probeNumber,resFree[i]);
+      if(rc!=0) continue;
+      // increment probe number
+      probe.push_back(probeNumber);  
       // load OPTIMIZED Delta-B numbers
       sprintf(inpath,"%s/delta-b-opt_pr-%02d.csv",outDir.c_str(),probeNumber); 
       rc = LoadDeltaB_opt(inpath,dbPP,dbTR);
@@ -162,6 +174,8 @@ int MakeTables_prod(int runPeriod,std::string theDate,int isSyst,int systDirNum)
       // load shimmed gradients 
       sprintf(inpath,"%s/shim-grad_opt_pr-%02d.csv",outDir.c_str(),probeNumber); 
       rc = LoadShimmedGrad_opt(inpath,grad);  
+      // load shimmed field fit pars
+      rc = GetShimmedGradientFitPars(outDir.c_str(),probeNumber,grad); 
       if(rc!=0) return 1;
       shimGrad.push_back(grad);
       // clean up 
@@ -301,21 +315,42 @@ int CollectData(std::vector<result_prod_t> r,std::vector<result_prod_t> rFree,
    calib_result_t dataPt; 
    const int N = r.size();
    for(int i=0;i<N;i++){
-      // no proton corrections 
-      dataPt.calibCoeff            = r[i].diff; 
-      dataPt.calibCoeffErr         = r[i].diffErr;  
-      dataPt.calibCoeff_aba        = r[i].diff_aba; 
-      dataPt.calibCoeffErr_aba     = r[i].diffErr_aba;
-      dataPt.calibCoeff_opt        = r[i].diff_opt; 
-      dataPt.calibCoeffErr_opt     = r[i].diffErr_opt;
-      // free proton corrections applied 
-      dataPt.calibCoeffFree        = rFree[i].diff;  
-      dataPt.calibCoeffFreeErr     = rFree[i].diffErr;  
-      dataPt.calibCoeffFree_aba    = rFree[i].diff_aba;  
-      dataPt.calibCoeffFreeErr_aba = rFree[i].diffErr_aba; 
-      dataPt.calibCoeffFree_opt    = rFree[i].diff_opt;  
-      dataPt.calibCoeffFreeErr_opt = rFree[i].diffErr_opt; 
-      dataPt.freeErr               = rFree[i].pErr;  
+      // no proton corrections, no misalignment 
+      dataPt.calibCoeff               = r[i].diff; 
+      dataPt.calibCoeffErr            = r[i].diffErr;  
+      dataPt.calibCoeff_aba           = r[i].diff_aba; 
+      dataPt.calibCoeffErr_aba        = r[i].diffErr_aba;
+      dataPt.calibCoeff_opt           = r[i].diff_opt; 
+      dataPt.calibCoeffErr_opt        = r[i].diffErr_opt;
+      // no proton correction, with misalignment
+      dataPt.calibCoeffCor            = r[i].diffCor; 
+      dataPt.calibCoeffCorErr         = r[i].diffErr;         // note uncertainty is same as without mis cor!
+      dataPt.calibCoeffCor_aba        = r[i].diffCor_aba;      
+      dataPt.calibCoeffCorErr_aba     = r[i].diffErr_aba;     // note uncertainty is same as without mis cor!
+      dataPt.calibCoeffCor_opt        = r[i].diffCor_opt;      
+      dataPt.calibCoeffCorErr_opt     = r[i].diffErr_opt;     // note uncertainty is same as without mis cor!
+      // with free proton, without misalignment 
+      dataPt.calibCoeffFree           = rFree[i].diff;  
+      dataPt.calibCoeffFreeErr        = rFree[i].diffErr;        
+      dataPt.calibCoeffFree_aba       = rFree[i].diff_aba;    
+      dataPt.calibCoeffFreeErr_aba    = rFree[i].diffErr_aba;   
+      dataPt.calibCoeffFree_opt       = rFree[i].diff_opt;    
+      dataPt.calibCoeffFreeErr_opt    = rFree[i].diffErr_opt;  
+      // with free proton, with misalignment 
+      dataPt.calibCoeffCorFree        = rFree[i].diffCor;  
+      dataPt.calibCoeffCorFreeErr     = rFree[i].diffErr;     // note uncertainty is same as without mis cor! 
+      dataPt.calibCoeffCorFree_aba    = rFree[i].diffCor_aba;  
+      dataPt.calibCoeffCorFreeErr_aba = rFree[i].diffErr_aba; // note uncertainty is same as without mis cor!  
+      dataPt.calibCoeffCorFree_opt    = rFree[i].diffCor_opt;  
+      dataPt.calibCoeffCorFreeErr_opt = rFree[i].diffErr_opt; // note uncertainty is same as without mis cor! 
+      dataPt.freeErr                  = rFree[i].pErr; 
+      // free-proton related details.  
+      dataPt.fpCor                 = rFree[i].freeProtCor; 
+      dataPt.fpCorErr              = rFree[i].freeProtCorErr;
+      dataPt.ppTemp                = rFree[i].ppTemp;  
+      dataPt.ppTempErr             = rFree[i].ppTempErr;  
+      dataPt.trTemp                = rFree[i].trTemp;  
+      dataPt.trTempErr             = rFree[i].trTempErr;  
       // imposed gradient data 
       dataPt.dBdx_imp              = ig[i][0].grad;  
       dataPt.dBdy_imp              = ig[i][1].grad;
@@ -330,6 +365,25 @@ int CollectData(std::vector<result_prod_t> r,std::vector<result_prod_t> rFree,
       dataPt.dBdx_shimErr          = mg[i][0].grad_err;  
       dataPt.dBdy_shimErr          = mg[i][1].grad_err;
       dataPt.dBdz_shimErr          = mg[i][2].grad_err; 
+      // shimmed field fit parameters -- note REVERSED order of par index vs x,y,z 
+      dataPt.shim_x_a              = mg[i][0].par[2]; 
+      dataPt.shim_x_aErr           = mg[i][0].parErr[2]; 
+      dataPt.shim_x_b              = mg[i][0].par[1]; 
+      dataPt.shim_x_bErr           = mg[i][0].parErr[1]; 
+      dataPt.shim_x_c              = mg[i][0].par[0]; 
+      dataPt.shim_x_cErr           = mg[i][0].parErr[0]; 
+      dataPt.shim_y_a              = mg[i][1].par[2]; 
+      dataPt.shim_y_aErr           = mg[i][1].parErr[2]; 
+      dataPt.shim_y_b              = mg[i][1].par[1]; 
+      dataPt.shim_y_bErr           = mg[i][1].parErr[1]; 
+      dataPt.shim_y_c              = mg[i][1].par[0]; 
+      dataPt.shim_y_cErr           = mg[i][1].parErr[0]; 
+      dataPt.shim_z_a              = mg[i][2].par[2]; 
+      dataPt.shim_z_aErr           = mg[i][2].parErr[2]; 
+      dataPt.shim_z_b              = mg[i][2].par[1]; 
+      dataPt.shim_z_bErr           = mg[i][2].parErr[1]; 
+      dataPt.shim_z_c              = mg[i][2].par[0]; 
+      dataPt.shim_z_cErr           = mg[i][2].parErr[0]; 
       // delta-B data  
       dataPt.deltaB_pp_x           = dB_pp[i].dB_opt[0]; 
       dataPt.deltaB_pp_y           = dB_pp[i].dB_opt[1]; 
@@ -344,19 +398,131 @@ int CollectData(std::vector<result_prod_t> r,std::vector<result_prod_t> rFree,
       dataPt.deltaB_tr_yErr        = dB_tr[i].dB_opt_err[1]; 
       dataPt.deltaB_tr_zErr        = dB_tr[i].dB_opt_err[2];
       // misalignment data.  note that this is in Hz 
-      dataPt.dx                    = mis[i].dB_x_opt; 
-      dataPt.dy                    = mis[i].dB_y_opt; 
-      dataPt.dz                    = mis[i].dB_z_opt;
-      dataPt.dr                    = TMath::Sqrt( dataPt.dx*dataPt.dx + dataPt.dy*dataPt.dy + dataPt.dz*dataPt.dz ); 
+      dataPt.dB_x                  = mis[i].dB_x_opt; 
+      dataPt.dB_y                  = mis[i].dB_y_opt; 
+      dataPt.dB_z                  = mis[i].dB_z_opt;
+      dataPt.dB_r_tot              = TMath::Sqrt( dataPt.dx*dataPt.dx + dataPt.dy*dataPt.dy + dataPt.dz*dataPt.dz ); 
       // misalignment CORRECTION. always use the opt result.  this is in Hz  
       dataPt.misCor                = mCor[i][2].val;  
-      dataPt.misCor_err            = mCor[i][2].err; 
+      dataPt.misCor_err            = mCor[i][2].err;
+      // misalignment in mm; TODO: uncertainties? 
+      dataPt.mis_x                 = mis[i].dx_opt;  
+      dataPt.mis_xErr              = 0;  
+      dataPt.mis_y                 = mis[i].dy_opt;  
+      dataPt.mis_yErr              = 0;  
+      dataPt.mis_z                 = mis[i].dz_opt;  
+      dataPt.mis_zErr              = 0;  
       // systematic uncertainty (this is identical for raw and free results)  
       dataPt.systErr               = r[i].systErr;  
       // fill vector 
       data.push_back(dataPt);  
    }
    return 0;
+}
+//______________________________________________________________________________
+int GetFreeProtonCorrection(const char *outdir,int probeNumber,result_prod_t &resFree){
+
+   char path[200];
+   sprintf(path,"%s/pp-swap_fpc_pr-%02d.csv",outdir,probeNumber);
+   std::string inpath = path; 
+
+   std::vector<double> fpc,fpce;
+   int rc = gm2fieldUtil::Import::ImportData2<double>(inpath,"csv",fpc,fpce);
+   if(rc!=0) return 1;
+
+   // WARNING: we use the error on the mean, since that's effectively the weighted 
+   // average on the uncertainties that we use as weights.  Those uncertainties 
+   // are more meaningful than the scatter in the data here
+   double mean=0,err=0; 
+   std::vector<double> w; 
+   const int N = fpc.size();
+   for(int i=0;i<N;i++) w.push_back(fpce[i]); 
+ 
+   rc    = gm2fieldUtil::Math::GetWeightedMean<double>(fpc,w,mean,err); 
+   // stdev = gm2fieldUtil::Math::GetStandardDeviation<double>(fpc); 
+
+   resFree.freeProtCor    = mean;     
+   resFree.freeProtCorErr = err;    
+
+   return 0; 
+}
+//______________________________________________________________________________
+int GetShimmedGradientFitPars(const char *outdir,int probeNumber,std::vector<grad_meas_t> &data){
+
+  std::vector<double> xPar,xParErr;
+  std::vector<double> yPar,yParErr;
+  std::vector<double> zPar,zParErr;
+
+  char inpath[200]; 
+  sprintf(inpath,"%s/shimmed-grad-x_pars_pr-%02d.csv",outdir,probeNumber);
+  LoadShimmedFieldFitPars(inpath,xPar,xParErr); 
+  sprintf(inpath,"%s/shimmed-grad-y_pars_pr-%02d.csv",outdir,probeNumber);
+  LoadShimmedFieldFitPars(inpath,yPar,yParErr); 
+  sprintf(inpath,"%s/shimmed-grad-z_pars_pr-%02d.csv",outdir,probeNumber);
+  LoadShimmedFieldFitPars(inpath,zPar,zParErr); 
+
+  // note the dimension of data is 3 -- x, y, z
+  // in case we have different dimensions for each axis, we do them separately  
+  int NPAR = xPar.size();
+  for(int i=0;i<NPAR;i++){ 
+     data[0].par[i]    = xPar[i];
+     data[0].parErr[i] = xParErr[i];
+  }
+  NPAR = yPar.size();
+  for(int i=0;i<NPAR;i++){ 
+     data[1].par[i]    = yPar[i];
+     data[1].parErr[i] = yParErr[i];
+  }
+  NPAR = zPar.size();
+  for(int i=0;i<NPAR;i++){ 
+     data[2].par[i]    = zPar[i];
+     data[2].parErr[i] = zParErr[i];
+  }
+
+  return 0;
+
+}
+//______________________________________________________________________________
+int GetTemperatures(const char *outdir,int probeNumber,result_prod_t &res,result_prod_t &resFree){
+   // load PP and TRLY temperatures
+   int rc=0;
+
+   char inpath[200]; 
+   std::vector<calibSwap_t> pp,tr;
+   sprintf(inpath,"%s/pp-swap-data_pr-%02d.csv",probeNumber);
+   rc = LoadCalibSwapData(inpath,pp);
+   if(rc!=0) return 1;
+   sprintf(inpath,"%s/trly-swap-data_pr-%02d.csv",probeNumber);
+   rc = LoadCalibSwapData(inpath,tr);
+   if(rc!=0) return 1;
+
+   // get temps 
+   const int N = pp.size();
+   std::vector<double> x,y;
+   for(int i=0;i<N;i++){
+      x.push_back(pp[i].temp);
+      y.push_back(tr[i].temp);
+   }
+
+   // PP
+   double ppt     = gm2fieldUtil::Math::GetMean<double>(x); 
+   double ppt_err = gm2fieldUtil::Math::GetStandardDeviation<double>(x); 
+   // TRLY
+   double trt     = gm2fieldUtil::Math::GetMean<double>(y); 
+   double trt_err = gm2fieldUtil::Math::GetStandardDeviation<double>(y);
+
+   // apply temperatures 
+   res.ppTemp        = ppt;  
+   res.ppTempErr     = ppt_err;  
+   res.trTemp        = trt;  
+   res.trTempErr     = trt_err;  
+   resFree.ppTemp    = ppt;  
+   resFree.ppTempErr = ppt_err;  
+   resFree.trTemp    = trt;  
+   resFree.trTempErr = trt_err;  
+
+   return 0; 
+   
 }
 //______________________________________________________________________________
 int PrintResults(const char *filename,std::vector<calib_result_t> data,bool toROOT,bool toJSON){
@@ -400,19 +566,42 @@ int GetJSONObject(std::vector<calib_result_t> data,json &jData){
    const int N = data.size(); 
 
    for(int i=0;i<N;i++){
-      jData["calibCoeff"][i]            = data[i].calibCoeff; 
-      jData["calibCoeff_aba"][i]        = data[i].calibCoeff_aba; 
-      jData["calibCoeff_opt"][i]        = data[i].calibCoeff_opt; 
-      jData["calibCoeffErr"][i]         = data[i].calibCoeffErr; 
-      jData["calibCoeffErr_aba"][i]     = data[i].calibCoeffErr_aba;
-      jData["calibCoeffErr_opt"][i]     = data[i].calibCoeffErr_opt;
-      jData["calibCoeffFree"][i]        = data[i].calibCoeffFree; 
-      jData["calibCoeffFree_aba"][i]    = data[i].calibCoeffFree_aba; 
-      jData["calibCoeffFree_opt"][i]    = data[i].calibCoeffFree_opt; 
-      jData["calibCoeffFreeErr"][i]     = data[i].calibCoeffFreeErr; 
-      jData["calibCoeffFreeErr_aba"][i] = data[i].calibCoeffFreeErr_aba;
-      jData["calibCoeffFreeErr_opt"][i] = data[i].calibCoeffFreeErr_opt;
-      jData["freeErr"][i]               = data[i].freeErr; 
+      // without free proton, without misalignment 
+      jData["calibCoeff"][i]               = data[i].calibCoeff; 
+      jData["calibCoeff_aba"][i]           = data[i].calibCoeff_aba; 
+      jData["calibCoeff_opt"][i]           = data[i].calibCoeff_opt; 
+      jData["calibCoeffErr"][i]            = data[i].calibCoeffErr; 
+      jData["calibCoeffErr_aba"][i]        = data[i].calibCoeffErr_aba;
+      jData["calibCoeffErr_opt"][i]        = data[i].calibCoeffErr_opt;
+      // without free proton, with misalignment
+      jData["calibCoeffCor"][i]            = data[i].calibCoeffCor; 
+      jData["calibCoeffCor_aba"][i]        = data[i].calibCoeffCor_aba; 
+      jData["calibCoeffCor_opt"][i]        = data[i].calibCoeffCor_opt; 
+      jData["calibCoeffCorErr"][i]         = data[i].calibCoeffCorErr; 
+      jData["calibCoeffCorErr_aba"][i]     = data[i].calibCoeffCorErr_aba;
+      jData["calibCoeffCorErr_opt"][i]     = data[i].calibCoeffCorErr_opt;
+      // with free proton, without misalignment 
+      jData["calibCoeffFree"][i]           = data[i].calibCoeffFree; 
+      jData["calibCoeffFree_aba"][i]       = data[i].calibCoeffFree_aba; 
+      jData["calibCoeffFree_opt"][i]       = data[i].calibCoeffFree_opt; 
+      jData["calibCoeffFreeErr"][i]        = data[i].calibCoeffFreeErr; 
+      jData["calibCoeffFreeErr_aba"][i]    = data[i].calibCoeffFreeErr_aba;
+      jData["calibCoeffFreeErr_opt"][i]    = data[i].calibCoeffFreeErr_opt;
+      // with free proton, with misalignment 
+      jData["calibCoeffCorFree"][i]        = data[i].calibCoeffCorFree; 
+      jData["calibCoeffCorFree_aba"][i]    = data[i].calibCoeffCorFree_aba; 
+      jData["calibCoeffCorFree_opt"][i]    = data[i].calibCoeffCorFree_opt; 
+      jData["calibCoeffCorFreeErr"][i]     = data[i].calibCoeffCorFreeErr; 
+      jData["calibCoeffCorFreeErr_aba"][i] = data[i].calibCoeffCorFreeErr_aba;
+      jData["calibCoeffCorFreeErr_opt"][i] = data[i].calibCoeffCorFreeErr_opt;
+      jData["freeErr"][i]               = data[i].freeErr;
+      // free-proton related numbers
+      jData["fpCor"][i]                 = data[i].fpCor;  
+      jData["fpCorErr"][i]              = data[i].fpCorErr;  
+      jData["ppTemp"][i]                = data[i].ppTemp;  
+      jData["ppTempErr"][i]             = data[i].ppTempErr;  
+      jData["trTemp"][i]                = data[i].trTemp;  
+      jData["trTempErr"][i]             = data[i].trTempErr;  
       // imposed gradient data 
       jData["dBdx_imp"][i]              = data[i].dBdx_imp;      
       jData["dBdy_imp"][i]              = data[i].dBdy_imp;      
@@ -426,7 +615,26 @@ int GetJSONObject(std::vector<calib_result_t> data,json &jData){
       jData["dBdz_shim"][i]             = data[i].dBdz_shim;      
       jData["dBdx_shimErr"][i]          = data[i].dBdx_shimErr;      
       jData["dBdy_shimErr"][i]          = data[i].dBdy_shimErr;      
-      jData["dBdz_shimErr"][i]          = data[i].dBdz_shimErr;      
+      jData["dBdz_shimErr"][i]          = data[i].dBdz_shimErr;     
+      // auxilary shimmed gradient data 
+      jData["shim_x_a"][i]              = data[i].shim_x_a; 
+      jData["shim_x_aErr"][i]           = data[i].shim_x_aErr; 
+      jData["shim_x_b"][i]              = data[i].shim_x_b; 
+      jData["shim_x_bErr"][i]           = data[i].shim_x_bErr; 
+      jData["shim_x_c"][i]              = data[i].shim_x_c; 
+      jData["shim_x_cErr"][i]           = data[i].shim_x_cErr; 
+      jData["shim_y_a"][i]              = data[i].shim_y_a; 
+      jData["shim_y_aErr"][i]           = data[i].shim_y_aErr; 
+      jData["shim_y_b"][i]              = data[i].shim_y_b; 
+      jData["shim_y_bErr"][i]           = data[i].shim_y_bErr; 
+      jData["shim_y_c"][i]              = data[i].shim_y_c; 
+      jData["shim_y_cErr"][i]           = data[i].shim_y_cErr;
+      jData["shim_z_a"][i]              = data[i].shim_z_a; 
+      jData["shim_z_aErr"][i]           = data[i].shim_z_aErr; 
+      jData["shim_z_b"][i]              = data[i].shim_z_b; 
+      jData["shim_z_bErr"][i]           = data[i].shim_z_bErr; 
+      jData["shim_z_c"][i]              = data[i].shim_z_c; 
+      jData["shim_z_cErr"][i]           = data[i].shim_z_cErr; 
       // delta-B data  
       jData["deltaB_pp_x"][i]           = data[i].deltaB_pp_x; 
       jData["deltaB_pp_y"][i]           = data[i].deltaB_pp_y; 
@@ -447,7 +655,20 @@ int GetJSONObject(std::vector<calib_result_t> data,json &jData){
       jData["dr"][i]                    = data[i].dr;
       // misalignment CORRECTION data 
       jData["misCor"][i]                = data[i].misCor;   
-      jData["misCor_err"][i]            = data[i].misCor_err;  
+      jData["misCor_err"][i]            = data[i].misCor_err;
+      jData["misCor_x"][i]              = data[i].misCor_x;   
+      jData["misCor_x_err"][i]          = data[i].misCor_x_err;
+      jData["misCor_y"][i]              = data[i].misCor_y;   
+      jData["misCor_y_err"][i]          = data[i].misCor_y_err;
+      jData["misCor_z"][i]              = data[i].misCor_z;   
+      jData["misCor_z_err"][i]          = data[i].misCor_z_err;
+      // auxilary misalignment numbers.  These are in mm!  
+      jData["mis_x"][i]                 = data[i].mis_x;  
+      jData["mis_xErr"][i]              = data[i].mis_xErr;  
+      jData["mis_y"][i]                 = data[i].mis_y;  
+      jData["mis_yErr"][i]              = data[i].mis_yErr;  
+      jData["mis_z"][i]                 = data[i].mis_z;  
+      jData["mis_zErr"][i]              = data[i].mis_zErr;  
       // systematic uncertainty 
       jData["systErr"][i]               = data[i].systErr;  
    }
