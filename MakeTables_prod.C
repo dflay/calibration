@@ -52,6 +52,7 @@ double gYSize      = 0.06;
 int GetTemperatures(const char *outdir,int probeNumber,result_prod_t &res,result_prod_t &resFree); 
 int GetFreeProtonCorrection(const char *outdir,int probeNumber,result_prod_t &resFree); 
 int GetShimmedGradientFitPars(const char *outdir,int probeNumber,std::vector<grad_meas_t> &data); 
+int GetMisalignmentCorByAxisData(const char *outdir,int probeNumber,std::vector<misalignCor_t> &data); 
 
 int ApplyShimmedGradEstimates(int probe,std::string prodVersion,std::vector<grad_meas_t> &data); 
 int PrintTableOfResults(const char *outpath,int probe,double diff,double diffFree,
@@ -79,10 +80,11 @@ int PrintToFile_csv(const char *outpath,std::vector<calib_result_t> data);
 int PrintToFile_json(const char *outpath,std::vector<calib_result_t> data); 
 int GetJSONObject(std::vector<calib_result_t> data,json &jData);
 
-int CollectData(std::vector<result_prod_t> r,std::vector<result_prod_t> rFree,
+ int CollectData(std::vector<result_prod_t> r,std::vector<result_prod_t> rFree,
                 std::vector<std::vector<imposed_gradient_t>> ig,std::vector<std::vector<grad_meas_t> > mg,
                 std::vector<deltab_prod_t> dB_pp,std::vector<deltab_prod_t> dB_tr,
-                std::vector<misalignment_t> mis,std::vector< std::vector<misalignCor_t> > mCor,std::vector<calib_result_t> &data); 
+                std::vector<misalignment_t> mis,std::vector< std::vector<misalignCor_t> > mCor,
+                std::vector< std::vector<misalignCor_t> > mCor_a,std::vector<calib_result_t> &data); 
 
 int MakeTables_prod(int runPeriod,std::string theDate,int isSyst,int systDirNum){
 
@@ -125,8 +127,8 @@ int MakeTables_prod(int runPeriod,std::string theDate,int isSyst,int systDirNum)
    misalignment_t m; 
    std::vector<misalignment_t> misalign;
 
-   std::vector<misalignCor_t> mc; 
-   std::vector< std::vector<misalignCor_t> > mCor; 
+   std::vector<misalignCor_t> mc,mca; 
+   std::vector< std::vector<misalignCor_t> > mCor,mCor_a; 
 
    char inpath[500]; 
 
@@ -199,8 +201,13 @@ int MakeTables_prod(int runPeriod,std::string theDate,int isSyst,int systDirNum)
       rc = LoadMisalignmentCorData(inpath,mc); 
       if(rc!=0) return 1;
       mCor.push_back(mc);
+      // misalignment corrections by axis
+      rc = GetMisalignmentCorByAxisData(outDir.c_str(),probeNumber,mca); 
+      if(rc!=0) return 1;
+      mCor_a.push_back(mca); 
       // clean up 
-      mc.clear(); 
+      mc.clear();
+      mca.clear();  
    }
 
    // now make tables
@@ -301,7 +308,7 @@ int MakeTables_prod(int runPeriod,std::string theDate,int isSyst,int systDirNum)
    }
 
    std::vector<calib_result_t> data; 
-   rc = CollectData(res,resFree,impGrad,shimGrad,deltaB_pp,deltaB_trly,misalign,mCor,data); 
+   rc = CollectData(res,resFree,impGrad,shimGrad,deltaB_pp,deltaB_trly,misalign,mCor,mCor_a,data); 
 
    rc = PrintResults(outPath,data); 
 
@@ -311,7 +318,8 @@ int MakeTables_prod(int runPeriod,std::string theDate,int isSyst,int systDirNum)
 int CollectData(std::vector<result_prod_t> r,std::vector<result_prod_t> rFree,
                 std::vector<std::vector<imposed_gradient_t>> ig,std::vector<std::vector<grad_meas_t> > mg,
                 std::vector<deltab_prod_t> dB_pp,std::vector<deltab_prod_t> dB_tr,
-                std::vector<misalignment_t> mis,std::vector< std::vector<misalignCor_t> > mCor,std::vector<calib_result_t> &data){
+                std::vector<misalignment_t> mis,std::vector< std::vector<misalignCor_t> > mCor,
+                std::vector< std::vector<misalignCor_t> > mCor_a,std::vector<calib_result_t> &data){
 
    // print the results to a ROOT file
    calib_result_t dataPt; 
@@ -403,17 +411,20 @@ int CollectData(std::vector<result_prod_t> r,std::vector<result_prod_t> rFree,
       dataPt.dB_x                  = mis[i].dB_x_opt; 
       dataPt.dB_y                  = mis[i].dB_y_opt; 
       dataPt.dB_z                  = mis[i].dB_z_opt;
-      dataPt.dB_r_tot              = TMath::Sqrt( dataPt.dx*dataPt.dx + dataPt.dy*dataPt.dy + dataPt.dz*dataPt.dz ); 
+      dataPt.dB_r_tot              = TMath::Sqrt( dataPt.dB_x*dataPt.dB_x + dataPt.dB_y*dataPt.dB_y + dataPt.dB_z*dataPt.dB_z ); 
       // misalignment CORRECTION. always use the opt result.  this is in Hz 
-      // FIXME: Add the individual axis corrections!  
-      dataPt.misCor                = mCor[i][2].val; // this is a sum over all axes, opt result     
-      dataPt.misCor_err            = mCor[i][2].err; // this is a sum over all axes, opt result 
-      dataPt.misCor_x              = 0.;
-      dataPt.misCor_xErr           = 0.;
-      dataPt.misCor_y              = 0.;
-      dataPt.misCor_yErr           = 0.;
-      dataPt.misCor_z              = 0.;
-      dataPt.misCor_zErr           = 0.;
+      // this is a sum over all axes
+      dataPt.misCor                = mCor[i][2].val; // index 2 = opt result     
+      dataPt.misCor_err            = mCor[i][2].err; // index 2 = opt result 
+      // now the second index is AXIS
+      dataPt.misCor_x              = mCor_a[i][0].val;  
+      dataPt.misCor_xErr           = mCor_a[i][0].err;
+      dataPt.misCor_y              = mCor_a[i][1].val;
+      dataPt.misCor_yErr           = mCor_a[i][1].err;
+      dataPt.misCor_z              = mCor_a[i][2].val;
+      dataPt.misCor_zErr           = mCor_a[i][2].err;
+      dataPt.misCor_z_bar          = 0.;
+      dataPt.misCor_zErr_bar       = 0.;
       // misalignment in mm; TODO: uncertainties? 
       dataPt.mis_x                 = mis[i].dx_opt;  
       dataPt.mis_xErr              = 0;  
@@ -429,6 +440,30 @@ int CollectData(std::vector<result_prod_t> r,std::vector<result_prod_t> rFree,
       data.push_back(dataPt);  
    }
    return 0;
+}
+//______________________________________________________________________________
+int GetMisalignmentCorByAxisData(const char *outdir,int probeNumber,std::vector<misalignCor_t> &data){
+
+   misalignCor_t inData;
+   std::vector<double> v,ve;
+   char inpath[200];
+   sprintf(inpath,"%s/misalign-cor-opt_by-axis_pr-%02d.csv",outdir,probeNumber); 
+   int rc = gm2fieldUtil::Import::ImportData2<double>(inpath,"csv",v,ve);
+
+   std::string axis[3] = {"x","y","z"}; 
+
+   // size is number of axes = 3
+   const int N = v.size();
+   for(int i=0;i<N;i++){
+      inData.label = axis[i]; 
+      inData.val   = v[i];
+      inData.err   = ve[i];
+      // std::cout << Form("probe %02d, misCor_%s = %.3lf +/- %.3lf",probeNumber,axis[i].c_str(),inData.val,inData.err) << std::endl;
+      data.push_back(inData);
+   }
+
+   return 0; 
+
 }
 //______________________________________________________________________________
 int GetFreeProtonCorrection(const char *outdir,int probeNumber,result_prod_t &resFree){
@@ -447,13 +482,17 @@ int GetFreeProtonCorrection(const char *outdir,int probeNumber,result_prod_t &re
    double mean=0,err=0; 
    std::vector<double> w; 
    const int N = fpc.size();
-   for(int i=0;i<N;i++) w.push_back(fpce[i]); 
+   for(int i=0;i<N;i++) w.push_back(1./fpce[i]); 
  
    rc    = gm2fieldUtil::Math::GetWeightedMean<double>(fpc,w,mean,err); 
    // stdev = gm2fieldUtil::Math::GetStandardDeviation<double>(fpc); 
 
+   // for systematic uncertainties, we take the MEAN of all uncertainties; 
+   // averaging over a systematic value doesn't make it better.  
+   double meanErr = gm2fieldUtil::Math::GetMean<double>(fpce);   
+
    resFree.freeProtCor    = mean;     
-   resFree.freeProtCorErr = err;    
+   resFree.freeProtCorErr = meanErr;    
 
    return 0; 
 }
@@ -500,10 +539,10 @@ int GetTemperatures(const char *outdir,int probeNumber,result_prod_t &res,result
 
    char inpath[200]; 
    std::vector<calibSwap_t> pp,tr;
-   sprintf(inpath,"%s/pp-swap-data_pr-%02d.csv",probeNumber);
+   sprintf(inpath,"%s/pp-swap-data_pr-%02d.csv",outdir,probeNumber);
    rc = LoadCalibSwapData(inpath,pp);
    if(rc!=0) return 1;
-   sprintf(inpath,"%s/trly-swap-data_pr-%02d.csv",probeNumber);
+   sprintf(inpath,"%s/trly-swap-data_pr-%02d.csv",outdir,probeNumber);
    rc = LoadCalibSwapData(inpath,tr);
    if(rc!=0) return 1;
 
@@ -559,7 +598,7 @@ int PrintResults(const char *filename,std::vector<calib_result_t> data,bool toRO
    return rc;
 }
 //______________________________________________________________________________
-int PrintTiFile_csv(const char *outpath,std::vector<calib_result_t> data){
+int PrintToFile_csv(const char *outpath,std::vector<calib_result_t> data){
 
    char outStr[1000]; 
    const int N = data.size();
@@ -573,10 +612,11 @@ int PrintTiFile_csv(const char *outpath,std::vector<calib_result_t> data){
       return 1;
    }else{
       outfile << header << std::endl;
-      for(int i=0;i<Ni++){
+      for(int i=0;i<N;i++){
 	 sprintf(outStr,"%02d,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf.%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf.%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf",
 	       // data[i].calibCoeff            ,data[i].calibCoeffErr        ,
 	       // data[i].calibCoeff_aba        ,data[i].calibCoeffErr_aba    ,
+               i+1,
 	       data[i].calibCoeff_opt        ,data[i].calibCoeffErr_opt    ,
 	       // data[i].calibCoeffCor         ,data[i].calibCoeffCorErr     ,
 	       // data[i].calibCoeffCor_aba     ,data[i].calibCoeffCorErr_aba ,
@@ -625,7 +665,7 @@ int PrintTiFile_csv(const char *outpath,std::vector<calib_result_t> data){
 	       data[i].shim_z_c              ,data[i].shim_z_cErr,
 
 	       data[i].mis_z_bar             ,data[i].mis_zErr_bar,
-	       data[i].misCor_z_bar          ,data[i].misCor_zErr_bar); 
+	       data[i].misCor_zErr_bar       ,data[i].misCor_zErr_bar); 
 
 	 outfile << outStr << std::endl;
       }
@@ -741,19 +781,21 @@ int GetJSONObject(std::vector<calib_result_t> data,json &jData){
       jData["deltaB_tr_yErr"][i]        = data[i].deltaB_tr_yErr; 
       jData["deltaB_tr_zErr"][i]        = data[i].deltaB_tr_zErr; 
       // misalignment data 
-      jData["dx"][i]                    = data[i].dx;
-      jData["dy"][i]                    = data[i].dy;
-      jData["dz"][i]                    = data[i].dz;
-      jData["dr"][i]                    = data[i].dr;
+      jData["dB_x"][i]                  = data[i].dB_x;
+      jData["dB_y"][i]                  = data[i].dB_y;
+      jData["dB_z"][i]                  = data[i].dB_z;
+      jData["dB_r_tot"][i]              = data[i].dB_r_tot;
       // misalignment CORRECTION data 
       jData["misCor"][i]                = data[i].misCor;   
       jData["misCor_err"][i]            = data[i].misCor_err;
       jData["misCor_x"][i]              = data[i].misCor_x;   
-      jData["misCor_x_err"][i]          = data[i].misCor_x_err;
+      jData["misCor_xErr"][i]           = data[i].misCor_xErr;
       jData["misCor_y"][i]              = data[i].misCor_y;   
-      jData["misCor_y_err"][i]          = data[i].misCor_y_err;
+      jData["misCor_yErr"][i]           = data[i].misCor_yErr;
       jData["misCor_z"][i]              = data[i].misCor_z;   
-      jData["misCor_z_err"][i]          = data[i].misCor_z_err;
+      jData["misCor_zErr"][i]           = data[i].misCor_zErr;
+      jData["misCor_z_bar"][i]          = data[i].misCor_z_bar;   
+      jData["misCor_zErr_bar"][i]       = data[i].misCor_zErr_bar;
       // auxilary misalignment numbers.  These are in mm!  
       jData["mis_x"][i]                 = data[i].mis_x;  
       jData["mis_xErr"][i]              = data[i].mis_xErr;  
@@ -761,6 +803,8 @@ int GetJSONObject(std::vector<calib_result_t> data,json &jData){
       jData["mis_yErr"][i]              = data[i].mis_yErr;  
       jData["mis_z"][i]                 = data[i].mis_z;  
       jData["mis_zErr"][i]              = data[i].mis_zErr;  
+      jData["mis_z_bar"][i]             = data[i].mis_z_bar;  
+      jData["mis_zErr_bar"][i]          = data[i].mis_zErr_bar;  
       // systematic uncertainty 
       jData["systErr"][i]               = data[i].systErr;  
    }

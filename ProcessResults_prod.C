@@ -280,11 +280,11 @@ int PrintResults(std::string outpath,result_prod_t result){
    // prepare the header 
    sprintf(header,"#type,diff,diff-mis-cor,shot-err,misalign-err,free-prot-err,syst"); 
    char myStr[1000]; 
-   sprintf(myStr    ,"raw,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf",result.diff    ,result.diffCor    ,result.diffErr    ,result.mErr    ,result.pErr    ,result.systErr); 
+   sprintf(myStr    ,"raw,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf",result.diff    ,result.diffCor    ,result.diffErr    ,result.mErr    ,result.pErr    ,result.systErr); 
    char myStr_aba[1000]; 
-   sprintf(myStr_aba,"ABA,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf",result.diff_aba,result.diffCor_aba,result.diffErr_aba,result.mErr_aba,result.pErr_aba,result.systErr); 
+   sprintf(myStr_aba,"ABA,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf",result.diff_aba,result.diffCor_aba,result.diffErr_aba,result.mErr_aba,result.pErr_aba,result.systErr); 
    char myStr_opt[1000]; 
-   sprintf(myStr_opt,"opt,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf",result.diff_opt,result.diffCor_opt,result.diffErr_opt,result.mErr_opt,result.pErr_opt,result.systErr); 
+   sprintf(myStr_opt,"opt,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf",result.diff_opt,result.diffCor_opt,result.diffErr_opt,result.mErr_opt,result.pErr_opt,result.systErr); 
 
    std::ofstream outfile;
    outfile.open(outpath.c_str());

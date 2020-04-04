@@ -275,13 +275,13 @@ int LocalScanGrad_pp_prod(std::string configFile){
    // plunging probe swap data 
    std::vector<calibSwap_t> ppCalib_data;
    char inpath_pp[200]; 
-   sprintf(inpath_pp,"%s/pp-swap-data_pr-%02d_%s.csv",outDir.c_str(),probeNumber,date.c_str());
+   sprintf(inpath_pp,"%s/pp-swap-data_pr-%02d.csv",outDir.c_str(),probeNumber);
    rc = LoadCalibSwapData(inpath_pp,ppCalib_data);  
 
    // trolley swap data 
    std::vector<calibSwap_t> trlyCalib_data;
    char inpath_tr[200]; 
-   sprintf(inpath_tr,"%s/trly-swap-data_pr-%02d_%s.csv",outDir.c_str(),probeNumber,date.c_str());
+   sprintf(inpath_tr,"%s/trly-swap-data_pr-%02d.csv",outDir.c_str(),probeNumber);
    rc = LoadCalibSwapData(inpath_tr,trlyCalib_data);  
 
    // get the AVG coordinates of the PP and trly probe during rapid swapping  

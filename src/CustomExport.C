@@ -264,7 +264,7 @@ int PrintToFile(const char *outpath,std::string label,const int N,double *x,doub
    return 0;
 }
 //______________________________________________________________________________
-int PrintToFile(const char *outpath,std::vector<double> x){
+int PrintToFile_1dbl(const char *outpath,std::vector<double> x){
    char outStr[200];
    const int N = x.size();
 
@@ -282,7 +282,7 @@ int PrintToFile(const char *outpath,std::vector<double> x){
    return 0;
 }
 //______________________________________________________________________________
-int PrintToFile(const char *outpath,std::vector<double> x1,std::vector<double> x2){
+int PrintToFile_2dbl(const char *outpath,std::vector<double> x1,std::vector<double> x2){
    char outStr[200];
    const int N = x1.size();
 

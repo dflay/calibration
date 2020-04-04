@@ -17,8 +17,8 @@ int PrintTRLYPositions(const char *outpath,std::vector<int> probe,
 
 int PrintToFile_sccTimes(const char *outpath,std::vector<double> off,std::vector<double> on); 
 
-int PrintToFile(const char *outpath,std::vector<double> x);
-int PrintToFile(const char *outpath,std::vector<double> x1,std::vector<double> x2);
+int PrintToFile_1dbl(const char *outpath,std::vector<double> x);
+int PrintToFile_2dbl(const char *outpath,std::vector<double> x1,std::vector<double> x2);
 
 int PrintToFile(const char *outpath,std::vector<std::string> label,std::vector<double> x); 
 int PrintToFile(const char *outpath,std::vector<std::string> label,std::vector<double> x1,std::vector<double> x2);

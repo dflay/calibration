@@ -212,7 +212,7 @@ int Process_pptr_prod(std::string configFile){
    // print to file 
    rc = PrintToFile(outpath_raw ,raw ); 
    rc = PrintToFile(outpath_free,free);
-   rc = PrintToFile(outpath_fpc,fpc,fpcErr);  
+   rc = PrintToFile_2dbl(outpath_fpc.c_str(),fpc,fpcErr);  
 
    // make plot of all frequencies for all shots 
    TGraph *gPP     = GetPPTGraph1("TimeStamp","freq",ppData); 
@@ -370,7 +370,7 @@ int GetSwapStatsForPP(int runPeriod,std::string probeID,std::vector<plungingProb
    calibSwap_t rawEvent,freeEvent;
  
    double arg=0;
-   double mean_freeProt=0,stdev_freeProt=0;
+   double mean_freeProt=0,stdev_freeProt=0,mean_freeProtErr=0;
    double mean_freq_free=0,stdev_freq_free=0;
    double mean_freq=0,stdev_freq=0;
    double mean_temp=0,stdev_temp=0;
@@ -398,7 +398,7 @@ int GetSwapStatsForPP(int runPeriod,std::string probeID,std::vector<plungingProb
 	 arg = data[i].freq[j] + data[i].freq_LO[j]; 
 	 // get the free-proton frequency here
          freqFree    = fp->GetOmegaP_free(arg,data[i].temp[j]);
-         delta_t     = fp->GetDelta_t(data[i].temp[j])/1E-9; // in ppb 
+         delta_t     = fp->GetDelta_t(data[i].temp[j])/1E-9;     // in ppb 
          delta_t_err = fp->GetDelta_t_err(data[i].temp[j])/1E-9; // in ppb 
 	 F.push_back(arg);
 	 FF.push_back(freqFree);
@@ -427,6 +427,7 @@ int GetSwapStatsForPP(int runPeriod,std::string probeID,std::vector<plungingProb
       stdev_y         = gm2fieldUtil::Math::GetStandardDeviation<double>(y);
       mean_z          = gm2fieldUtil::Math::GetMean<double>(z); 
       stdev_z         = gm2fieldUtil::Math::GetStandardDeviation<double>(z);
+      // std::cout << Form("swap %02d: fpc mean = %.1lf +/- %.1lf ppb",i+1,mean_freeProt,mean_freeProtErr) << std::endl;
       // fill output structs 
       rawEvent.time    = data[i].time[0]/1E+9; 
       rawEvent.freq    = mean_freq;  
@@ -454,8 +455,8 @@ int GetSwapStatsForPP(int runPeriod,std::string probeID,std::vector<plungingProb
       // fill vectors (dimension = num swaps) 
       raw.push_back(rawEvent);  
       free.push_back(freeEvent);  
-      freeProtonCor.push_back(mean_freeProt);     
-      freeProtonCorErr.push_back(mean_freeProtErr); 
+      freeProtCor.push_back(mean_freeProt);     
+      freeProtCorErr.push_back(mean_freeProtErr); 
       // clean up for next run 
       fpc.clear();
       fpc_err.clear();
