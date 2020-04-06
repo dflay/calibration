@@ -12,7 +12,7 @@ import math
 
 #_______________________________________________________________________________
 def getDiff(axis,axisErr,newAxis,newAxisErr,df1,df2,df3):
-
+   # take differences of specific columns from different datafames 
    # get lists of data
    x  = df1[axis].tolist()
    ex = df1[axisErr].tolist()
@@ -33,7 +33,7 @@ def getDiff(axis,axisErr,newAxis,newAxisErr,df1,df2,df3):
    return
 #_______________________________________________________________________________
 def getDiff_lists(x,xe,y,ye,z,ze):
-
+   # take differences of two lists
    N = len(x) 
    for i in xrange(0,N):
       # protect against weird strings 
@@ -49,7 +49,18 @@ def getDiff_lists(x,xe,y,ye,z,ze):
       ze.append(arg_err) 
    return
 #_______________________________________________________________________________
-
+def getStats(colName,df):
+   # get mean and standard deviation of a column from dataframe df
+   # first convert to float just to make sure
+   x     = df[colName].tolist()
+   xf    = [] 
+   N = len(x)
+   for entry in x:
+      xf.append( float(entry) ) 
+   mean  = np.mean(xf) 
+   stdev = np.std(xf) 
+   return mean,stdev 
+#_______________________________________________________________________________
 
 # create file paths
 csv_path_rh = "./input/ran-hong/run-1_04-03-20.csv" 
@@ -137,6 +148,18 @@ getDiff("dBdy_imp"      ,"dBdy_impErr"      ,"impy_bldf"  ,"impye_bldf"  ,data_d
 getDiff("dBdz_imp"      ,"dBdz_impErr"      ,"impz_bldf"  ,"impze_bldf"  ,data_df,data_bl,data_diff)
 
 # print data_diff
+
+# some stats
+mean=0
+stdev=0
+mean,stdev = getStats("cc_rhdf",data_diff)
+print("cc_rhdf: mean = {0:.3f}, stdev = {1:.3f}".format(mean,stdev) )
+mean,stdev = getStats("cc_bldf",data_diff)
+print("cc_bldf: mean = {0:.3f}, stdev = {1:.3f}".format(mean,stdev) )
+mean,stdev = getStats("ccc_rhdf",data_diff)
+print("ccc_rhdf: mean = {0:.3f}, stdev = {1:.3f}".format(mean,stdev) )
+mean,stdev = getStats("ccc_bldf",data_diff)
+print("ccc_bldf: mean = {0:.3f}, stdev = {1:.3f}".format(mean,stdev) )
 
 # plot data
 
