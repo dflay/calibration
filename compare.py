@@ -99,7 +99,9 @@ getDiff("deltaB_pp_z"   ,"deltaB_pp_zErr"   ,"dbppz_rhdf" ,"dbppze_rhdf" ,data_d
 getDiff("deltaB_tr_x"   ,"deltaB_tr_xErr"   ,"dbtrx_rhdf" ,"dbtrxe_rhdf" ,data_df,data_rh,data_diff)
 getDiff("deltaB_tr_y"   ,"deltaB_tr_yErr"   ,"dbtry_rhdf" ,"dbtrye_rhdf" ,data_df,data_rh,data_diff)
 getDiff("deltaB_tr_z"   ,"deltaB_tr_zErr"   ,"dbtrz_rhdf" ,"dbtrze_rhdf" ,data_df,data_rh,data_diff)
-
+getDiff("dBdx_imp"      ,"dBdx_impErr"   ,"impx_rhdf" ,"impxe_rhdf" ,data_df,data_rh,data_diff)
+getDiff("dBdy_imp"      ,"dBdy_impErr"   ,"impy_rhdf" ,"impye_rhdf" ,data_df,data_rh,data_diff)
+getDiff("dBdz_imp"      ,"dBdz_impErr"   ,"impz_rhdf" ,"impze_rhdf" ,data_df,data_rh,data_diff)
 
 # for Bingzhi 
 getDiff("calibCoeff"    ,"calibCoeffErr"    ,"cc_bldf"  ,"cce_bldf"  ,data_df,data_bl,data_diff)
@@ -119,12 +121,15 @@ getDiff("shim_y_c"      ,"shim_y_cErr"      ,"syc_bldf" ,"syce_bldf" ,data_df,da
 getDiff("shim_z_a"      ,"shim_z_aErr"      ,"sza_bldf" ,"szae_bldf" ,data_df,data_bl,data_diff)
 getDiff("shim_z_b"      ,"shim_z_bErr"      ,"szb_bldf" ,"szbe_bldf" ,data_df,data_bl,data_diff)
 getDiff("shim_z_c"      ,"shim_z_cErr"      ,"szc_bldf" ,"szce_bldf" ,data_df,data_bl,data_diff)
-getDiff("deltaB_pp_x"   ,"deltaB_pp_xErr"   ,"dbppx_bldf" ,"dbppxe_bldf" ,data_df,data_rh,data_diff)
-getDiff("deltaB_pp_y"   ,"deltaB_pp_yErr"   ,"dbppy_bldf" ,"dbppye_bldf" ,data_df,data_rh,data_diff)
-getDiff("deltaB_pp_z"   ,"deltaB_pp_zErr"   ,"dbppz_bldf" ,"dbppze_bldf" ,data_df,data_rh,data_diff)
-getDiff("deltaB_tr_x"   ,"deltaB_tr_xErr"   ,"dbtrx_bldf" ,"dbtrxe_bldf" ,data_df,data_rh,data_diff)
-getDiff("deltaB_tr_y"   ,"deltaB_tr_yErr"   ,"dbtry_bldf" ,"dbtrye_bldf" ,data_df,data_rh,data_diff)
-getDiff("deltaB_tr_z"   ,"deltaB_tr_zErr"   ,"dbtrz_bldf" ,"dbtrze_bldf" ,data_df,data_rh,data_diff)
+getDiff("deltaB_pp_x"   ,"deltaB_pp_xErr"   ,"dbppx_bldf" ,"dbppxe_bldf" ,data_df,data_bl,data_diff)
+getDiff("deltaB_pp_y"   ,"deltaB_pp_yErr"   ,"dbppy_bldf" ,"dbppye_bldf" ,data_df,data_bl,data_diff)
+getDiff("deltaB_pp_z"   ,"deltaB_pp_zErr"   ,"dbppz_bldf" ,"dbppze_bldf" ,data_df,data_bl,data_diff)
+getDiff("deltaB_tr_x"   ,"deltaB_tr_xErr"   ,"dbtrx_bldf" ,"dbtrxe_bldf" ,data_df,data_bl,data_diff)
+getDiff("deltaB_tr_y"   ,"deltaB_tr_yErr"   ,"dbtry_bldf" ,"dbtrye_bldf" ,data_df,data_bl,data_diff)
+getDiff("deltaB_tr_z"   ,"deltaB_tr_zErr"   ,"dbtrz_bldf" ,"dbtrze_bldf" ,data_df,data_bl,data_diff)
+getDiff("dBdx_imp"      ,"dBdx_impErr"      ,"impx_bldf"  ,"impxe_bldf"  ,data_df,data_bl,data_diff)
+getDiff("dBdy_imp"      ,"dBdy_impErr"      ,"impy_bldf"  ,"impye_bldf"  ,data_df,data_bl,data_diff)
+getDiff("dBdz_imp"      ,"dBdz_impErr"      ,"impz_bldf"  ,"impze_bldf"  ,data_df,data_bl,data_diff)
 
 print data_diff
 
@@ -624,6 +629,79 @@ axisErr = "dbtrze_rhdf"
 data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
 axis    = "dbtrz_bldf"
 axisErr = "dbtrze_bldf"
+data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.set_xlabel("Probe") 
+currentAxis.set_ylabel("") 
+
+# imposed gradients  
+title = ["dBdx_imp","dBdy_imp","dBdz_imp"]
+fig = plt.figure(9)
+NROW = 2
+NCOL = 3
+plt.subplot(NROW,NCOL,1)
+currentAxis = plt.gca() # grab current axis 
+axis    = "dBdx_imp"
+axisErr = "dBdx_impErr"
+data_df.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[0], marker=mStyle[0], s=mSize, color=color[0], ax=currentAxis)
+data_rh.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[0], marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
+data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[0], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.legend(["DF","RH","BL"])
+currentAxis.set_xlabel("") 
+currentAxis.set_ylabel("dB/dq [imp] (Hz)") 
+
+plt.subplot(NROW,NCOL,4)
+currentAxis = plt.gca() # grab current axis 
+axis    = "impx_rhdf"
+axisErr = "impxe_rhdf"
+data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
+axis    = "impx_bldf"
+axisErr = "impxe_bldf"
+data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.set_xlabel("Probe") 
+currentAxis.set_ylabel("dB/dq Diff (Hz)") 
+
+# y 
+plt.subplot(NROW,NCOL,2)
+currentAxis = plt.gca() # grab current axis 
+axis    = "dBdy_imp"
+axisErr = "dBdy_impErr"
+data_df.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[1], marker=mStyle[0], s=mSize, color=color[0], ax=currentAxis)
+data_rh.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[1], marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
+data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[1], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.legend(["DF","RH","BL"])
+currentAxis.set_xlabel("") 
+currentAxis.set_ylabel("") 
+
+plt.subplot(NROW,NCOL,5)
+currentAxis = plt.gca() # grab current axis 
+axis    = "impy_rhdf"
+axisErr = "impye_rhdf"
+data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
+axis    = "impy_bldf"
+axisErr = "impye_bldf"
+data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.set_xlabel("Probe") 
+currentAxis.set_ylabel("") 
+
+# dBz 
+plt.subplot(NROW,NCOL,3)
+currentAxis = plt.gca() # grab current axis 
+axis    = "dBdz_imp"
+axisErr = "dBdz_impErr"
+data_df.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[2], marker=mStyle[0], s=mSize, color=color[0], ax=currentAxis)
+data_rh.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[2], marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
+data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[2], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.legend(["DF","RH","BL"])
+currentAxis.set_xlabel("") 
+currentAxis.set_ylabel("") 
+
+plt.subplot(NROW,NCOL,6)
+currentAxis = plt.gca() # grab current axis 
+axis    = "impz_rhdf"
+axisErr = "impze_rhdf"
+data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
+axis    = "impz_bldf"
+axisErr = "impze_bldf"
 data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
 currentAxis.set_xlabel("Probe") 
 currentAxis.set_ylabel("") 
