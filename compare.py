@@ -64,8 +64,10 @@ data_bl = pd.read_csv(csv_path_bl,index_col=False) # index_col = False when you 
 print("Reading data from: {0}".format(csv_path_df)) 
 data_df = pd.read_csv(csv_path_df,index_col=False) # index_col = False when you don't have an index column
 
-# colors for everyone 
-color = ["blue","red","#20B010"]
+# marker parameters  
+color  = ["blue","red","#20B010"]
+mStyle = ["s","o","v"]
+mSize  = 30 
 
 # calculate differences 
 probeList = data_df['Probe'].tolist() # a list of the probe numbers to add to the new data frame 
@@ -82,15 +84,16 @@ getDiff("misCor_z"      ,"misCor_zErr"      ,"mcz_rhdf" ,"mcze_rhdf" ,data_df,da
 getDiff("mis_x"         ,"mis_xErr"         ,"mx_rhdf"  ,"mxe_rhdf"  ,data_df,data_rh,data_diff)
 getDiff("mis_y"         ,"mis_yErr"         ,"my_rhdf"  ,"mye_rhdf"  ,data_df,data_rh,data_diff)
 getDiff("mis_z"         ,"mis_zErr"         ,"mz_rhdf"  ,"mze_rhdf"  ,data_df,data_rh,data_diff)
-getDiff("shim_x_a"      ,"shim_x_aErr"      ,"sxa_rhdf" ,"sxae_rhdf" ,data_df,data_rh,data_diff)
-getDiff("shim_x_b"      ,"shim_x_bErr"      ,"sxb_rhdf" ,"sxbe_rhdf" ,data_df,data_rh,data_diff)
-getDiff("shim_x_c"      ,"shim_x_cErr"      ,"sxc_rhdf" ,"sxce_rhdf" ,data_df,data_rh,data_diff)
-getDiff("shim_y_a"      ,"shim_y_aErr"      ,"sya_rhdf" ,"syae_rhdf" ,data_df,data_rh,data_diff)
-getDiff("shim_y_b"      ,"shim_y_bErr"      ,"syb_rhdf" ,"sybe_rhdf" ,data_df,data_rh,data_diff)
-getDiff("shim_y_c"      ,"shim_y_cErr"      ,"syc_rhdf" ,"syce_rhdf" ,data_df,data_rh,data_diff)
-getDiff("shim_z_a"      ,"shim_z_aErr"      ,"sza_rhdf" ,"szae_rhdf" ,data_df,data_rh,data_diff)
-getDiff("shim_z_b"      ,"shim_z_bErr"      ,"szb_rhdf" ,"szbe_rhdf" ,data_df,data_rh,data_diff)
-getDiff("shim_z_c"      ,"shim_z_cErr"      ,"szc_rhdf" ,"szce_rhdf" ,data_df,data_rh,data_diff)
+# wait for my new CSV file for these... 
+# getDiff("shim_x_a"      ,"shim_x_aErr"      ,"sxa_rhdf" ,"sxae_rhdf" ,data_df,data_rh,data_diff)
+# getDiff("shim_x_b"      ,"shim_x_bErr"      ,"sxb_rhdf" ,"sxbe_rhdf" ,data_df,data_rh,data_diff)
+# getDiff("shim_x_c"      ,"shim_x_cErr"      ,"sxc_rhdf" ,"sxce_rhdf" ,data_df,data_rh,data_diff)
+# getDiff("shim_y_a"      ,"shim_y_aErr"      ,"sya_rhdf" ,"syae_rhdf" ,data_df,data_rh,data_diff)
+# getDiff("shim_y_b"      ,"shim_y_bErr"      ,"syb_rhdf" ,"sybe_rhdf" ,data_df,data_rh,data_diff)
+# getDiff("shim_y_c"      ,"shim_y_cErr"      ,"syc_rhdf" ,"syce_rhdf" ,data_df,data_rh,data_diff)
+# getDiff("shim_z_a"      ,"shim_z_aErr"      ,"sza_rhdf" ,"szae_rhdf" ,data_df,data_rh,data_diff)
+# getDiff("shim_z_b"      ,"shim_z_bErr"      ,"szb_rhdf" ,"szbe_rhdf" ,data_df,data_rh,data_diff)
+# getDiff("shim_z_c"      ,"shim_z_cErr"      ,"szc_rhdf" ,"szce_rhdf" ,data_df,data_rh,data_diff)
 
 # for Bingzhi 
 getDiff("calibCoeff"    ,"calibCoeffErr"    ,"cc_bldf"  ,"cce_bldf"  ,data_df,data_bl,data_diff)
@@ -113,12 +116,144 @@ getDiff("misCor_z"      ,"misCor_zErr"      ,"mcz_bldf" ,"mcze_bldf" ,data_df,da
 
 print data_diff
 
-# probably need a subplot here -- bottom panel for differences 
-currentAxis = plt.gca() # grab current axis 
-data_df.plot(kind="scatter", x="Probe", y="calibCoeff", yerr="calibCoeffErr", marker="s", s=30, color=color[0], ax=currentAxis)
-data_rh.plot(kind="scatter", x="Probe", y="calibCoeff", yerr="calibCoeffErr", marker="o", s=30, color=color[1], ax=currentAxis)
-data_bl.plot(kind="scatter", x="Probe", y="calibCoeff", yerr="calibCoeffErr", marker="v", s=30, color=color[2], ax=currentAxis)
-currentAxis.legend(["DF","RH","BL"])
-plt.show()
+# plot data
 
+# general setup  
+NCOL = 1
+NROW = 2
+
+# calib coeffs (NO MISALIGNMENT)
+ 
+fig = plt.figure(1) 
+plt.subplot(NROW,NCOL,1)
+
+currentAxis = plt.gca() # grab current axis 
+axis    = "calibCoeff"
+axisErr = "calibCoeffErr"
+data_df.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[0], s=mSize, color=color[0], ax=currentAxis)
+data_rh.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
+data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.legend(["DF","RH","BL"])
+currentAxis.set_xlabel("Probe") 
+currentAxis.set_ylabel("Calib Coeff (Hz)") 
+
+plt.subplot(NROW,NCOL,2)
+currentAxis = plt.gca() # grab current axis 
+axis    = "cc_rhdf"
+axisErr = "cce_rhdf"
+data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
+axis    = "cc_bldf"                                                        
+axisErr = "cce_bldf"                                                       
+data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.set_xlabel("Probe") 
+currentAxis.set_ylabel("Calib Coeff (Hz)") 
+
+for ax in fig.get_axes():
+    ax.label_outer()
+
+# calib coeffs (WITH MISALIGNMENT)
+fig = plt.figure(2) 
+plt.subplot(NROW,NCOL,1)
+currentAxis = plt.gca() # grab current axis 
+axis    = "calibCoeff_cor"
+axisErr = "calibCoeffErr_cor"
+data_df.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[0], s=mSize, color=color[0], ax=currentAxis)
+data_rh.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
+data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.legend(["DF","RH","BL"])
+currentAxis.set_xlabel("Probe") 
+currentAxis.set_ylabel("Calib Coeff [Cor] (Hz)") 
+
+plt.subplot(NROW,NCOL,2)
+currentAxis = plt.gca() # grab current axis 
+axis    = "ccc_rhdf"
+axisErr = "ccce_rhdf"
+data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
+axis    = "ccc_bldf"
+axisErr = "ccce_bldf"
+data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.set_xlabel("Probe") 
+currentAxis.set_ylabel("Calib Coeff [Cor] Diff (Hz)") 
+
+for ax in fig.get_axes():
+    ax.label_outer()
+
+# misalignment corrections: x
+title = ["misCor_x","misCor_y","misCor_z"]
+fig = plt.figure(3)
+NROW = 2
+NCOL = 3
+plt.subplot(NROW,NCOL,1)
+currentAxis = plt.gca() # grab current axis 
+axis    = "misCor_x"
+axisErr = "misCor_xErr"
+data_df.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[0], marker=mStyle[0], s=mSize, color=color[0], ax=currentAxis)
+data_rh.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[0], marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
+data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[0], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.legend(["DF","RH","BL"])
+currentAxis.set_xlabel("") 
+currentAxis.set_ylabel("misCor (Hz)") 
+
+plt.subplot(NROW,NCOL,4)
+currentAxis = plt.gca() # grab current axis 
+axis    = "mcx_rhdf"
+axisErr = "mcxe_rhdf"
+data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
+axis    = "mcx_bldf"
+axisErr = "mcxe_bldf"
+data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.set_xlabel("Probe") 
+currentAxis.set_ylabel("misCor Diff (Hz)") 
+
+# misalignment corrections: y 
+plt.subplot(NROW,NCOL,2)
+currentAxis = plt.gca() # grab current axis 
+axis    = "misCor_y"
+axisErr = "misCor_yErr"
+data_df.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[1], marker=mStyle[0], s=mSize, color=color[0], ax=currentAxis)
+data_rh.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[1], marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
+data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[1], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.legend(["DF","RH","BL"])
+currentAxis.set_xlabel("") 
+currentAxis.set_ylabel("") 
+
+plt.subplot(NROW,NCOL,5)
+currentAxis = plt.gca() # grab current axis 
+axis    = "mcy_rhdf"
+axisErr = "mcye_rhdf"
+data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
+axis    = "mcy_bldf"
+axisErr = "mcye_bldf"
+data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.set_xlabel("Probe") 
+currentAxis.set_ylabel("") 
+
+# misalignment corrections: y 
+plt.subplot(NROW,NCOL,3)
+currentAxis = plt.gca() # grab current axis 
+axis    = "misCor_z"
+axisErr = "misCor_zErr"
+data_df.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[2], marker=mStyle[0], s=mSize, color=color[0], ax=currentAxis)
+data_rh.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[2], marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
+data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[2], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.legend(["DF","RH","BL"])
+currentAxis.set_xlabel("") 
+currentAxis.set_ylabel("") 
+
+plt.subplot(NROW,NCOL,6)
+currentAxis = plt.gca() # grab current axis 
+axis    = "mcz_rhdf"
+axisErr = "mcze_rhdf"
+data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
+axis    = "mcz_bldf"
+axisErr = "mcze_bldf"
+data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.set_xlabel("Probe") 
+currentAxis.set_ylabel("") 
+
+# for ax in fig.get_axes():
+#     ax.label_outer()
+
+# show all plots
+plt.show()
 
