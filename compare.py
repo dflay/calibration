@@ -53,8 +53,8 @@ def getDiff_lists(x,xe,y,ye,z,ze):
 
 # create file paths
 csv_path_rh = "./input/ran-hong/run-1_04-03-20.csv" 
-csv_path_bl = "./input/bingzhi-li/run-1_04-05-20.csv" 
-csv_path_df = "./output/blinded/flay/04-04-20/run-1/calibData_04-04-20.csv"
+csv_path_bl = "./input/bingzhi-li/run-1_04-06-20.csv" 
+csv_path_df = "./output/blinded/flay/04-06-20/run-1/calibData_04-06-20.csv"
 
 # create a pandas dataframe, reading in the csv file  
 print("Reading data from: {0}".format(csv_path_rh)) 
@@ -84,16 +84,22 @@ getDiff("misCor_z"      ,"misCor_zErr"      ,"mcz_rhdf" ,"mcze_rhdf" ,data_df,da
 getDiff("mis_x"         ,"mis_xErr"         ,"mx_rhdf"  ,"mxe_rhdf"  ,data_df,data_rh,data_diff)
 getDiff("mis_y"         ,"mis_yErr"         ,"my_rhdf"  ,"mye_rhdf"  ,data_df,data_rh,data_diff)
 getDiff("mis_z"         ,"mis_zErr"         ,"mz_rhdf"  ,"mze_rhdf"  ,data_df,data_rh,data_diff)
-# wait for my new CSV file for these... 
-# getDiff("shim_x_a"      ,"shim_x_aErr"      ,"sxa_rhdf" ,"sxae_rhdf" ,data_df,data_rh,data_diff)
-# getDiff("shim_x_b"      ,"shim_x_bErr"      ,"sxb_rhdf" ,"sxbe_rhdf" ,data_df,data_rh,data_diff)
-# getDiff("shim_x_c"      ,"shim_x_cErr"      ,"sxc_rhdf" ,"sxce_rhdf" ,data_df,data_rh,data_diff)
-# getDiff("shim_y_a"      ,"shim_y_aErr"      ,"sya_rhdf" ,"syae_rhdf" ,data_df,data_rh,data_diff)
-# getDiff("shim_y_b"      ,"shim_y_bErr"      ,"syb_rhdf" ,"sybe_rhdf" ,data_df,data_rh,data_diff)
-# getDiff("shim_y_c"      ,"shim_y_cErr"      ,"syc_rhdf" ,"syce_rhdf" ,data_df,data_rh,data_diff)
-# getDiff("shim_z_a"      ,"shim_z_aErr"      ,"sza_rhdf" ,"szae_rhdf" ,data_df,data_rh,data_diff)
-# getDiff("shim_z_b"      ,"shim_z_bErr"      ,"szb_rhdf" ,"szbe_rhdf" ,data_df,data_rh,data_diff)
-# getDiff("shim_z_c"      ,"shim_z_cErr"      ,"szc_rhdf" ,"szce_rhdf" ,data_df,data_rh,data_diff)
+getDiff("shim_x_a"      ,"shim_x_aErr"      ,"sxa_rhdf" ,"sxae_rhdf" ,data_df,data_rh,data_diff)
+getDiff("shim_x_b"      ,"shim_x_bErr"      ,"sxb_rhdf" ,"sxbe_rhdf" ,data_df,data_rh,data_diff)
+getDiff("shim_x_c"      ,"shim_x_cErr"      ,"sxc_rhdf" ,"sxce_rhdf" ,data_df,data_rh,data_diff)
+getDiff("shim_y_a"      ,"shim_y_aErr"      ,"sya_rhdf" ,"syae_rhdf" ,data_df,data_rh,data_diff)
+getDiff("shim_y_b"      ,"shim_y_bErr"      ,"syb_rhdf" ,"sybe_rhdf" ,data_df,data_rh,data_diff)
+getDiff("shim_y_c"      ,"shim_y_cErr"      ,"syc_rhdf" ,"syce_rhdf" ,data_df,data_rh,data_diff)
+getDiff("shim_z_a"      ,"shim_z_aErr"      ,"sza_rhdf" ,"szae_rhdf" ,data_df,data_rh,data_diff)
+getDiff("shim_z_b"      ,"shim_z_bErr"      ,"szb_rhdf" ,"szbe_rhdf" ,data_df,data_rh,data_diff)
+getDiff("shim_z_c"      ,"shim_z_cErr"      ,"szc_rhdf" ,"szce_rhdf" ,data_df,data_rh,data_diff)
+getDiff("deltaB_pp_x"   ,"deltaB_pp_xErr"   ,"dbppx_rhdf" ,"dbppxe_rhdf" ,data_df,data_rh,data_diff)
+getDiff("deltaB_pp_y"   ,"deltaB_pp_yErr"   ,"dbppy_rhdf" ,"dbppye_rhdf" ,data_df,data_rh,data_diff)
+getDiff("deltaB_pp_z"   ,"deltaB_pp_zErr"   ,"dbppz_rhdf" ,"dbppze_rhdf" ,data_df,data_rh,data_diff)
+getDiff("deltaB_tr_x"   ,"deltaB_tr_xErr"   ,"dbtrx_rhdf" ,"dbtrxe_rhdf" ,data_df,data_rh,data_diff)
+getDiff("deltaB_tr_y"   ,"deltaB_tr_yErr"   ,"dbtry_rhdf" ,"dbtrye_rhdf" ,data_df,data_rh,data_diff)
+getDiff("deltaB_tr_z"   ,"deltaB_tr_zErr"   ,"dbtrz_rhdf" ,"dbtrze_rhdf" ,data_df,data_rh,data_diff)
+
 
 # for Bingzhi 
 getDiff("calibCoeff"    ,"calibCoeffErr"    ,"cc_bldf"  ,"cce_bldf"  ,data_df,data_bl,data_diff)
@@ -101,18 +107,24 @@ getDiff("calibCoeff_cor","calibCoeffErr_cor","ccc_bldf" ,"ccce_bldf" ,data_df,da
 getDiff("misCor_x"      ,"misCor_xErr"      ,"mcx_bldf" ,"mcxe_bldf" ,data_df,data_bl,data_diff)
 getDiff("misCor_y"      ,"misCor_yErr"      ,"mcy_bldf" ,"mcye_bldf" ,data_df,data_bl,data_diff)
 getDiff("misCor_z"      ,"misCor_zErr"      ,"mcz_bldf" ,"mcze_bldf" ,data_df,data_bl,data_diff)
-# getDiff("mis_x"         ,"mis_xErr"         ,"mx_bldf"  ,"mxe_bldf"  ,data_df,data_bl,data_diff)
-# getDiff("mis_y"         ,"mis_yErr"         ,"my_bldf"  ,"mye_bldf"  ,data_df,data_bl,data_diff)
-# getDiff("mis_z"         ,"mis_zErr"         ,"mz_bldf"  ,"mze_bldf"  ,data_df,data_bl,data_diff)
-# getDiff("shim_x_a"      ,"shim_x_aErr"      ,"sxa_bldf" ,"sxae_bldf" ,data_df,data_bl,data_diff)
-# getDiff("shim_x_b"      ,"shim_x_bErr"      ,"sxb_bldf" ,"sxbe_bldf" ,data_df,data_bl,data_diff)
-# getDiff("shim_x_c"      ,"shim_x_cErr"      ,"sxc_bldf" ,"sxce_bldf" ,data_df,data_bl,data_diff)
-# getDiff("shim_y_a"      ,"shim_y_aErr"      ,"sya_bldf" ,"syae_bldf" ,data_df,data_bl,data_diff)
-# getDiff("shim_y_b"      ,"shim_y_bErr"      ,"syb_bldf" ,"sybe_bldf" ,data_df,data_bl,data_diff)
-# getDiff("shim_y_c"      ,"shim_y_cErr"      ,"syc_bldf" ,"syce_bldf" ,data_df,data_bl,data_diff)
-# getDiff("shim_z_a"      ,"shim_z_aErr"      ,"sza_bldf" ,"szae_bldf" ,data_df,data_bl,data_diff)
-# getDiff("shim_z_b"      ,"shim_z_bErr"      ,"szb_bldf" ,"szbe_bldf" ,data_df,data_bl,data_diff)
-# getDiff("shim_z_c"      ,"shim_z_cErr"      ,"szc_bldf" ,"szce_bldf" ,data_df,data_bl,data_diff)
+getDiff("mis_x"         ,"mis_xErr"         ,"mx_bldf"  ,"mxe_bldf"  ,data_df,data_bl,data_diff)
+getDiff("mis_y"         ,"mis_yErr"         ,"my_bldf"  ,"mye_bldf"  ,data_df,data_bl,data_diff)
+getDiff("mis_z"         ,"mis_zErr"         ,"mz_bldf"  ,"mze_bldf"  ,data_df,data_bl,data_diff)
+getDiff("shim_x_a"      ,"shim_x_aErr"      ,"sxa_bldf" ,"sxae_bldf" ,data_df,data_bl,data_diff)
+getDiff("shim_x_b"      ,"shim_x_bErr"      ,"sxb_bldf" ,"sxbe_bldf" ,data_df,data_bl,data_diff)
+getDiff("shim_x_c"      ,"shim_x_cErr"      ,"sxc_bldf" ,"sxce_bldf" ,data_df,data_bl,data_diff)
+getDiff("shim_y_a"      ,"shim_y_aErr"      ,"sya_bldf" ,"syae_bldf" ,data_df,data_bl,data_diff)
+getDiff("shim_y_b"      ,"shim_y_bErr"      ,"syb_bldf" ,"sybe_bldf" ,data_df,data_bl,data_diff)
+getDiff("shim_y_c"      ,"shim_y_cErr"      ,"syc_bldf" ,"syce_bldf" ,data_df,data_bl,data_diff)
+getDiff("shim_z_a"      ,"shim_z_aErr"      ,"sza_bldf" ,"szae_bldf" ,data_df,data_bl,data_diff)
+getDiff("shim_z_b"      ,"shim_z_bErr"      ,"szb_bldf" ,"szbe_bldf" ,data_df,data_bl,data_diff)
+getDiff("shim_z_c"      ,"shim_z_cErr"      ,"szc_bldf" ,"szce_bldf" ,data_df,data_bl,data_diff)
+getDiff("deltaB_pp_x"   ,"deltaB_pp_xErr"   ,"dbppx_bldf" ,"dbppxe_bldf" ,data_df,data_rh,data_diff)
+getDiff("deltaB_pp_y"   ,"deltaB_pp_yErr"   ,"dbppy_bldf" ,"dbppye_bldf" ,data_df,data_rh,data_diff)
+getDiff("deltaB_pp_z"   ,"deltaB_pp_zErr"   ,"dbppz_bldf" ,"dbppze_bldf" ,data_df,data_rh,data_diff)
+getDiff("deltaB_tr_x"   ,"deltaB_tr_xErr"   ,"dbtrx_bldf" ,"dbtrxe_bldf" ,data_df,data_rh,data_diff)
+getDiff("deltaB_tr_y"   ,"deltaB_tr_yErr"   ,"dbtry_bldf" ,"dbtrye_bldf" ,data_df,data_rh,data_diff)
+getDiff("deltaB_tr_z"   ,"deltaB_tr_zErr"   ,"dbtrz_bldf" ,"dbtrze_bldf" ,data_df,data_rh,data_diff)
 
 print data_diff
 
@@ -228,7 +240,7 @@ data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2]
 currentAxis.set_xlabel("Probe") 
 currentAxis.set_ylabel("") 
 
-# misalignment corrections: y 
+# misalignment corrections: z 
 plt.subplot(NROW,NCOL,3)
 currentAxis = plt.gca() # grab current axis 
 axis    = "misCor_z"
@@ -251,8 +263,370 @@ data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2]
 currentAxis.set_xlabel("Probe") 
 currentAxis.set_ylabel("") 
 
-# for ax in fig.get_axes():
-#     ax.label_outer()
+# shimmed gradient fits, a coeff
+fig = plt.figure(4)
+NROW = 2
+NCOL = 3
+title = ["shim_x_a","shim_y_a","shim_z_a"]
+plt.subplot(NROW,NCOL,1)
+currentAxis = plt.gca() # grab current axis 
+axis    = "shim_x_a"
+axisErr = "shim_x_aErr"
+data_df.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[0], marker=mStyle[0], s=mSize, color=color[0], ax=currentAxis)
+data_rh.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[0], marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
+data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[0], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.legend(["DF","RH","BL"])
+currentAxis.set_xlabel("") 
+currentAxis.set_ylabel("shim a Par (Hz/mm^2)") 
+
+plt.subplot(NROW,NCOL,4)
+currentAxis = plt.gca() # grab current axis 
+axis    = "sxa_rhdf"
+axisErr = "sxae_rhdf"
+data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
+axis    = "sxa_bldf"
+axisErr = "sxae_bldf"
+data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.set_xlabel("Probe") 
+currentAxis.set_ylabel("shim a Par Diff (Hz/mm^2)") 
+
+# shimmed field gradient a: y 
+plt.subplot(NROW,NCOL,2)
+currentAxis = plt.gca() # grab current axis 
+axis    = "shim_y_a"
+axisErr = "shim_y_aErr"
+data_df.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[1], marker=mStyle[0], s=mSize, color=color[0], ax=currentAxis)
+data_rh.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[1], marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
+data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[1], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.legend(["DF","RH","BL"])
+currentAxis.set_xlabel("") 
+currentAxis.set_ylabel("") 
+
+plt.subplot(NROW,NCOL,5)
+currentAxis = plt.gca() # grab current axis 
+axis    = "sya_rhdf"
+axisErr = "syae_rhdf"
+data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
+axis    = "sya_bldf"
+axisErr = "syae_bldf"
+data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.set_xlabel("Probe") 
+currentAxis.set_ylabel("") 
+
+# shimmed field gradient a: z  
+plt.subplot(NROW,NCOL,3)
+currentAxis = plt.gca() # grab current axis 
+axis    = "shim_z_a"
+axisErr = "shim_z_aErr"
+data_df.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[2], marker=mStyle[0], s=mSize, color=color[0], ax=currentAxis)
+data_rh.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[2], marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
+data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[2], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.legend(["DF","RH","BL"])
+currentAxis.set_xlabel("") 
+currentAxis.set_ylabel("") 
+
+plt.subplot(NROW,NCOL,6)
+currentAxis = plt.gca() # grab current axis 
+axis    = "sza_rhdf"
+axisErr = "szae_rhdf"
+data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
+axis    = "sza_bldf"
+axisErr = "szae_bldf"
+data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.set_xlabel("Probe") 
+currentAxis.set_ylabel("") 
+
+# shimmed field gradient b   
+title = ["shim_x_b","shim_y_b","shim_z_b"]
+fig = plt.figure(5)
+NROW = 2
+NCOL = 3
+plt.subplot(NROW,NCOL,1)
+currentAxis = plt.gca() # grab current axis 
+axis    = "shim_x_b"
+axisErr = "shim_x_bErr"
+data_df.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[0], marker=mStyle[0], s=mSize, color=color[0], ax=currentAxis)
+data_rh.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[0], marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
+data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[0], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.legend(["DF","RH","BL"])
+currentAxis.set_xlabel("") 
+currentAxis.set_ylabel("shim b Par (Hz/mm)") 
+
+plt.subplot(NROW,NCOL,4)
+currentAxis = plt.gca() # grab current axis 
+axis    = "sxb_rhdf"
+axisErr = "sxbe_rhdf"
+data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
+axis    = "sxb_bldf"
+axisErr = "sxbe_bldf"
+data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.set_xlabel("Probe") 
+currentAxis.set_ylabel("shim b Par Diff (Hz/mm)") 
+
+# shimmed field gradient b: y  
+plt.subplot(NROW,NCOL,2)
+currentAxis = plt.gca() # grab current axis 
+axis    = "shim_y_b"
+axisErr = "shim_y_bErr"
+data_df.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[1], marker=mStyle[0], s=mSize, color=color[0], ax=currentAxis)
+data_rh.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[1], marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
+data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[1], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.legend(["DF","RH","BL"])
+currentAxis.set_xlabel("") 
+currentAxis.set_ylabel("") 
+
+plt.subplot(NROW,NCOL,5)
+currentAxis = plt.gca() # grab current axis 
+axis    = "syb_rhdf"
+axisErr = "sybe_rhdf"
+data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
+axis    = "syb_bldf"
+axisErr = "sybe_bldf"
+data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.set_xlabel("Probe") 
+currentAxis.set_ylabel("") 
+
+# shimmed field gradient b: z  
+plt.subplot(NROW,NCOL,3)
+currentAxis = plt.gca() # grab current axis 
+axis    = "shim_z_b"
+axisErr = "shim_z_bErr"
+data_df.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[2], marker=mStyle[0], s=mSize, color=color[0], ax=currentAxis)
+data_rh.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[2], marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
+data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[2], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.legend(["DF","RH","BL"])
+currentAxis.set_xlabel("") 
+currentAxis.set_ylabel("") 
+
+plt.subplot(NROW,NCOL,6)
+currentAxis = plt.gca() # grab current axis 
+axis    = "szb_rhdf"
+axisErr = "szbe_rhdf"
+data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
+axis    = "szb_bldf"
+axisErr = "szbe_bldf"
+data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.set_xlabel("Probe") 
+currentAxis.set_ylabel("") 
+
+# shimmed gradient fits c: x
+title = ["shim_x_c","shim_y_c","shim_z_c"]
+fig = plt.figure(6)
+NROW = 2
+NCOL = 3
+plt.subplot(NROW,NCOL,1)
+currentAxis = plt.gca() # grab current axis 
+axis    = "shim_x_c"
+axisErr = "shim_x_cErr"
+data_df.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[0], marker=mStyle[0], s=mSize, color=color[0], ax=currentAxis)
+data_rh.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[0], marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
+data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[0], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.legend(["DF","RH","BL"])
+currentAxis.set_xlabel("") 
+currentAxis.set_ylabel("shim c Par (Hz)") 
+
+plt.subplot(NROW,NCOL,4)
+currentAxis = plt.gca() # grab current axis 
+axis    = "sxc_rhdf"
+axisErr = "sxce_rhdf"
+data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
+axis    = "sxc_bldf"
+axisErr = "sxce_bldf"
+data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.set_xlabel("Probe") 
+currentAxis.set_ylabel("shim c Par Diff (Hz)") 
+
+# shimmed field gradient c: y 
+plt.subplot(NROW,NCOL,2)
+currentAxis = plt.gca() # grab current axis 
+axis    = "shim_y_c"
+axisErr = "shim_y_cErr"
+data_df.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[1], marker=mStyle[0], s=mSize, color=color[0], ax=currentAxis)
+data_rh.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[1], marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
+data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[1], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.legend(["DF","RH","BL"])
+currentAxis.set_xlabel("") 
+currentAxis.set_ylabel("") 
+
+plt.subplot(NROW,NCOL,5)
+currentAxis = plt.gca() # grab current axis 
+axis    = "syc_rhdf"
+axisErr = "syce_rhdf"
+data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
+axis    = "syc_bldf"
+axisErr = "syce_bldf"
+data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.set_xlabel("Probe") 
+currentAxis.set_ylabel("") 
+
+# shimmed field gradient c: z
+plt.subplot(NROW,NCOL,3)
+currentAxis = plt.gca() # grab current axis 
+axis    = "shim_z_c"
+axisErr = "shim_z_cErr"
+data_df.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[2], marker=mStyle[0], s=mSize, color=color[0], ax=currentAxis)
+data_rh.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[2], marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
+data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[2], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.legend(["DF","RH","BL"])
+currentAxis.set_xlabel("") 
+currentAxis.set_ylabel("") 
+
+plt.subplot(NROW,NCOL,6)
+currentAxis = plt.gca() # grab current axis 
+axis    = "szc_rhdf"
+axisErr = "szce_rhdf"
+data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
+axis    = "szc_bldf"
+axisErr = "szce_bldf"
+data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.set_xlabel("Probe") 
+currentAxis.set_ylabel("") 
+
+# deltaB PP  
+title = ["deltaB_pp_x","deltaB_pp_y","deltaB_pp_z"]
+fig = plt.figure(7)
+NROW = 2
+NCOL = 3
+plt.subplot(NROW,NCOL,1)
+currentAxis = plt.gca() # grab current axis 
+axis    = "deltaB_pp_x"
+axisErr = "deltaB_pp_xErr"
+data_df.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[0], marker=mStyle[0], s=mSize, color=color[0], ax=currentAxis)
+data_rh.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[0], marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
+data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[0], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.legend(["DF","RH","BL"])
+currentAxis.set_xlabel("") 
+currentAxis.set_ylabel("DeltaB (Hz)") 
+
+plt.subplot(NROW,NCOL,4)
+currentAxis = plt.gca() # grab current axis 
+axis    = "dbppx_rhdf"
+axisErr = "dbppxe_rhdf"
+data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
+axis    = "dbppx_bldf"
+axisErr = "dbppxe_bldf"
+data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.set_xlabel("Probe") 
+currentAxis.set_ylabel("DeltaB Diff (Hz)") 
+
+# dBy 
+plt.subplot(NROW,NCOL,2)
+currentAxis = plt.gca() # grab current axis 
+axis    = "deltaB_pp_y"
+axisErr = "deltaB_pp_yErr"
+data_df.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[1], marker=mStyle[0], s=mSize, color=color[0], ax=currentAxis)
+data_rh.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[1], marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
+data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[1], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.legend(["DF","RH","BL"])
+currentAxis.set_xlabel("") 
+currentAxis.set_ylabel("") 
+
+plt.subplot(NROW,NCOL,5)
+currentAxis = plt.gca() # grab current axis 
+axis    = "dbppy_rhdf"
+axisErr = "dbppye_rhdf"
+data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
+axis    = "dbppy_bldf"
+axisErr = "dbppye_bldf"
+data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.set_xlabel("Probe") 
+currentAxis.set_ylabel("") 
+
+# dBz 
+plt.subplot(NROW,NCOL,3)
+currentAxis = plt.gca() # grab current axis 
+axis    = "deltaB_pp_z"
+axisErr = "deltaB_pp_zErr"
+data_df.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[2], marker=mStyle[0], s=mSize, color=color[0], ax=currentAxis)
+data_rh.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[2], marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
+data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[2], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.legend(["DF","RH","BL"])
+currentAxis.set_xlabel("") 
+currentAxis.set_ylabel("") 
+
+plt.subplot(NROW,NCOL,6)
+currentAxis = plt.gca() # grab current axis 
+axis    = "dbppz_rhdf"
+axisErr = "dbppze_rhdf"
+data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
+axis    = "dbppz_bldf"
+axisErr = "dbppze_bldf"
+data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.set_xlabel("Probe") 
+currentAxis.set_ylabel("") 
+
+# deltaB TR  
+title = ["deltaB_tr_x","deltaB_tr_y","deltaB_tr_z"]
+fig = plt.figure(8)
+NROW = 2
+NCOL = 3
+plt.subplot(NROW,NCOL,1)
+currentAxis = plt.gca() # grab current axis 
+axis    = "deltaB_tr_x"
+axisErr = "deltaB_tr_xErr"
+data_df.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[0], marker=mStyle[0], s=mSize, color=color[0], ax=currentAxis)
+data_rh.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[0], marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
+data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[0], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.legend(["DF","RH","BL"])
+currentAxis.set_xlabel("") 
+currentAxis.set_ylabel("DeltaB (Hz)") 
+
+plt.subplot(NROW,NCOL,4)
+currentAxis = plt.gca() # grab current axis 
+axis    = "dbtrx_rhdf"
+axisErr = "dbtrxe_rhdf"
+data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
+axis    = "dbtrx_bldf"
+axisErr = "dbtrxe_bldf"
+data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.set_xlabel("Probe") 
+currentAxis.set_ylabel("DeltaB Diff (Hz)") 
+
+# dBy 
+plt.subplot(NROW,NCOL,2)
+currentAxis = plt.gca() # grab current axis 
+axis    = "deltaB_tr_y"
+axisErr = "deltaB_tr_yErr"
+data_df.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[1], marker=mStyle[0], s=mSize, color=color[0], ax=currentAxis)
+data_rh.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[1], marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
+data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[1], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.legend(["DF","RH","BL"])
+currentAxis.set_xlabel("") 
+currentAxis.set_ylabel("") 
+
+plt.subplot(NROW,NCOL,5)
+currentAxis = plt.gca() # grab current axis 
+axis    = "dbtry_rhdf"
+axisErr = "dbtrye_rhdf"
+data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
+axis    = "dbtry_bldf"
+axisErr = "dbtrye_bldf"
+data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.set_xlabel("Probe") 
+currentAxis.set_ylabel("") 
+
+# dBz 
+plt.subplot(NROW,NCOL,3)
+currentAxis = plt.gca() # grab current axis 
+axis    = "deltaB_pp_z"
+axisErr = "deltaB_pp_zErr"
+data_df.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[2], marker=mStyle[0], s=mSize, color=color[0], ax=currentAxis)
+data_rh.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[2], marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
+data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[2], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.legend(["DF","RH","BL"])
+currentAxis.set_xlabel("") 
+currentAxis.set_ylabel("") 
+
+plt.subplot(NROW,NCOL,6)
+currentAxis = plt.gca() # grab current axis 
+axis    = "dbtrz_rhdf"
+axisErr = "dbtrze_rhdf"
+data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
+axis    = "dbtrz_bldf"
+axisErr = "dbtrze_bldf"
+data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.set_xlabel("Probe") 
+currentAxis.set_ylabel("") 
 
 # show all plots
 plt.show()
