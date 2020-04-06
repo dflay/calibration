@@ -64,6 +64,11 @@ data_bl = pd.read_csv(csv_path_bl,index_col=False) # index_col = False when you 
 print("Reading data from: {0}".format(csv_path_df)) 
 data_df = pd.read_csv(csv_path_df,index_col=False) # index_col = False when you don't have an index column
 
+# adjust bingzhi coefficients (he plots on absolute scale) 
+data_bl['shim_x_c'] -= 61.78E+6
+data_bl['shim_y_c'] -= 61.78E+6
+data_bl['shim_z_c'] -= 61.78E+6
+
 # marker parameters  
 color  = ["blue","red","#20B010"]
 mStyle = ["s","o","v"]
@@ -131,16 +136,13 @@ getDiff("dBdx_imp"      ,"dBdx_impErr"      ,"impx_bldf"  ,"impxe_bldf"  ,data_d
 getDiff("dBdy_imp"      ,"dBdy_impErr"      ,"impy_bldf"  ,"impye_bldf"  ,data_df,data_bl,data_diff)
 getDiff("dBdz_imp"      ,"dBdz_impErr"      ,"impz_bldf"  ,"impze_bldf"  ,data_df,data_bl,data_diff)
 
-print data_diff
+# print data_diff
 
 # plot data
 
-# general setup  
+# calib coeffs (NO MISALIGNMENT)
 NCOL = 1
 NROW = 2
-
-# calib coeffs (NO MISALIGNMENT)
- 
 fig = plt.figure(1) 
 plt.subplot(NROW,NCOL,1)
 
@@ -150,7 +152,7 @@ axisErr = "calibCoeffErr"
 data_df.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[0], s=mSize, color=color[0], ax=currentAxis)
 data_rh.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
 data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
-currentAxis.legend(["DF","RH","BL"])
+# currentAxis.legend(["DF","RH","BL"])
 currentAxis.set_xlabel("Probe") 
 currentAxis.set_ylabel("Calib Coeff (Hz)") 
 
@@ -177,7 +179,7 @@ axisErr = "calibCoeffErr_cor"
 data_df.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[0], s=mSize, color=color[0], ax=currentAxis)
 data_rh.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
 data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
-currentAxis.legend(["DF","RH","BL"])
+# currentAxis.legend(["DF","RH","BL"])
 currentAxis.set_xlabel("Probe") 
 currentAxis.set_ylabel("Calib Coeff [Cor] (Hz)") 
 
@@ -647,7 +649,7 @@ data_rh.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[0], ma
 data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[0], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
 currentAxis.legend(["DF","RH","BL"])
 currentAxis.set_xlabel("") 
-currentAxis.set_ylabel("dB/dq [imp] (Hz)") 
+currentAxis.set_ylabel("dB/dq [imp] (Hz/mm)") 
 
 plt.subplot(NROW,NCOL,4)
 currentAxis = plt.gca() # grab current axis 
@@ -658,7 +660,7 @@ axis    = "impx_bldf"
 axisErr = "impxe_bldf"
 data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
 currentAxis.set_xlabel("Probe") 
-currentAxis.set_ylabel("dB/dq Diff (Hz)") 
+currentAxis.set_ylabel("dB/dq Diff (Hz/mm)") 
 
 # y 
 plt.subplot(NROW,NCOL,2)

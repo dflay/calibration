@@ -415,14 +415,14 @@ int CollectData(std::vector<result_prod_t> r,std::vector<result_prod_t> rFree,
       // misalignment CORRECTION. always use the opt result.  this is in Hz 
       // this is a sum over all axes
       dataPt.misCor                = mCor[i][2].val; // index 2 = opt result     
-      dataPt.misCor_err            = mCor[i][2].err; // index 2 = opt result 
+      dataPt.misCor_err            = TMath::Abs(mCor[i][2].err); // index 2 = opt result 
       // now the second index is AXIS
       dataPt.misCor_x              = mCor_a[i][0].val;  
-      dataPt.misCor_xErr           = mCor_a[i][0].err;
+      dataPt.misCor_xErr           = TMath::Abs(mCor_a[i][0].err);
       dataPt.misCor_y              = mCor_a[i][1].val;
-      dataPt.misCor_yErr           = mCor_a[i][1].err;
+      dataPt.misCor_yErr           = TMath::Abs(mCor_a[i][1].err);
       dataPt.misCor_z              = mCor_a[i][2].val;
-      dataPt.misCor_zErr           = mCor_a[i][2].err;
+      dataPt.misCor_zErr           = TMath::Abs(mCor_a[i][2].err);
       dataPt.misCor_z_bar          = 0.;
       dataPt.misCor_zErr_bar       = 0.;
       // misalignment in mm; TODO: uncertainties? 
@@ -505,29 +505,58 @@ int GetShimmedGradientFitPars(const char *outdir,int probeNumber,std::vector<gra
 
   char inpath[200]; 
   sprintf(inpath,"%s/shimmed-grad-x_pars_pr-%02d.csv",outdir,probeNumber);
-  LoadShimmedFieldFitPars(inpath,xPar,xParErr); 
+  int rcx = LoadShimmedFieldFitPars(inpath,xPar,xParErr); 
   sprintf(inpath,"%s/shimmed-grad-y_pars_pr-%02d.csv",outdir,probeNumber);
-  LoadShimmedFieldFitPars(inpath,yPar,yParErr); 
+  int rcy = LoadShimmedFieldFitPars(inpath,yPar,yParErr); 
   sprintf(inpath,"%s/shimmed-grad-z_pars_pr-%02d.csv",outdir,probeNumber);
-  LoadShimmedFieldFitPars(inpath,zPar,zParErr); 
+  int rcz = LoadShimmedFieldFitPars(inpath,zPar,zParErr);
+
+  // if no file exists, fill with zeroes 
+  if(rcx!=0){
+     for(int i=0;i<3;i++) xPar.push_back(0);
+     for(int i=0;i<3;i++) xParErr.push_back(0);
+  }
+
+  if(rcy!=0){
+     for(int i=0;i<3;i++) yPar.push_back(0);
+     for(int i=0;i<3;i++) yParErr.push_back(0);
+  }
+
+  if(rcz!=0){
+     for(int i=0;i<3;i++) zPar.push_back(0);
+     for(int i=0;i<3;i++) zParErr.push_back(0);
+  }
+
+  // zero out everything to start
+  int ND = data.size(); 
+  for(int i=0;i<ND;i++){
+     for (int j=0;j<3;j++) data[i].par[j] = 0;
+     for (int j=0;j<3;j++) data[i].parErr[j] = 0;
+  }
 
   // note the dimension of data is 3 -- x, y, z
   // in case we have different dimensions for each axis, we do them separately  
-  int NPAR = xPar.size();
-  for(int i=0;i<NPAR;i++){ 
+  int npx = xPar.size();
+  for(int i=0;i<npx;i++){ 
      data[0].par[i]    = xPar[i];
      data[0].parErr[i] = xParErr[i];
   }
-  NPAR = yPar.size();
-  for(int i=0;i<NPAR;i++){ 
+  int npy = yPar.size();
+  for(int i=0;i<npy;i++){ 
      data[1].par[i]    = yPar[i];
      data[1].parErr[i] = yParErr[i];
   }
-  NPAR = zPar.size();
-  for(int i=0;i<NPAR;i++){ 
+  int npz = zPar.size();
+  for(int i=0;i<npz;i++){ 
      data[2].par[i]    = zPar[i];
      data[2].parErr[i] = zParErr[i];
   }
+
+  // char pt[3] = {'c','b','a'};
+  // for(int i=0;i<3;i++) std::cout << Form("shim_x_%c = %.3lf +/- %.3lf",pt[i],data[0].par[i],data[0].parErr[i]) << std::endl;
+  // for(int i=0;i<3;i++) std::cout << Form("shim_y_%c = %.3lf +/- %.3lf",pt[i],data[1].par[i],data[1].parErr[i]) << std::endl;
+  // for(int i=0;i<3;i++) std::cout << Form("shim_z_%c = %.3lf +/- %.3lf",pt[i],data[2].par[i],data[2].parErr[i]) << std::endl;
+  // std::cout << "-----" << std::endl;
 
   return 0;
 
@@ -603,18 +632,14 @@ int PrintToFile_csv(const char *outpath,std::vector<calib_result_t> data){
    char outStr[1000]; 
    const int N = data.size();
 
-   std::string header = "Probe,calibCoeff,calibCoeffErr,calibCoeff_cor,calibCoeffErr_cor,";
-   header            += "calibCoeffFree,calibCoeffFreeErr,calibCoeffFree_cor,calibCoeffFreeErr_cor,";
-   header            += "deltaB_tr_x,deltaB_tr_xErr,deltaB_tr_y,deltaB_tr_yErr,deltaB_tr_z,deltaB_tr_zErr,";
-   header            += "deltaB_pp_x,deltaB_pp_xErr,deltaB_pp_y,deltaB_pp_yErr,deltaB_pp_z,deltaB_pp_zErr,";
-   header            += "dBdx_imp,dBdx_impErr,dBdy_imp,dBdy_impErr,dBdz_imp,dBdz_impErr,";
-   header            += "dBdx_shim,dBdx_shimErr,dBdy_shim,dBdy_shimErr,dBdz_shim,dBdz_shimErr,";
-   header            += "mis_x,mis_xErr,mis_y,mis_yErr,mis_z,mis_zErr,"; 
-   header            += "misCor_x,misCor_xErr,misCor_y,misCor_yErr,misCor_z,misCor_zErr,";
-   header            += "shim_x_a,shim_x_aErr,shim_x_b,shim_x_bErr,shim_x_c,shim_x_cErr,";
-   header            += "shim_y_a,shim_y_aErr,shim_y_b,shim_y_bErr,shim_y_c,shim_y_cErr,";
-   header            += "shim_z_a,shim_z_aErr,shim_z_b,shim_z_bErr,shim_z_c,shim_z_cErr,";
-   header            += "mis_z_bar,mis_zErr_bar,misCor_z_bar,misCor_zErr_bar";
+   std::vector<std::string> HEAD;
+   int rc = gm2fieldUtil::Import::ImportData1<std::string>("./input/headers/cc-output.csv","csv",HEAD); 
+
+   // construct the header
+   int NH = HEAD.size();
+   std::string header = HEAD[0];
+   for(int i=1;i<NH;i++) header += "," + HEAD[i];
+   // std::cout << header << std::endl;
 
    std::ofstream outfile; 
    outfile.open(outpath);
@@ -624,59 +649,50 @@ int PrintToFile_csv(const char *outpath,std::vector<calib_result_t> data){
    }else{
       outfile << header << std::endl;
       for(int i=0;i<N;i++){
-	 sprintf(outStr,"%02d,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf",
-	       // data[i].calibCoeff            ,data[i].calibCoeffErr        ,
-	       // data[i].calibCoeff_aba        ,data[i].calibCoeffErr_aba    ,
-               i+1,
-	       data[i].calibCoeff_opt        ,data[i].calibCoeffErr_opt    ,
-	       // data[i].calibCoeffCor         ,data[i].calibCoeffCorErr     ,
-	       // data[i].calibCoeffCor_aba     ,data[i].calibCoeffCorErr_aba ,
-	       data[i].calibCoeffCor_opt     ,data[i].calibCoeffCorErr_opt ,
-	       // data[i].calibCoeffFree        ,data[i].calibCoeffFreeErr        ,
-	       // data[i].calibCoeffFree_aba    ,data[i].calibCoeffFreeErr_aba    ,
-	       data[i].calibCoeffFree_opt    ,data[i].calibCoeffFreeErr_opt    ,
-	       // data[i].calibCoeffCorFree     ,data[i].calibCoeffCorFreeErr     ,
-	       // data[i].calibCoeffCorFree_aba ,data[i].calibCoeffCorFreeErr_aba ,
-	       data[i].calibCoeffCorFree_opt ,data[i].calibCoeffCorFreeErr_opt ,
+         sprintf(outStr,"%02d",i+1); 
+         sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].calibCoeff_opt,data[i].calibCoeffErr_opt); 
+         sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].calibCoeffCor_opt,data[i].calibCoeffCorErr_opt); 
+         sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].calibCoeffFree_opt,data[i].calibCoeffFreeErr_opt); 
+         sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].calibCoeffCorFree_opt,data[i].calibCoeffCorFreeErr_opt); 
 
-	       data[i].deltaB_tr_x           ,data[i].deltaB_tr_xErr,
-	       data[i].deltaB_tr_y           ,data[i].deltaB_tr_yErr,
-	       data[i].deltaB_tr_z           ,data[i].deltaB_tr_zErr,
+         sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].deltaB_tr_x,data[i].deltaB_tr_xErr); 
+         sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].deltaB_tr_y,data[i].deltaB_tr_yErr); 
+         sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].deltaB_tr_z,data[i].deltaB_tr_zErr); 
 
-	       data[i].deltaB_pp_x           ,data[i].deltaB_pp_xErr,
-	       data[i].deltaB_pp_y           ,data[i].deltaB_pp_yErr,
-	       data[i].deltaB_pp_z           ,data[i].deltaB_pp_zErr,
+         sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].deltaB_pp_x,data[i].deltaB_pp_xErr); 
+         sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].deltaB_pp_y,data[i].deltaB_pp_yErr); 
+         sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].deltaB_pp_z,data[i].deltaB_pp_zErr); 
 
-	       data[i].dBdx_imp              ,data[i].dBdx_impErr,
-	       data[i].dBdy_imp              ,data[i].dBdy_impErr,
-	       data[i].dBdz_imp              ,data[i].dBdz_impErr,
+         sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].dBdx_imp,data[i].dBdx_impErr); 
+         sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].dBdy_imp,data[i].dBdy_impErr); 
+         sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].dBdz_imp,data[i].dBdz_impErr); 
 
-	       data[i].dBdx_shim             ,data[i].dBdx_shimErr,
-	       data[i].dBdy_shim             ,data[i].dBdy_shimErr,
-	       data[i].dBdz_shim             ,data[i].dBdz_shimErr,
+         sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].dBdx_shim,data[i].dBdx_shimErr); 
+         sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].dBdy_shim,data[i].dBdy_shimErr); 
+         sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].dBdz_shim,data[i].dBdz_shimErr);
+ 
+         sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].mis_x,data[i].mis_xErr); 
+         sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].mis_y,data[i].mis_yErr); 
+         sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].mis_z,data[i].mis_zErr); 
 
-	       data[i].mis_x                 ,data[i].mis_xErr,
-	       data[i].mis_y                 ,data[i].mis_yErr,
-	       data[i].mis_z                 ,data[i].mis_zErr,
+         sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].misCor_x,data[i].misCor_xErr); 
+         sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].misCor_y,data[i].misCor_yErr); 
+         sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].misCor_z,data[i].misCor_zErr); 
 
-	       data[i].misCor_x              ,data[i].misCor_xErr,
-	       data[i].misCor_y              ,data[i].misCor_yErr,
-	       data[i].misCor_z              ,data[i].misCor_zErr,
+         sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].shim_x_a,data[i].shim_x_aErr); 
+         sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].shim_x_b,data[i].shim_x_bErr); 
+         sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].shim_x_c,data[i].shim_x_cErr); 
 
-	       data[i].shim_x_a              ,data[i].shim_x_aErr,
-	       data[i].shim_x_b              ,data[i].shim_x_bErr,
-	       data[i].shim_x_c              ,data[i].shim_x_cErr,
+         sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].shim_y_a,data[i].shim_y_aErr); 
+         sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].shim_y_b,data[i].shim_y_bErr); 
+         sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].shim_y_c,data[i].shim_y_cErr); 
 
-	       data[i].shim_y_a              ,data[i].shim_y_aErr,
-	       data[i].shim_y_b              ,data[i].shim_y_bErr,
-	       data[i].shim_y_c              ,data[i].shim_y_cErr,
+         sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].shim_z_a,data[i].shim_z_aErr); 
+         sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].shim_z_b,data[i].shim_z_bErr); 
+         sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].shim_z_c,data[i].shim_z_cErr); 
 
-	       data[i].shim_z_a              ,data[i].shim_z_aErr,
-	       data[i].shim_z_b              ,data[i].shim_z_bErr,
-	       data[i].shim_z_c              ,data[i].shim_z_cErr,
-
-	       data[i].mis_z_bar             ,data[i].mis_zErr_bar,
-	       data[i].misCor_zErr_bar       ,data[i].misCor_zErr_bar); 
+         sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].mis_z_bar,data[i].mis_zErr_bar); 
+         sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].misCor_z_bar,data[i].misCor_zErr_bar); 
 
 	 outfile << outStr << std::endl;
       }

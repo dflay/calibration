@@ -2436,6 +2436,8 @@ int LoadShimmedFieldFitPars(const char *inpath,std::vector<double> &x,std::vecto
          x.push_back(ix); 
          dx.push_back(idx); 
       }
+      x.pop_back();
+      dx.pop_back();
       infile.close();
    }
    return 0;
