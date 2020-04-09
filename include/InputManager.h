@@ -20,8 +20,9 @@ class InputManager{
       bool fSyst,fVaryDBTime_tr,fVarySwapTime_tr,fVaryShimFit,fVaryImpGradFit,fShimGradAltEnable;
       bool fTRLYFootprintStatus; 
       int fSystDirNum; 
-      int fTrolleyProbe,fAxis,fFXPRListTag,fBlindUnits,fRunPeriod,fNumEventsToAvg,fNumEventsTimeWindow,fImpGradFitDim,fImpGradFitOrder; 
-      double fBlindScale,fTrolleyAngle,fDBZCurrent,fTempCor_pp,fDBDeltaTime_tr,fSwapDeltaTime_tr,fTRLYFootprint,fTRLYFootprintErr; 
+      int fTrolleyProbe,fAxis,fFXPRListTag,fBlindUnits,fRunPeriod,fNumEventsToAvg,fNumEventsTimeWindow,fImpGradFitDim,fImpGradFitOrder;
+      double fTempCor_tr,fTempCor_pp; 
+      double fBlindScale,fTrolleyAngle,fDBZCurrent,fDBDeltaTime_tr,fSwapDeltaTime_tr,fTRLYFootprint,fTRLYFootprintErr; 
       std::string fType,fDevice,fRunDate,fFitFunc,fBlindLabel,fProdTag,fNMRANATag,fCutFile,fPPID,fOscCorType,fAnaDate;
       std::vector<int> fRunList,fFXPRList; 
       std::vector<std::string> fRunLabel; 
@@ -93,6 +94,7 @@ class InputManager{
       double GetTrolleyAngle()       const { return fTrolleyAngle;    }  
       double GetDBZCurrent()         const { return fDBZCurrent;      } 
       double GetTempCor_pp()         const { return fTempCor_pp;      } 
+      double GetTempCor_tr()         const { return fTempCor_tr;      } 
 
       double GetDeltaTime(std::string dev="NONE",std::string type="NONE"){
          // the step size over which to vary a time cut 

@@ -83,7 +83,12 @@ data_bl['shim_z_c'] -= 61.78E+6
 # marker parameters  
 color  = ["blue","red","#20B010"]
 mStyle = ["s","o","v"]
-mSize  = 30 
+mSize  = 80
+
+# axis details 
+tickSize      = 16 
+xAxisFontSize = 16 
+yAxisFontSize = 16  
 
 # calculate differences 
 probeList = data_df['Probe'].tolist() # a list of the probe numbers to add to the new data frame 
@@ -176,8 +181,10 @@ data_df.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[0], 
 data_rh.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
 data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
 # currentAxis.legend(["DF","RH","BL"])
-currentAxis.set_xlabel("Probe") 
-currentAxis.set_ylabel("Calib Coeff (Hz)") 
+currentAxis.set_xlabel("Probe"           ,fontsize=xAxisFontSize) 
+currentAxis.set_ylabel("Calib Coeff (Hz)",fontsize=yAxisFontSize)
+currentAxis.set_ylim(bottom=100, top=300)
+currentAxis.tick_params(labelsize=tickSize) 
 
 plt.subplot(NROW,NCOL,2)
 currentAxis = plt.gca() # grab current axis 
@@ -187,8 +194,10 @@ data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1]
 axis    = "cc_bldf"                                                        
 axisErr = "cce_bldf"                                                       
 data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
-currentAxis.set_xlabel("Probe") 
-currentAxis.set_ylabel("Calib Coeff (Hz)") 
+currentAxis.set_xlabel("Probe"          ,fontsize=xAxisFontSize) 
+currentAxis.set_ylabel("Difference (Hz)",fontsize=yAxisFontSize) 
+currentAxis.set_ylim(bottom=-4, top=10)
+currentAxis.tick_params(labelsize=tickSize) 
 
 for ax in fig.get_axes():
     ax.label_outer()

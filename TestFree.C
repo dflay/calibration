@@ -8,13 +8,22 @@
 #include "TCanvas.h"
 
 #include "gm2fieldGraph.h"
+#include "gm2fieldImport.h"
 
 #include "./src/FreeProton.C"
 
+int FillVector(int probe,std::string type,json data,std::vector<double> &x); 
+TGraphErrors *GetTGraphErrors(int probe,std::string xAxis,std::string yAxis,std::string yAxisErr,json data); 
+
 int TestFree(){
 
-   FreeProton *fp = new FreeProton("PP-145-01",1);
+   std::string probeID = "PP-145-01";
+   int runPeriod       = 1;  
+
+   FreeProton *fp = new FreeProton(probeID,runPeriod);
    fp->Print(); 
+
+
 
    const int NPTS = 10; 
    double min = 19;
@@ -66,7 +75,33 @@ int TestFree(){
    gm2fieldUtil::Graph::SetGraphParameters(gDT ,20,kBlack); 
    gm2fieldUtil::Graph::SetGraphParameters(gCHI,20,kBlack); 
    gm2fieldUtil::Graph::SetGraphParameters(gSIG,20,kBlack); 
-   
+  
+   // load free proton, TRLY data from calibration analysis 
+   json ccData;
+   std::string inpath_data = "./output/blinded/flay/04-06-20/run-1/calibData_04-06-20.json"; 
+   int rc = gm2fieldUtil::Import::ImportJSON(inpath_data,ccData);
+
+   TLegend *L = new TLegend(0.6,0.6,0.8,0.8);
+   TMultiGraph *mg = new TMultiGraph(); 
+   mg->Add(gDT,"lp"); 
+
+   // build graphs
+   int color=0,color_last=2; 
+   const int NP = 17;  
+   TGraphErrors **gpp = new TGraphErrors*[NP];
+   for(int i=0;i<NP;i++){
+      color = color_last + i;
+      if(color==10 || color==19) color++;
+      gpp[i] = GetTGraphErrors(i+1,"ppTemp","fpCor","fpCorErr",ccData); 
+      gm2fieldUtil::Graph::SetGraphParameters(gpp[i],21,color);
+      color = color_last;
+      mg->Add(gpp[i],"p"); 
+      L->AddEntry(gpp[i],Form("Probe %02d",i+1),"p"); 
+   }
+    
+   TGraphErrors *gTR  = GetTGraphErrors(-1,"probe","trTemp","trTempErr",ccData);
+   gm2fieldUtil::Graph::SetGraphParameters(gTR,20,kBlack);  
+ 
    double xSize = 0.05; 
    double ySize = 0.06; 
 
@@ -95,13 +130,55 @@ int TestFree(){
    c1->Update();
 
    c1->cd(4);
-   gDT->Draw("alp"); 
-   gm2fieldUtil::Graph::SetGraphLabels(gDT,"Total Correction","Temperature (#circC)","#delta_{t} (ppb)"); 
-   gm2fieldUtil::Graph::SetGraphLabelSizes(gDT,xSize,ySize);  
-   gDT->Draw("alp");
+   mg->Draw("a"); 
+   gm2fieldUtil::Graph::SetGraphLabels(mg,"Total Correction","Temperature (#circC)","#delta_{t} (ppb)"); 
+   gm2fieldUtil::Graph::SetGraphLabelSizes(mg,xSize,ySize);  
+   mg->Draw("a");
+   L->Draw("same");
    c1->Update();
+
+   TCanvas *c2 = new TCanvas("c2","TRLY Temperatures",1200,600);
+
+   c2->cd(1);
+   gTR->Draw("alp"); 
+   gm2fieldUtil::Graph::SetGraphLabels(gTR,"TRLY Temperatures","Probe","Temperature (#circC)"); 
+   // gm2fieldUtil::Graph::SetGraphLabelSizes(gTR,xSize,ySize);  
+   gTR->Draw("alp"); 
+   c2->Update();
 
    delete fp; 
 
+   return 0;
+}
+//______________________________________________________________________________
+TGraphErrors *GetTGraphErrors(int probe,std::string xAxis,std::string yAxis,std::string yAxisErr,json data){
+   // get a TGraph of a given data type for a given probe number
+   std::vector<double> x,y,ey; 
+   FillVector(probe,xAxis   ,data,x);  
+   FillVector(probe,yAxis   ,data,y);  
+   FillVector(probe,yAxisErr,data,ey);  
+
+   TGraphErrors *g = gm2fieldUtil::Graph::GetTGraphErrors(x,y,ey);
+   return g; 
+}
+//______________________________________________________________________________
+int FillVector(int probe,std::string type,json data,std::vector<double> &x){
+   double arg=0;
+   int N=0;
+   if(type.compare("probe")==0){
+      N = 17; 
+      for(int i=0;i<N;i++) x.push_back(i+1);
+   }else{
+      N = data[type].size();
+      for(int i=0;i<N;i++){
+	 arg = (double)data[type][i];
+	 if(probe>0){ 
+	    if( probe==(i+1) ) x.push_back(arg);
+	 }else{
+	    // don't care about probe number
+	    x.push_back(arg);
+	 }
+      }
+   }
    return 0;
 }

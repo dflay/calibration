@@ -49,6 +49,8 @@ double gMarkerSize = 0.8;
 double gXSize      = 0.05;  
 double gYSize      = 0.06;  
 
+bool keyExists(std::string key,std::vector<std::string> header); 
+
 int GetTemperatures(const char *outdir,int probeNumber,result_prod_t &res,result_prod_t &resFree); 
 int GetFreeProtonCorrection(const char *outdir,int probeNumber,result_prod_t &resFree); 
 int GetShimmedGradientFitPars(const char *outdir,int probeNumber,std::vector<grad_meas_t> &data); 
@@ -627,6 +629,13 @@ int PrintResults(const char *filename,std::vector<calib_result_t> data,bool toRO
    return rc;
 }
 //______________________________________________________________________________
+bool keyExists(std::string key,std::vector<std::string> header){
+   bool exist = false; 
+   const int N = header.size();
+   for(int i=0;i<N;i++) if( header[i].compare(key)==0 ) exist = true;
+   return exist;
+}
+//______________________________________________________________________________
 int PrintToFile_csv(const char *outpath,std::vector<calib_result_t> data){
 
    char outStr[1000]; 
@@ -640,6 +649,9 @@ int PrintToFile_csv(const char *outpath,std::vector<calib_result_t> data){
    std::string header = HEAD[0];
    for(int i=1;i<NH;i++) header += "," + HEAD[i];
    // std::cout << header << std::endl;
+
+   // idea: check if header of a given column exists from the csv file, and adjust output string
+   // accordingly to ensure 1-to-1 mappping 
 
    std::ofstream outfile; 
    outfile.open(outpath);
@@ -753,7 +765,7 @@ int GetJSONObject(std::vector<calib_result_t> data,json &jData){
       jData["calibCoeffCorFreeErr"][i]     = data[i].calibCoeffCorFreeErr; 
       jData["calibCoeffCorFreeErr_aba"][i] = data[i].calibCoeffCorFreeErr_aba;
       jData["calibCoeffCorFreeErr_opt"][i] = data[i].calibCoeffCorFreeErr_opt;
-      jData["freeErr"][i]               = data[i].freeErr;
+      jData["freeErr"][i]                  = data[i].freeErr;
       // free-proton related numbers
       jData["fpCor"][i]                 = data[i].fpCor;  
       jData["fpCorErr"][i]              = data[i].fpCorErr;  

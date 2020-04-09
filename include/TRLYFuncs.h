@@ -21,11 +21,12 @@
 
 int GetTRLYStatsAtTime(bool UseTempCor,bool UseOscCor,int probe,int nev,double fLO,
                        std::vector<double> time,std::vector<averageFixedProbeEvent_t> fxpr,
-                       std::vector<trolleyAnaEvent_t> Data,std::vector<calibSwap_t> &Event,double t0=0);
+                       std::vector<trolleyAnaEvent_t> Data,std::vector<calibSwap_t> &Event,double t0=0,double dsigdT=0);
 
 int GetTRLYStatsAtTime_hybrid(bool UseTempCor,bool UseOscCor,int probe,int nev,double fLO,
                               std::vector<double> time,std::vector<averageFixedProbeEvent_t> fxpr,
-                              std::vector<trolleyAnaEvent_t> Data,std::vector<calibSwap_t> &Event,std::vector<double> t0); 
+                              std::vector<trolleyAnaEvent_t> Data,std::vector<calibSwap_t> &Event,
+                              std::vector<double> t0,double dsigdT=0); 
 
 int FindTransitionTimes(int step,double thr,std::vector<trolleyAnaEvent_t> Data,
                         std::vector< std::vector<double> > &timeLo,std::vector< std::vector<double> > &timeHi);

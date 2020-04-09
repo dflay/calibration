@@ -237,7 +237,8 @@ int GetTRLYStatsAtTime_old(bool UseTempCor,bool UseOscCor,int probe,int nev,doub
 //______________________________________________________________________________
 int GetTRLYStatsAtTime(bool UseTempCor,bool UseOscCor,int probe,int nev,double fLO,
                        std::vector<double> time,std::vector<averageFixedProbeEvent_t> fxpr,
-                       std::vector<trolleyAnaEvent_t> Data,std::vector<calibSwap_t> &Event,double t0){
+                       std::vector<trolleyAnaEvent_t> Data,std::vector<calibSwap_t> &Event,
+                       double t0,double dsigdT){
 
    // find the mean field at the times specified in the time vector 
    calibSwap_t theEvent; 
@@ -250,10 +251,14 @@ int GetTRLYStatsAtTime(bool UseTempCor,bool UseOscCor,int probe,int nev,double f
 
    // now need to average over each toggle 
 
+   // dsigdT is in ppb/(deg C).  Need to convert to Hz/(deg C)
+   // 1 ppb = 0.06179 Hz.  
+   // from Martin C doc-db 2342: could be 5.45 ppb/(deg C), or -2.5 ppb/(deg C) 
+   double dSigdT = 0.06179*dsigdT; 
+
    int n=0;
    int M = trTime.size();
    const int NT = time.size();
-   double dSigdT = 5.45E-9;  // per deg C, from Martin C doc-db 2342; could be -2.5E-9
    double lastTime=0;
    double arg_freq=0,delta_t=0;
    double mean_freq=0,stdev_freq=0;
@@ -327,7 +332,8 @@ int GetTRLYStatsAtTime(bool UseTempCor,bool UseOscCor,int probe,int nev,double f
 //______________________________________________________________________________
 int GetTRLYStatsAtTime_hybrid(bool UseTempCor,bool UseOscCor,int probe,int nev,double fLO,
                               std::vector<double> time,std::vector<averageFixedProbeEvent_t> fxpr,
-                              std::vector<trolleyAnaEvent_t> Data,std::vector<calibSwap_t> &Event,std::vector<double> t0){
+                              std::vector<trolleyAnaEvent_t> Data,std::vector<calibSwap_t> &Event,
+                              std::vector<double> t0,double dsigdT){
 
    // find the mean field at the times specified in the time vector 
    calibSwap_t theEvent; 
@@ -339,12 +345,16 @@ int GetTRLYStatsAtTime_hybrid(bool UseTempCor,bool UseOscCor,int probe,int nev,d
    
    if(UseOscCor) std::cout << "[GetTRLYStatsAtTime]: USING OSCILLATION CORRECTION" << std::endl;
 
-   // now need to average over each toggle 
+   // now need to average over each toggle
+ 
+   // dsigdT is in ppb/(deg C).  Need to convert to Hz/(deg C)
+   // 1 ppb = 0.06179 Hz.  
+   // from Martin C doc-db 2342: could be 5.45 ppb/(deg C), or -2.5 ppb/(deg C) 
+   double dSigdT = 0.06179*dsigdT; 
 
    int n=0;
    int M = trTime.size();
    const int NT = time.size();
-   double dSigdT = 5.45E-9;  // per deg C, from Martin C doc-db 2342; could be -2.5E-9
    double lastTime=0;
    double arg_freq=0,delta_t=0;
    double mean_freq=0,stdev_freq=0;

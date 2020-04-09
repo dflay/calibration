@@ -46,21 +46,25 @@ headerNames = ["trace","channel","time_ns","zc","nc","ampl","rms_noise","t2_time
 prefix = "./input/NMR-ANA/{0}".format(dirName)
 
 csv_path = "{0}/run-{1:05d}/results.csv".format(prefix,int(runList[0]) )
+print("plot_nmrAna: Reading in {0}".format(csv_path) )
 # df = pd.read_csv(csv_path,header="None") 
 df = pd.read_csv(csv_path,names=headerNames) 
 # run column
 rList = []
-for j in xrange(0,10): 
+NS = len(df.index)
+for j in xrange(0,NS): 
    rList.append(runList[0]) 
 
 NR = len(runList)
 for i in xrange(1,NR):
    csv_path = "{0}/run-{1:05d}/results.csv".format(prefix,int(runList[i]) )
-   # print("plot_nmrAna: Reading in {0}".format(csv_path) )
-   for j in xrange(0,10): 
-      rList.append(runList[i]) 
+   print("plot_nmrAna: Reading in {0}".format(csv_path) )
    df_new = pd.read_csv(csv_path,names=headerNames)
    df     = df.append(df_new)
+   NS = len(df_new.index)
+   print("N shots = {0}".format(NS) )
+   for j in xrange(0,NS): 
+      rList.append(runList[i]) 
 
 # print rList
 NRR = len(rList) 

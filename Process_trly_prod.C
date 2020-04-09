@@ -195,12 +195,12 @@ int Process_trly_prod(std::string configFile){
 
    // now get average field for 30 seconds BEFORE each time stamp
    double fLO = 61.74E+6; 
-
+   double dsigdT = inputMgr->GetTempCor_tr();
    std::vector<calibSwap_t> trlySwap; 
-   rc = GetTRLYStatsAtTime(useTempCor,useOscCor,probeNumber-1,nev,fLO,time,fxprData,trlyData,trlySwap,t0);
+   rc = GetTRLYStatsAtTime(useTempCor,useOscCor,probeNumber-1,nev,fLO,time,fxprData,trlyData,trlySwap,t0,dsigdT);
 
    char outPath[500];
-   sprintf(outPath,"%s/trly-swap-data_pr-%02d_%s.csv",outDir.c_str(),probeNumber,runDate.c_str());
+   sprintf(outPath,"%s/trly-swap-data_pr-%02d.csv",outDir.c_str(),probeNumber);
    std::string outpath = outPath;
 
    rc = PrintToFile(outpath,trlySwap); 

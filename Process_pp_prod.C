@@ -99,10 +99,12 @@ int Process_pp_prod(std::string configFile){
    std::string outDir  = GetPath("output",isBlind,blindLabel,theDate,isSyst,systDirNum);
 
    char outPath[500]; 
-   sprintf(outPath,"%s/pp-swap-data_pr-%02d_%s.csv",outDir.c_str(),probeNumber,runDate.c_str());
+   sprintf(outPath,"%s/pp-swap-data_pr-%02d.csv",outDir.c_str(),probeNumber);
    std::string outpath_raw = outPath;  
-   sprintf(outPath,"%s/pp-swap-data_free-prot_pr-%02d_%s.csv",outDir.c_str(),probeNumber,runDate.c_str());
-   std::string outpath_free = outPath;  
+   sprintf(outPath,"%s/pp-swap-data_free-prot_pr-%02d.csv",outDir.c_str(),probeNumber);
+   std::string outpath_free = outPath; 
+   sprintf(outPath,"%s/pp-swap_fpc_pr-%02d.csv",outDir.c_str(),probeNumber);
+   std::string outpath_fpc = outPath; 
 
    int blindUnits  = inputMgr->GetBlindUnits(); 
    double blindMag = inputMgr->GetBlindScale(); 
@@ -179,14 +181,16 @@ int Process_pp_prod(std::string configFile){
 
    int M=0;
 
-   // get stats for the PP 
+   // get stats for the PP
+   std::vector<double> fpc,fpcErr;
    std::vector<calibSwap_t> raw,free; 
    // rc = GetSwapStatsForPP(ppPert,ppData,raw,free,yMin,yMax); 
-   rc = GetSwapStatsForPP(runPeriod,ppID,ppData,raw,free,yMin,yMax); 
+   rc = GetSwapStatsForPP(runPeriod,ppID,ppData,raw,free,yMin,yMax,fpc,fpcErr); 
 
    // print to file 
    rc = PrintToFile(outpath_raw ,raw ); 
-   rc = PrintToFile(outpath_free,free); 
+   rc = PrintToFile(outpath_free,free);
+   rc = PrintToFile_2dbl(outpath_fpc.c_str(),fpc,fpcErr);
 
    // make plot of all frequencies for all shots 
    TGraph *gPP     = GetPPTGraph1("TimeStamp","freq",ppData); 
@@ -226,7 +230,8 @@ int Process_pp_prod(std::string configFile){
 }
 //______________________________________________________________________________
 int GetSwapStatsForPP(int runPeriod,std::string probeID,std::vector<plungingProbeAnaEvent_t> data,
-                      std::vector<calibSwap_t> &raw,std::vector<calibSwap_t> &free,double &min,double &max){
+                      std::vector<calibSwap_t> &raw,std::vector<calibSwap_t> &free,double &min,double &max,
+                      std::vector<double> &freeProtCor,std::vector<double> &freeProtCorErr){
 
    // gather stats for the PP; recall a single PP-DAQ run has N traces in it. 
    // here, a PP-DAQ run is a single swap!
@@ -242,6 +247,8 @@ int GetSwapStatsForPP(int runPeriod,std::string probeID,std::vector<plungingProb
    calibSwap_t rawEvent,freeEvent;
  
    double arg=0;
+   double delta_t=0,delta_t_err=0;
+   double mean_freeProt=0,mean_freeProtErr=0,stdev_freeProt=0;
    double mean_freq_free=0,stdev_freq_free=0;
    double mean_freq=0,stdev_freq=0;
    double mean_temp=0,stdev_temp=0;
@@ -249,7 +256,7 @@ int GetSwapStatsForPP(int runPeriod,std::string probeID,std::vector<plungingProb
    double mean_y=0,stdev_y=0;
    double mean_z=0,stdev_z=0;
    double freqFree=0,freqFreeErr_stat=0,freqFreeErr_syst=0;
-   std::vector<double> F,FF,T,x,y,z;
+   std::vector<double> F,FF,T,x,y,z,fpc,fpc_err;
 
    int rc=0; 
    char msg[200];
@@ -274,17 +281,24 @@ int GetSwapStatsForPP(int runPeriod,std::string probeID,std::vector<plungingProb
 	 arg = data[i].freq[j] + data[i].freq_LO[j]; 
 	 // get the free-proton frequency here
 	 // GetOmegaP_free(ppPert,arg,0,data[i].temp[j],0,freqFree,freqFreeErr_stat);
-         freqFree = fp->GetOmegaP_free(arg,data[i].temp[j]); 
+         freqFree    = fp->GetOmegaP_free(arg,data[i].temp[j]);
+         delta_t     = fp->GetDelta_t(data[i].temp[j])/1E-9;     // in ppb 
+         delta_t_err = fp->GetDelta_t_err(data[i].temp[j])/1E-9; // in ppb  
 	 F.push_back(arg);
 	 FF.push_back(freqFree);
          T.push_back(data[i].temp[j]);
 	 x.push_back(data[i].r[j]);  
 	 y.push_back(data[i].y[j]);  
-	 z.push_back(data[i].phi[j]);  
+	 z.push_back(data[i].phi[j]); 
+         fpc.push_back(delta_t);
+         fpc_err.push_back(delta_t_err); 
          if( min>data[i].freq[j] ) min = data[i].freq[j];  
          if( max<data[i].freq[j] ) max = data[i].freq[j];  
       }
-      // get average on the run (swap) 
+      // get average on the run (swap)
+      mean_freeProt   = gm2fieldUtil::Math::GetMean<double>(fpc);
+      mean_freeProtErr= gm2fieldUtil::Math::GetMean<double>(fpc_err);
+      stdev_freeProt  = gm2fieldUtil::Math::GetStandardDeviation<double>(fpc); 
       mean_freq       = gm2fieldUtil::Math::GetMean<double>(F); 
       stdev_freq      = gm2fieldUtil::Math::GetStandardDeviation<double>(F);
       mean_freq_free  = gm2fieldUtil::Math::GetMean<double>(FF); 
@@ -325,8 +339,12 @@ int GetSwapStatsForPP(int runPeriod,std::string probeID,std::vector<plungingProb
       freeEvent.phiErr  = stdev_z; 
       // fill vectors 
       raw.push_back(rawEvent);  
-      free.push_back(freeEvent);  
+      free.push_back(freeEvent); 
+      freeProtCor.push_back(mean_freeProt);
+      freeProtCorErr.push_back(mean_freeProtErr);
       // clean up for next run 
+      fpc.clear();
+      fpc_err.clear();
       F.clear();
       FF.clear();
       T.clear();  

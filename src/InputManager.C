@@ -33,6 +33,7 @@ int InputManager::Init(){
    fTRLYFootprintStatus = false; 
    fSystDirNum      = 0;  
    fTempCor_pp      = 0;
+   fTempCor_tr      = 0;
    fNumEventsToAvg  = 0;  
    fNumEventsTimeWindow = 0; 
    fTrolleyAngle     = 0; 
@@ -239,7 +240,10 @@ int InputManager::Parse(){
       if(swapStatus) fLoadSwapTime   = (bool)( (int)fParams["load-trly-swap-times"] ); 
       if(sccStatus)  fLoadSCCTime    = (bool)( (int)fParams["load-trly-scc-times"] ); 
       if(timeStatus) fUseTimeWeight  = (bool)( (int)fParams["use-aba-time-weight"] ); 
-      if(tempStatus) fUseTempCor     = (bool)( (int)fParams["use-trly-temp-cor"] ); 
+      if(tempStatus){
+	 fUseTempCor     = (bool)( (int)fParams["use-trly-temp-cor"]["enable"] ); 
+	 fTempCor_tr     = (double)fParams["use-trly-temp-cor"]["temp-cor-value"];  // in ppb/degC! 
+      }
       if(oscStatus){
 	 fUseOscCor       = (bool)( (int)fParams["osc-cor"]["enable"] );
          fOscCorType      = fParams["osc-cor"]["type"];  
@@ -310,7 +314,7 @@ int InputManager::Print(){
    std::cout << "Misalignment cor:   " << fUseMisalignCor    << std::endl; 
    std::cout << "Shim grad alt:      " << fShimGradAltEnable << std::endl;
    std::cout << "Trolley angle:      " << fTrolleyAngle      << std::endl; 
-   std::cout << "dBz current:        " << fDBZCurrent        << std::endl; 
+   std::cout << "dBz current:        " << fDBZCurrent        << std::endl;
    if(fType.compare("calib-prod")==0){
          std::cout << "Run period:         " << fRunPeriod    << std::endl;
 	 std::cout << "Axis:               " << fAxis << " (" << axis << ")" << std::endl;
@@ -331,6 +335,11 @@ int InputManager::Print(){
    if(fTRLYFootprintStatus){
       std::cout << Form("TRLY footprint:     %.3lf +/- %.3lf",fTRLYFootprint,fTRLYFootprintErr) << std::endl;  
    }
+
+   if(fUseTempCor){
+      std::cout << "TR temp cor enable: " << fUseTempCor        << std::endl; 
+      std::cout << "TR temp cor value:  " << Form("%.1lf ppb/(deg C)",fTempCor_tr) << std::endl;
+   } 
 
    int N = fRunList.size(); 
    std::cout << "Number of runs:     " << N                << std::endl;

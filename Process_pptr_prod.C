@@ -225,8 +225,9 @@ int Process_pptr_prod(std::string configFile){
 
    // now get TRLY values
    double fLO = 61.74E+6;
+   double dsigdT = inputMgr->GetTempCor_tr(); 
    std::vector<calibSwap_t> trlySwap;
-   rc = GetTRLYStatsAtTime_hybrid(useTempCor,useOscCor,probeNumber-1,nev,fLO,time,fxprData,trlyData,trlySwap,T0);
+   rc = GetTRLYStatsAtTime_hybrid(useTempCor,useOscCor,probeNumber-1,nev,fLO,time,fxprData,trlyData,trlySwap,T0,dsigdT);
 
    // print to file 
    rc = PrintToFile(outpath_trly,trlySwap);
