@@ -1,4 +1,5 @@
-# Plots for DF results 
+# Less extensive comparisons of data 
+# focus on calibration coeffs  
 
 import csv
 import json
@@ -71,22 +72,27 @@ def getDiff_lists(x,xe,y,ye,z,ze):
    return
 #_______________________________________________________________________________
 
+plt.tight_layout()
+
 # create file paths
 
 # create a pandas dataframe, reading in the csv file  
-csv_path_df = "./output/blinded/flay/04-07-20/run-1/calibData_04-07-20.csv"
-print("Reading data from: {0}".format(csv_path_df)) 
-data_df1 = pd.read_csv(csv_path_df,index_col=False) # index_col = False when you don't have an index column
+csv_path = "./output/blinded/flay/04-07-20/run-1/calibData_04-07-20.csv"
+print("Reading data from: {0}".format(csv_path)) 
+data_df1 = pd.read_csv(csv_path,index_col=False) # index_col = False when you don't have an index column
 
-# csv_path_df = "./output/blinded/flay/04-07-20/run-1/calibData_04-07-20.csv"
-csv_path_df = "./input/ran-hong/run-1_04-03-20.csv"
-print("Reading data from: {0}".format(csv_path_df)) 
-data_df2 = pd.read_csv(csv_path_df,index_col=False) # index_col = False when you don't have an index column
+csv_path = "./input/ran-hong/run-1_04-11-20.csv"
+print("Reading data from: {0}".format(csv_path)) 
+data_df2 = pd.read_csv(csv_path,index_col=False) # index_col = False when you don't have an index column
+
+csv_path = "./input/bingzhi-li/run-1_04-06-20.csv"
+print("Reading data from: {0}".format(csv_path)) 
+data_df3 = pd.read_csv(csv_path,index_col=False) # index_col = False when you don't have an index column
 
 # marker parameters  
 color  = ["blue","red","#20B010"]
 mStyle = ["s","o","v"]
-mSize  = 30 
+mSize  = 80 
 
 # calculate differences 
 probeList = data_df1['Probe'].tolist() # a list of the probe numbers to add to the new data frame 
@@ -111,24 +117,43 @@ data_comp.insert(1,'calibCoeff_2',cc1)
 
 ccc2  = data_df2['calibCoeff_cor'].tolist()
 ccc2e = data_df2['calibCoeffErr_cor'].tolist()
-data_comp.insert(1,'calibCoeff_cor_2',ccc1)
+data_comp.insert(1,'calibCoeff_cor_2',ccc1) 
+
+cc3  = data_df3['calibCoeff'].tolist()
+cc3e = data_df3['calibCoeffErr'].tolist()
+data_comp.insert(1,'calibCoeff_3',cc1)
+
+ccc3  = data_df3['calibCoeff_cor'].tolist()
+ccc3e = data_df3['calibCoeffErr_cor'].tolist()
+data_comp.insert(1,'calibCoeff_cor_3',ccc1)
 
 # estimate of uncertainty on DF vs RH 
 NP  = len(cc1) 
-ee  = [] 
-cee = [] 
+ee2  = [] 
+cee2 = [] 
+ee3  = [] 
+cee3 = [] 
 for i in xrange(0,NP):
    arg = math.sqrt( cc1e[i]*cc1e[i] + cc2e[i]*cc2e[i] ) 
-   ee.append(arg) 
+   ee2.append(arg) 
    arg = math.sqrt( ccc1e[i]*ccc1e[i] + ccc2e[i]*ccc2e[i] ) 
-   cee.append(arg) 
+   cee2.append(arg) 
+   arg = math.sqrt( cc1e[i]*cc1e[i] + cc3e[i]*cc3e[i] ) 
+   ee3.append(arg) 
+   arg = math.sqrt( ccc1e[i]*ccc1e[i] + ccc3e[i]*ccc3e[i] ) 
+   cee3.append(arg) 
 
-data_comp.insert(1,'calibCoeff_2Err',ee)  
-data_comp.insert(1,'calibCoeff_cor_2Err',cee)  
+data_comp.insert(1,'calibCoeff_2Err',ee2)  
+data_comp.insert(1,'calibCoeff_cor_2Err',cee2)  
+data_comp.insert(1,'calibCoeff_3Err',ee3)  
+data_comp.insert(1,'calibCoeff_cor_3Err',cee3)  
 
 # take differences 
-getDiff_2df("calibCoeff"        ,"calibCoeffErr"        ,"cc_diff"  ,"cce_diff"    ,data_df1,data_df2,data_diff)
-getDiff_2df("calibCoeff_cor"    ,"calibCoeffErr_cor"    ,"ccc_diff" ,"ccce_diff"   ,data_df1,data_df2,data_diff)
+getDiff_2df("calibCoeff"        ,"calibCoeffErr"        ,"rh_cc_diff"  ,"rh_cce_diff"    ,data_df1,data_df2,data_diff)
+getDiff_2df("calibCoeff_cor"    ,"calibCoeffErr_cor"    ,"rh_ccc_diff" ,"rh_ccce_diff"   ,data_df1,data_df2,data_diff)
+getDiff_2df("calibCoeff"        ,"calibCoeffErr"        ,"bl_cc_diff"  ,"bl_cce_diff"    ,data_df1,data_df3,data_diff)
+getDiff_2df("calibCoeff_cor"    ,"calibCoeffErr_cor"    ,"bl_ccc_diff" ,"bl_ccce_diff"   ,data_df1,data_df3,data_diff)
+
 # getDiff_2df("calibCoeffFree"    ,"calibCoeffFreeErr"    ,"fcc_diff"  ,"fcce_diff"  ,data_df1,data_df2,data_diff)
 # getDiff_2df("calibCoeffFree_cor","calibCoeffFreeErr_cor","fccc_diff" ,"fccce_diff" ,data_df1,data_df2,data_diff)
 
@@ -140,6 +165,10 @@ print data_diff
 NCOL = 1
 NROW = 2
 
+tickSize      = 16
+xAxisFontSize = 16
+yAxisFontSize = 16
+
 # calib coeffs (NO FREE PROTON)
 fig = plt.figure(1) 
 plt.subplot(NROW,NCOL,1)
@@ -149,17 +178,23 @@ axis    = "calibCoeff_cor"
 axisErr = "calibCoeffErr_cor"
 data_df1.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[0], s=mSize, color=color[0], ax=currentAxis)
 data_df2.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
-currentAxis.legend(["DF","RH"])
-currentAxis.set_xlabel("Probe") 
-currentAxis.set_ylabel("Calib Coeff (Hz)") 
+data_df3.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.legend(["DF","RH","BL"])
+currentAxis.set_xlabel("Probe"           , fontsize=xAxisFontSize) 
+currentAxis.set_ylabel("Calib Coeff [Cor] (Hz)", fontsize=yAxisFontSize) 
+currentAxis.tick_params(labelsize=tickSize)
 
 plt.subplot(NROW,NCOL,2)
 currentAxis = plt.gca() # grab current axis 
-axis    = "ccc_diff"
-axisErr = "ccce_diff"
+axis    = "rh_ccc_diff"
+axisErr = "rh_ccce_diff"
 data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
-currentAxis.set_xlabel("Probe") 
-currentAxis.set_ylabel("Calib Coeff Diff (Hz)") 
+axis    = "bl_ccc_diff"
+axisErr = "bl_ccce_diff"
+data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.set_xlabel("Probe"                , fontsize=xAxisFontSize) 
+currentAxis.set_ylabel("Calib Coeff [Cor] Diff (Hz)", fontsize=yAxisFontSize) 
+currentAxis.tick_params(labelsize=tickSize)
 
 for ax in fig.get_axes():
     ax.label_outer()
@@ -168,12 +203,14 @@ for ax in fig.get_axes():
 fig = plt.figure(2) 
 
 label_1 = "Calibration Coefficients (DF)"
-label_2 = "Calibration Coefficients (RH)"
+label_2 = "Calibration Coefficients (RH or BL)"
 
 currentAxis = plt.gca() # grab current axis 
 data_comp.plot(kind="scatter", x="calibCoeff_cor_1", y="calibCoeff_cor_2", yerr="calibCoeff_cor_2Err", marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
-currentAxis.set_xlabel(label_1) 
-currentAxis.set_ylabel(label_2) 
+data_comp.plot(kind="scatter", x="calibCoeff_cor_1", y="calibCoeff_cor_3", yerr="calibCoeff_cor_3Err", marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.set_xlabel(label_1, fontsize = xAxisFontSize) 
+currentAxis.set_ylabel(label_2, fontsize = yAxisFontSize)
+currentAxis.tick_params(labelsize=tickSize)
 
 for ax in fig.get_axes():
     ax.label_outer()

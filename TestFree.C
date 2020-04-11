@@ -34,14 +34,33 @@ int TestFree(){
    std::vector<double> T,chi,delta_b,delta_t,sigma; 
    std::vector<double> chi_err,delta_b_err,delta_t_err,sigma_err; 
 
-   double freq = 61792272.689; 
+   // double freq = 61792272.689;   // random frequency 
+   double freq = 61791468.756;      // another random frequency to check against Dave K
    double temp = 25.0; 
    double freqFree    = fp->GetOmegaP_free(freq,temp);
    double DELTA_B     = fp->GetDelta_b(temp)/1E-9; 
-   double DELTA_B_ERR = fp->GetDelta_b_err(temp)/1E-9; 
+   double DELTA_B_ERR = fp->GetDelta_b_err(temp)/1E-9;
+   double SIGMA       = fp->GetSigma(temp)/1E-9;  
+   double SIGMA_ERR   = fp->GetSigma_err(temp)/1E-9;  
 
-   std::cout << Form("T = %.1lf deg C, freq = %.3lf Hz, freqFree = %.3lf Hz, free - raw = %.3lf Hz, delta_b = %.1lf ± %.1lf",
-                temp,freq,freqFree,freqFree-freq,DELTA_B,DELTA_B_ERR) << std::endl; 
+   // std::cout << Form("T = %.1lf deg C, freq = %.3lf Hz, freqFree = %.3lf Hz, free - raw = %.3lf Hz, delta_b = %.1lf ± %.1lf",
+   //              temp,freq,freqFree,freqFree-freq,DELTA_B,DELTA_B_ERR) << std::endl; 
+
+   // test at 22.3 deg C 
+   temp = 22.3; 
+   freqFree    = fp->GetOmegaP_free(freq,temp);
+   DELTA_B     = fp->GetDelta_b(temp)/1E-9; 
+   DELTA_B_ERR = fp->GetDelta_b_err(temp)/1E-9;
+   SIGMA       = fp->GetSigma(temp)/1E-9;  
+   SIGMA_ERR   = fp->GetSigma_err(temp)/1E-9;  
+  
+   std::cout << "---------------------------------------"                 << std::endl;
+   std::cout << Form("T         = %.1lf deg C",temp)                      << std::endl; 
+   std::cout << Form("freq_meas = %.3lf Hz",freq)                         << std::endl; 
+   std::cout << Form("freq_free = %.3lf Hz",freqFree)                     << std::endl; 
+   std::cout << Form("sigma     = %.1lf ± %.1lf ppb",SIGMA,SIGMA_ERR)     << std::endl; 
+   std::cout << Form("delta_b   = %.1lf ± %.1lf ppb",DELTA_B,DELTA_B_ERR) << std::endl; 
+   std::cout << "---------------------------------------"                 << std::endl;
 
    for(int i=0;i<NPTS;i++){
       it      = min + ( (double)i )*step;
@@ -60,8 +79,8 @@ int TestFree(){
       chi_err.push_back(arg_err);
       arg     = fp->GetSigma(it)/1E-9; 
       arg_err = fp->GetSigma_err(it)/1E-9;
-      std::cout << Form("T = %.1lf, sigma = %.1lf ± %.1lf ppb, delta_b = %.1lf ± %.1lf ppb, delta_t = %.1lf ± %.1lf ppb",
-                        it,arg,arg_err,delta_b[i],delta_b_err[i],delta_t[i],delta_t_err[i]) << std::endl;
+      // std::cout << Form("T = %.1lf, sigma = %.1lf ± %.1lf ppb, delta_b = %.1lf ± %.1lf ppb, delta_t = %.1lf ± %.1lf ppb",
+      //                   it,arg,arg_err,delta_b[i],delta_b_err[i],delta_t[i],delta_t_err[i]) << std::endl;
       sigma.push_back(arg); 
       sigma_err.push_back(arg_err); 
    }

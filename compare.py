@@ -63,9 +63,9 @@ def getStats(colName,df):
 #_______________________________________________________________________________
 
 # create file paths
-csv_path_rh = "./input/ran-hong/run-1_04-03-20.csv" 
+csv_path_rh = "./input/ran-hong/run-1_04-11-20.csv" 
 csv_path_bl = "./input/bingzhi-li/run-1_04-06-20.csv" 
-csv_path_df = "./output/blinded/flay/04-06-20/run-1/calibData_04-06-20.csv"
+csv_path_df = "./output/blinded/flay/04-07-20/run-1/calibData_04-07-20.csv"
 
 # create a pandas dataframe, reading in the csv file  
 print("Reading data from: {0}".format(csv_path_rh)) 

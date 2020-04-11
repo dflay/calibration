@@ -20,7 +20,8 @@ class FreeProton {
       std::string fProbeID; 
  
       double fsigma,feps,fchi,fdelta_s,fdelta_p,fdelta_b,fdelta_rd,fdelta_d,fdelta_v;
-      double fsigma_err,feps_err,fchi_err,fdelta_s_err,fdelta_p_err,fdelta_b_err,fdelta_rd_err,fdelta_d_err,fdelta_v_err;
+      double fsigma_err,feps_err,fchi_err,fdelta_s_err,fdelta_p_err,fdelta_b_err; 
+      double fdelta_rd_err,fdelta_d_err,fdelta_v_err;
 
       void CalculateDiamagneticShielding(double T,double &SIG,double &ERR);
       void CalculateBulkMagneticSusceptibility(double T,double &delta_b,double &delta_b_err); 
@@ -37,11 +38,11 @@ class FreeProton {
       int LoadData(std::string probeName,int runPeriod); 
 
       // These don't change as a function of T
-      double GetDelta_s()          const { return fdelta_s;  } 
-      double GetDelta_p()          const { return fdelta_p;  } 
-      double GetDelta_rd()         const { return fdelta_rd; } 
-      double GetDelta_d()          const { return fdelta_d;  } 
-      double GetDelta_v()          const { return fdelta_v;  }
+      double GetDelta_s()          const { return fdelta_s;      } 
+      double GetDelta_p()          const { return fdelta_p;      } 
+      double GetDelta_rd()         const { return fdelta_rd;     } 
+      double GetDelta_d()          const { return fdelta_d;      } 
+      double GetDelta_v()          const { return fdelta_v;      }
       double GetDelta_s_err()      const { return fdelta_s_err;  } 
       double GetDelta_p_err()      const { return fdelta_p_err;  } 
       double GetDelta_rd_err()     const { return fdelta_rd_err; } 

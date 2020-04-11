@@ -1,9 +1,6 @@
 #include "../include/Cut.h"
 //______________________________________________________________________________
 Cut::Cut(std::string filepath,int verbosity){
-   // kLOWER = 0;
-   // kUPPER = 1;
-   // kRANGE = 2;
    fVerbosity = verbosity;
    if( filepath.compare("UNKNOWN.json")!=0 ){
       LoadData(filepath);
