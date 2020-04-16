@@ -1,5 +1,26 @@
 #include "../include/CustomAlgorithms.h"
 //______________________________________________________________________________
+int GetAvgSCCMagnitude(std::string type,std::vector<surfaceCoilEvent_t> data,double &mean,double &err){
+   // Get surface coil maximum magnitude (excluding zeroes) 
+   std::vector<double> x;
+   double mag=0;
+   double thr = 0.100; // cut threshold
+   int M = 100;
+   if(type.compare("azi")==0) M = 4;
+   const int N = data.size(); 
+   for(int i=0;i<N;i++){
+      for(int j=0;j<M;j++){
+	 if(type.compare("top")==0) mag = TMath::Abs(data[i].TopCurrents[j] );  
+	 if(type.compare("bot")==0) mag = TMath::Abs(data[i].BotCurrents[j] ); 
+	 if(type.compare("azi")==0) mag = TMath::Abs(data[i].AzCurrents[j]  );
+	 if(mag>thr) x.push_back(mag); // cut out zeroes 
+      }
+   }
+   mean = gm2fieldUtil::Math::GetMean<double>(x); 
+   err  = gm2fieldUtil::Math::GetStandardDeviation<double>(x);
+   return 0; 
+}
+//______________________________________________________________________________
 int CheckShimGrad(int probe,std::vector<grad_meas_t> &data){
    // make sure we have non-zero entries for all values
    // zeroes are usually because we don't have a measurement 

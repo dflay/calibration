@@ -62,10 +62,17 @@ def getStats(colName,df):
    return mean,stdev 
 #_______________________________________________________________________________
 
+plotBingzhi = False
+
+legend = ["DF","RH"]
+
+if(plotBingzhi):
+   legend.append("BL")  
+
 # create file paths
-csv_path_rh = "./input/ran-hong/run-1_04-11-20.csv" 
-csv_path_bl = "./input/bingzhi-li/run-1_04-06-20.csv" 
-csv_path_df = "./output/blinded/flay/04-07-20/run-1/calibData_04-07-20.csv"
+csv_path_rh = "./input/ran-hong/run-1_04-14-20.csv" 
+csv_path_bl = "./input/bingzhi-li/run-1_04-14-20.csv" 
+csv_path_df = "./output/blinded/flay/04-14-20/run-1/calibData_04-14-20.csv"
 
 # create a pandas dataframe, reading in the csv file  
 print("Reading data from: {0}".format(csv_path_rh)) 
@@ -179,8 +186,9 @@ axis    = "calibCoeff"
 axisErr = "calibCoeffErr"
 data_df.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[0], s=mSize, color=color[0], ax=currentAxis)
 data_rh.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
-data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
-# currentAxis.legend(["DF","RH","BL"])
+if plotBingzhi: 
+   data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+# currentAxis.legend(legend)
 currentAxis.set_xlabel("Probe"           ,fontsize=xAxisFontSize) 
 currentAxis.set_ylabel("Calib Coeff (Hz)",fontsize=yAxisFontSize)
 currentAxis.set_ylim(bottom=100, top=300)
@@ -193,10 +201,11 @@ axisErr = "cce_rhdf"
 data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
 axis    = "cc_bldf"                                                        
 axisErr = "cce_bldf"                                                       
-data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+if plotBingzhi: 
+   data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
 currentAxis.set_xlabel("Probe"          ,fontsize=xAxisFontSize) 
 currentAxis.set_ylabel("Difference (Hz)",fontsize=yAxisFontSize) 
-currentAxis.set_ylim(bottom=-4, top=10)
+currentAxis.set_ylim(bottom=-4, top=12)
 currentAxis.tick_params(labelsize=tickSize) 
 
 for ax in fig.get_axes():
@@ -210,11 +219,14 @@ axis    = "calibCoeff_cor"
 axisErr = "calibCoeffErr_cor"
 data_df.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[0], s=mSize, color=color[0], ax=currentAxis)
 data_rh.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
-data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+if plotBingzhi: 
+   data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
 # currentAxis.legend(["DF","RH","BL"])
-currentAxis.set_xlabel("Probe") 
-currentAxis.set_ylabel("Calib Coeff [Cor] (Hz)") 
-
+currentAxis.set_xlabel("Probe"                 ,fontsize=xAxisFontSize) 
+currentAxis.set_ylabel("Calib Coeff [Cor] (Hz)",fontsize=yAxisFontSize)
+currentAxis.set_ylim(bottom=100, top=300)
+currentAxis.tick_params(labelsize=tickSize) 
+ 
 plt.subplot(NROW,NCOL,2)
 currentAxis = plt.gca() # grab current axis 
 axis    = "ccc_rhdf"
@@ -222,9 +234,12 @@ axisErr = "ccce_rhdf"
 data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
 axis    = "ccc_bldf"
 axisErr = "ccce_bldf"
-data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
-currentAxis.set_xlabel("Probe") 
-currentAxis.set_ylabel("Calib Coeff [Cor] Diff (Hz)") 
+if plotBingzhi: 
+   data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.set_xlabel("Probe"                      ,fontsize=xAxisFontSize) 
+currentAxis.set_ylabel("Calib Coeff [Cor] Diff (Hz)",fontsize=yAxisFontSize) 
+currentAxis.set_ylim(bottom=-4, top=12)
+currentAxis.tick_params(labelsize=tickSize) 
 
 for ax in fig.get_axes():
     ax.label_outer()
@@ -240,8 +255,9 @@ axis    = "misCor_x"
 axisErr = "misCor_xErr"
 data_df.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[0], marker=mStyle[0], s=mSize, color=color[0], ax=currentAxis)
 data_rh.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[0], marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
-data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[0], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
-currentAxis.legend(["DF","RH","BL"])
+if plotBingzhi: 
+   data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[0], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.legend(legend)
 currentAxis.set_xlabel("") 
 currentAxis.set_ylabel("misCor (Hz)") 
 
@@ -252,7 +268,8 @@ axisErr = "mcxe_rhdf"
 data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
 axis    = "mcx_bldf"
 axisErr = "mcxe_bldf"
-data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+if plotBingzhi: 
+   data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
 currentAxis.set_xlabel("Probe") 
 currentAxis.set_ylabel("misCor Diff (Hz)") 
 
@@ -263,8 +280,9 @@ axis    = "misCor_y"
 axisErr = "misCor_yErr"
 data_df.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[1], marker=mStyle[0], s=mSize, color=color[0], ax=currentAxis)
 data_rh.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[1], marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
-data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[1], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
-currentAxis.legend(["DF","RH","BL"])
+if plotBingzhi: 
+   data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[1], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.legend(legend)
 currentAxis.set_xlabel("") 
 currentAxis.set_ylabel("") 
 
@@ -275,7 +293,8 @@ axisErr = "mcye_rhdf"
 data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
 axis    = "mcy_bldf"
 axisErr = "mcye_bldf"
-data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+if plotBingzhi: 
+   data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
 currentAxis.set_xlabel("Probe") 
 currentAxis.set_ylabel("") 
 
@@ -286,8 +305,9 @@ axis    = "misCor_z"
 axisErr = "misCor_zErr"
 data_df.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[2], marker=mStyle[0], s=mSize, color=color[0], ax=currentAxis)
 data_rh.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[2], marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
-data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[2], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
-currentAxis.legend(["DF","RH","BL"])
+if plotBingzhi: 
+   data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[2], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.legend(legend)
 currentAxis.set_xlabel("") 
 currentAxis.set_ylabel("") 
 
@@ -298,7 +318,8 @@ axisErr = "mcze_rhdf"
 data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
 axis    = "mcz_bldf"
 axisErr = "mcze_bldf"
-data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+if plotBingzhi: 
+   data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
 currentAxis.set_xlabel("Probe") 
 currentAxis.set_ylabel("") 
 
@@ -313,8 +334,9 @@ axis    = "shim_x_a"
 axisErr = "shim_x_aErr"
 data_df.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[0], marker=mStyle[0], s=mSize, color=color[0], ax=currentAxis)
 data_rh.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[0], marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
-data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[0], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
-currentAxis.legend(["DF","RH","BL"])
+if plotBingzhi: 
+   data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[0], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.legend(legend)
 currentAxis.set_xlabel("") 
 currentAxis.set_ylabel("shim a Par (Hz/mm^2)") 
 
@@ -325,7 +347,8 @@ axisErr = "sxae_rhdf"
 data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
 axis    = "sxa_bldf"
 axisErr = "sxae_bldf"
-data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+if plotBingzhi: 
+   data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
 currentAxis.set_xlabel("Probe") 
 currentAxis.set_ylabel("shim a Par Diff (Hz/mm^2)") 
 
@@ -336,8 +359,9 @@ axis    = "shim_y_a"
 axisErr = "shim_y_aErr"
 data_df.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[1], marker=mStyle[0], s=mSize, color=color[0], ax=currentAxis)
 data_rh.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[1], marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
-data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[1], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
-currentAxis.legend(["DF","RH","BL"])
+if plotBingzhi: 
+   data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[1], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.legend(legend)
 currentAxis.set_xlabel("") 
 currentAxis.set_ylabel("") 
 
@@ -348,7 +372,8 @@ axisErr = "syae_rhdf"
 data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
 axis    = "sya_bldf"
 axisErr = "syae_bldf"
-data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+if plotBingzhi: 
+   data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
 currentAxis.set_xlabel("Probe") 
 currentAxis.set_ylabel("") 
 
@@ -359,8 +384,9 @@ axis    = "shim_z_a"
 axisErr = "shim_z_aErr"
 data_df.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[2], marker=mStyle[0], s=mSize, color=color[0], ax=currentAxis)
 data_rh.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[2], marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
-data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[2], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
-currentAxis.legend(["DF","RH","BL"])
+if plotBingzhi: 
+   data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[2], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.legend(legend)
 currentAxis.set_xlabel("") 
 currentAxis.set_ylabel("") 
 
@@ -371,7 +397,8 @@ axisErr = "szae_rhdf"
 data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
 axis    = "sza_bldf"
 axisErr = "szae_bldf"
-data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+if plotBingzhi: 
+   data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
 currentAxis.set_xlabel("Probe") 
 currentAxis.set_ylabel("") 
 
@@ -386,8 +413,9 @@ axis    = "shim_x_b"
 axisErr = "shim_x_bErr"
 data_df.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[0], marker=mStyle[0], s=mSize, color=color[0], ax=currentAxis)
 data_rh.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[0], marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
-data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[0], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
-currentAxis.legend(["DF","RH","BL"])
+if plotBingzhi: 
+   data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[0], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.legend(legend)
 currentAxis.set_xlabel("") 
 currentAxis.set_ylabel("shim b Par (Hz/mm)") 
 
@@ -398,7 +426,8 @@ axisErr = "sxbe_rhdf"
 data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
 axis    = "sxb_bldf"
 axisErr = "sxbe_bldf"
-data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+if plotBingzhi: 
+   data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
 currentAxis.set_xlabel("Probe") 
 currentAxis.set_ylabel("shim b Par Diff (Hz/mm)") 
 
@@ -409,8 +438,9 @@ axis    = "shim_y_b"
 axisErr = "shim_y_bErr"
 data_df.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[1], marker=mStyle[0], s=mSize, color=color[0], ax=currentAxis)
 data_rh.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[1], marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
-data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[1], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
-currentAxis.legend(["DF","RH","BL"])
+if plotBingzhi: 
+   data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[1], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.legend(legend)
 currentAxis.set_xlabel("") 
 currentAxis.set_ylabel("") 
 
@@ -421,7 +451,8 @@ axisErr = "sybe_rhdf"
 data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
 axis    = "syb_bldf"
 axisErr = "sybe_bldf"
-data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+if plotBingzhi: 
+  data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
 currentAxis.set_xlabel("Probe") 
 currentAxis.set_ylabel("") 
 
@@ -432,8 +463,9 @@ axis    = "shim_z_b"
 axisErr = "shim_z_bErr"
 data_df.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[2], marker=mStyle[0], s=mSize, color=color[0], ax=currentAxis)
 data_rh.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[2], marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
-data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[2], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
-currentAxis.legend(["DF","RH","BL"])
+if plotBingzhi: 
+   data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[2], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.legend(legend)
 currentAxis.set_xlabel("") 
 currentAxis.set_ylabel("") 
 
@@ -444,7 +476,8 @@ axisErr = "szbe_rhdf"
 data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
 axis    = "szb_bldf"
 axisErr = "szbe_bldf"
-data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+if plotBingzhi: 
+   data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
 currentAxis.set_xlabel("Probe") 
 currentAxis.set_ylabel("") 
 
@@ -459,8 +492,9 @@ axis    = "shim_x_c"
 axisErr = "shim_x_cErr"
 data_df.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[0], marker=mStyle[0], s=mSize, color=color[0], ax=currentAxis)
 data_rh.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[0], marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
-data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[0], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
-currentAxis.legend(["DF","RH","BL"])
+if plotBingzhi: 
+   data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[0], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.legend(legend)
 currentAxis.set_xlabel("") 
 currentAxis.set_ylabel("shim c Par (Hz)") 
 
@@ -471,7 +505,8 @@ axisErr = "sxce_rhdf"
 data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
 axis    = "sxc_bldf"
 axisErr = "sxce_bldf"
-data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+if plotBingzhi: 
+   data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
 currentAxis.set_xlabel("Probe") 
 currentAxis.set_ylabel("shim c Par Diff (Hz)") 
 
@@ -482,8 +517,9 @@ axis    = "shim_y_c"
 axisErr = "shim_y_cErr"
 data_df.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[1], marker=mStyle[0], s=mSize, color=color[0], ax=currentAxis)
 data_rh.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[1], marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
-data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[1], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
-currentAxis.legend(["DF","RH","BL"])
+if plotBingzhi: 
+   data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[1], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.legend(legend)
 currentAxis.set_xlabel("") 
 currentAxis.set_ylabel("") 
 
@@ -494,7 +530,8 @@ axisErr = "syce_rhdf"
 data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
 axis    = "syc_bldf"
 axisErr = "syce_bldf"
-data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+if plotBingzhi: 
+   data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
 currentAxis.set_xlabel("Probe") 
 currentAxis.set_ylabel("") 
 
@@ -505,8 +542,9 @@ axis    = "shim_z_c"
 axisErr = "shim_z_cErr"
 data_df.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[2], marker=mStyle[0], s=mSize, color=color[0], ax=currentAxis)
 data_rh.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[2], marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
-data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[2], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
-currentAxis.legend(["DF","RH","BL"])
+if plotBingzhi: 
+   data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[2], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.legend(legend)
 currentAxis.set_xlabel("") 
 currentAxis.set_ylabel("") 
 
@@ -517,7 +555,8 @@ axisErr = "szce_rhdf"
 data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
 axis    = "szc_bldf"
 axisErr = "szce_bldf"
-data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+if plotBingzhi: 
+   data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
 currentAxis.set_xlabel("Probe") 
 currentAxis.set_ylabel("") 
 
@@ -532,8 +571,9 @@ axis    = "deltaB_pp_x"
 axisErr = "deltaB_pp_xErr"
 data_df.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[0], marker=mStyle[0], s=mSize, color=color[0], ax=currentAxis)
 data_rh.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[0], marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
-data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[0], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
-currentAxis.legend(["DF","RH","BL"])
+if plotBingzhi: 
+   data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[0], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.legend(legend)
 currentAxis.set_xlabel("") 
 currentAxis.set_ylabel("DeltaB (Hz)") 
 
@@ -544,7 +584,8 @@ axisErr = "dbppxe_rhdf"
 data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
 axis    = "dbppx_bldf"
 axisErr = "dbppxe_bldf"
-data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+if plotBingzhi: 
+   data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
 currentAxis.set_xlabel("Probe") 
 currentAxis.set_ylabel("DeltaB Diff (Hz)") 
 
@@ -555,8 +596,9 @@ axis    = "deltaB_pp_y"
 axisErr = "deltaB_pp_yErr"
 data_df.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[1], marker=mStyle[0], s=mSize, color=color[0], ax=currentAxis)
 data_rh.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[1], marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
-data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[1], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
-currentAxis.legend(["DF","RH","BL"])
+if plotBingzhi: 
+   data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[1], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.legend(legend)
 currentAxis.set_xlabel("") 
 currentAxis.set_ylabel("") 
 
@@ -567,7 +609,8 @@ axisErr = "dbppye_rhdf"
 data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
 axis    = "dbppy_bldf"
 axisErr = "dbppye_bldf"
-data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+if plotBingzhi: 
+   data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
 currentAxis.set_xlabel("Probe") 
 currentAxis.set_ylabel("") 
 
@@ -578,8 +621,9 @@ axis    = "deltaB_pp_z"
 axisErr = "deltaB_pp_zErr"
 data_df.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[2], marker=mStyle[0], s=mSize, color=color[0], ax=currentAxis)
 data_rh.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[2], marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
-data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[2], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
-currentAxis.legend(["DF","RH","BL"])
+if plotBingzhi: 
+   data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[2], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.legend(legend)
 currentAxis.set_xlabel("") 
 currentAxis.set_ylabel("") 
 
@@ -590,7 +634,8 @@ axisErr = "dbppze_rhdf"
 data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
 axis    = "dbppz_bldf"
 axisErr = "dbppze_bldf"
-data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+if plotBingzhi: 
+   data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
 currentAxis.set_xlabel("Probe") 
 currentAxis.set_ylabel("") 
 
@@ -605,8 +650,9 @@ axis    = "deltaB_tr_x"
 axisErr = "deltaB_tr_xErr"
 data_df.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[0], marker=mStyle[0], s=mSize, color=color[0], ax=currentAxis)
 data_rh.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[0], marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
-data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[0], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
-currentAxis.legend(["DF","RH","BL"])
+if plotBingzhi: 
+   data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[0], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.legend(legend)
 currentAxis.set_xlabel("") 
 currentAxis.set_ylabel("DeltaB (Hz)") 
 
@@ -617,7 +663,8 @@ axisErr = "dbtrxe_rhdf"
 data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
 axis    = "dbtrx_bldf"
 axisErr = "dbtrxe_bldf"
-data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+if plotBingzhi: 
+   data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
 currentAxis.set_xlabel("Probe") 
 currentAxis.set_ylabel("DeltaB Diff (Hz)") 
 
@@ -628,8 +675,9 @@ axis    = "deltaB_tr_y"
 axisErr = "deltaB_tr_yErr"
 data_df.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[1], marker=mStyle[0], s=mSize, color=color[0], ax=currentAxis)
 data_rh.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[1], marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
-data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[1], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
-currentAxis.legend(["DF","RH","BL"])
+if plotBingzhi: 
+   data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[1], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.legend(legend)
 currentAxis.set_xlabel("") 
 currentAxis.set_ylabel("") 
 
@@ -640,19 +688,21 @@ axisErr = "dbtrye_rhdf"
 data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
 axis    = "dbtry_bldf"
 axisErr = "dbtrye_bldf"
-data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+if plotBingzhi: 
+   data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
 currentAxis.set_xlabel("Probe") 
 currentAxis.set_ylabel("") 
 
 # dBz 
 plt.subplot(NROW,NCOL,3)
 currentAxis = plt.gca() # grab current axis 
-axis    = "deltaB_pp_z"
-axisErr = "deltaB_pp_zErr"
+axis    = "deltaB_tr_z"
+axisErr = "deltaB_tr_zErr"
 data_df.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[2], marker=mStyle[0], s=mSize, color=color[0], ax=currentAxis)
 data_rh.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[2], marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
-data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[2], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
-currentAxis.legend(["DF","RH","BL"])
+if plotBingzhi: 
+   data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[2], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.legend(legend)
 currentAxis.set_xlabel("") 
 currentAxis.set_ylabel("") 
 
@@ -663,7 +713,8 @@ axisErr = "dbtrze_rhdf"
 data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
 axis    = "dbtrz_bldf"
 axisErr = "dbtrze_bldf"
-data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+if plotBingzhi: 
+   data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
 currentAxis.set_xlabel("Probe") 
 currentAxis.set_ylabel("") 
 
@@ -678,8 +729,9 @@ axis    = "dBdx_imp"
 axisErr = "dBdx_impErr"
 data_df.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[0], marker=mStyle[0], s=mSize, color=color[0], ax=currentAxis)
 data_rh.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[0], marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
-data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[0], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
-currentAxis.legend(["DF","RH","BL"])
+if plotBingzhi: 
+   data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[0], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.legend(legend)
 currentAxis.set_xlabel("") 
 currentAxis.set_ylabel("dB/dq [imp] (Hz/mm)") 
 
@@ -690,7 +742,8 @@ axisErr = "impxe_rhdf"
 data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
 axis    = "impx_bldf"
 axisErr = "impxe_bldf"
-data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+if plotBingzhi: 
+   data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
 currentAxis.set_xlabel("Probe") 
 currentAxis.set_ylabel("dB/dq Diff (Hz/mm)") 
 
@@ -701,8 +754,9 @@ axis    = "dBdy_imp"
 axisErr = "dBdy_impErr"
 data_df.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[1], marker=mStyle[0], s=mSize, color=color[0], ax=currentAxis)
 data_rh.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[1], marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
-data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[1], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
-currentAxis.legend(["DF","RH","BL"])
+if plotBingzhi: 
+   data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[1], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.legend(legend)
 currentAxis.set_xlabel("") 
 currentAxis.set_ylabel("") 
 
@@ -713,7 +767,8 @@ axisErr = "impye_rhdf"
 data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
 axis    = "impy_bldf"
 axisErr = "impye_bldf"
-data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+if plotBingzhi: 
+   data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
 currentAxis.set_xlabel("Probe") 
 currentAxis.set_ylabel("") 
 
@@ -724,8 +779,9 @@ axis    = "dBdz_imp"
 axisErr = "dBdz_impErr"
 data_df.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[2], marker=mStyle[0], s=mSize, color=color[0], ax=currentAxis)
 data_rh.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[2], marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
-data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[2], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
-currentAxis.legend(["DF","RH","BL"])
+if plotBingzhi: 
+   data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[2], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.legend(legend)
 currentAxis.set_xlabel("") 
 currentAxis.set_ylabel("") 
 
@@ -736,7 +792,8 @@ axisErr = "impze_rhdf"
 data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
 axis    = "impz_bldf"
 axisErr = "impze_bldf"
-data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+if plotBingzhi: 
+   data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
 currentAxis.set_xlabel("Probe") 
 currentAxis.set_ylabel("") 
 

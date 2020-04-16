@@ -190,26 +190,26 @@ int LocalScanGrad_pp_prod(std::string configFile){
    // now parse PP data using subrun list 
    rc = FilterPlungingProbeData(subRun,ppInput,ppInput2); 
 
+
    std::vector<int> fxprList;
    inputMgr->GetFXPRList(fxprList);
 
    // special time cut for the FXPR data (run 2 only)
    // time cut for the FXPR data
-   cutpath = "./input/json/run-2/extra-cuts.json";
+   char cut_path[200];
+   sprintf(cut_path,"./input/json/run-%d/extra-cuts.json",runPeriod); 
+   cutpath = cut_path;
    Cut *myCut = new Cut();
    unsigned long long tMin=0,tMax=-1;
-   if(runPeriod==2){
-      rc = GetFXPRCutTime(cutpath,probeNumber,axis,tMin,tMax);
-      // filter PP data
-      if(probeNumber==8){
-	 rc = myCut->FilterPPData(runPeriod,probeNumber,"shim",Axis,ppInput2,ppInput3,cutpath);
-      }else{
-	 CopyPlungingProbe(ppInput2,ppInput3);
-      }
+   rc = GetFXPRCutTime(cutpath,probeNumber,axis,tMin,tMax);
+
+   // filter PP data further if necessary
+   if(probeNumber==8 &&runPeriod==2){
+      rc = myCut->FilterPPData(runPeriod,probeNumber,"shim",Axis,ppInput2,ppInput3,cutpath);
    }else{
-      // no additional cuts needed, copy to final input vector 
       CopyPlungingProbe(ppInput2,ppInput3);
    }
+
    delete myCut;
 
    bool subtractDrift = inputMgr->GetFXPRDriftStatus();  

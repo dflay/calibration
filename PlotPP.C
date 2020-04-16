@@ -48,7 +48,6 @@ int PlotPP(){
 
    int rc=0;
 
-   std::vector<int> run;
    // run 2, probe 1 
    // run.push_back(6078); 
    // run.push_back(6079);
@@ -62,13 +61,20 @@ int PlotPP(){
    // run.push_back(8032);  // run 2, probe 14 
    // run.push_back(6124);  // run 2, probe 15 (dB) 
    // run.push_back(6464);  // run 2, probe 6 (dBy)
-   run.push_back(5522);     // run 1, probe 4 swap  
+   // run.push_back(5522);     // run 1, probe 4 swap  
 
    int runPeriod   = 1;
-   int probeNumber = 4; 
+   int probeNumber = 15; 
    int axis        = 0;  
    int prMethod    = gm2fieldUtil::Constants::kPhaseDerivative;
    int ppMethod    = plungingProbeAnalysis::kLeastSquaresPhase;
+
+   std::vector<int> run; 
+   if(runPeriod==1 && probeNumber==5)  run.push_back(5480); 
+   if(runPeriod==1 && probeNumber==6)  run.push_back(5586); 
+   if(runPeriod==1 && probeNumber==7)  run.push_back(5577); 
+   if(runPeriod==1 && probeNumber==10) run.push_back(5532); 
+   if(runPeriod==1 && probeNumber==15) run.push_back(5610); 
 
    std::string axisName; 
    if(axis==0) axisName = "x"; 
@@ -106,7 +112,9 @@ int PlotPP(){
    rc = gm2fieldUtil::Import::ImportData1<int>("./input/probe-lists/fxpr-list_set-1.csv","csv",fxprList); 
    
    // time cut for the FXPR data
-   cutpath = "./input/json/run-2/extra-cuts.json";
+   char cut_path[200];
+   sprintf(cut_path,"./input/json/run-%d/extra-cuts.json",runPeriod);
+   cutpath = cut_path; 
    unsigned long long tMin=0,tMax=-1;
    rc = GetFXPRCutTime(cutpath,probeNumber,axis,tMin,tMax); 
  
@@ -123,9 +131,9 @@ int PlotPP(){
    }
 
    // filter PP data
-   Cut *myCut = new Cut();
-   rc = myCut->FilterPPData(runPeriod,probeNumber,"shim",axisName,ppData,ppEvent,cutpath);
-   delete myCut;  
+   // Cut *myCut = new Cut();
+   // rc = myCut->FilterPPData(runPeriod,probeNumber,"shim",axisName,ppData,ppEvent,cutpath);
+   // delete myCut;  
 
    // Fixed probe plot 
    TGraph *gFXPR = GetFXPRTGraph_avg("GpsTimeStamp","freq","NONE",fxprData);
@@ -138,18 +146,18 @@ int PlotPP(){
    TGraph *g1 = GetPPTGraph1("TimeStamp","freq",ppData);
    gm2fieldUtil::Graph::SetGraphParameters(g1,25,kBlack);
 
-   TGraph *g2 = GetPPTGraph1("TimeStamp","freq",ppEvent);
-   gm2fieldUtil::Graph::SetGraphParameters(g2,47,kRed);
+   // TGraph *g2 = GetPPTGraph1("TimeStamp","freq",ppEvent);
+   // gm2fieldUtil::Graph::SetGraphParameters(g2,47,kRed);
 
    TLegend *L = new TLegend(0.6,0.6,0.8,0.8); 
    L->AddEntry(g1,"All Data","p"); 
-   L->AddEntry(g2,"Passed Cut Data","p"); 
+   // L->AddEntry(g2,"Passed Cut Data","p"); 
 
    TMultiGraph *mg = new TMultiGraph();
    mg->Add(g1,"lp"); 
    
    AddPPMultiGraph("TimeStamp","freq",ppData,mg,L);   
-   mg->Add(g2,"lp"); 
+   // mg->Add(g2,"lp"); 
 
    TMultiGraph *mgfp = new TMultiGraph();
    mgfp->Add(gFXPR ,"lp"); 

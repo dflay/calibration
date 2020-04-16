@@ -125,6 +125,21 @@ int DeltaB_pp_prod(std::string configFile){
    for(int i=0;i<NRUN;i++) rc = GetSurfaceCoilData(run[i],sccData,prodVersion);
    if(rc!=0) return 1; 
 
+   // Delta-B scale factor for dBz (we use Azi = 0.82 A for our standard dB procedure; sometimes we messed up)
+   bool needSF=false; 
+   double sf=1.,mean_scc=0,err_scc=0,tgt=0.82,diff_pct=0; 
+   if(axis==2){
+      GetAvgSCCMagnitude("azi",sccData,mean_scc,err_scc);
+      // apply a correction scale factor if difference from 0.82 exceeds 10% 
+      diff_pct = 100.*TMath::Abs(mean_scc-tgt)/tgt;
+      if(diff_pct>10.){
+	 sf = tgt/mean_scc;
+	 needSF = true;
+         std::cout << Form("[DeltaB_pp_prod]: WARNING!  SCC azi current = %.3lf A.",mean_scc);
+         std::cout << Form("  Applying a scale factor = %.3lf to the dB result.",sf) << std::endl;
+      }
+   }
+
    // load SCC times or not? 
    std::string dB_key = "load-pp-scc-times"; 
    bool loadTimes = inputMgr->GetValueFromKey<bool>(dB_key); 
@@ -339,6 +354,11 @@ int DeltaB_pp_prod(std::string configFile){
    for(int i=0;i<3;i++) if( gm2fieldUtil::Math::IsInfOrNaN<double>(dB[i]) )     dB[i] = 0.;
    for(int i=0;i<3;i++) if( gm2fieldUtil::Math::IsInfOrNaN<double>(dB_err[i]) ) dB_err[i] = 0.;
 
+   // apply a scale factor if necessary 
+   if(axis==2 && needSF){
+      for(int i=0;i<3;i++) dB[i] *= sf;
+   }
+
    // Plots
 
    TGraph *gPP             = GetPPTGraph1("TimeStamp","freq",ppInput); 
@@ -418,7 +438,7 @@ int DeltaB_pp_prod(std::string configFile){
    c1->Update();
 
    c1->cd();
-   TString plotPath = Form("%s/pp_dB_%s-grad_pr-%02d.png",plotDir.c_str(),gradName.c_str(),probeNumber); 
+   TString plotPath = Form("%s/pp_dB%s_pr-%02d.png",plotDir.c_str(),axisName.c_str(),probeNumber); 
    c1->Print(plotPath);
    delete c1;  
 
@@ -466,7 +486,7 @@ int DeltaB_pp_prod(std::string configFile){
    c2->Update(); 
 
    c2->cd();
-   plotPath = Form("%s/pp_dB_scc-currents_%s-grad_pr-%02d.png",plotDir.c_str(),gradName.c_str(),probeNumber); 
+   plotPath = Form("%s/pp_dB%s_scc-currents_pr-%02d.png",plotDir.c_str(),axisName.c_str(),probeNumber); 
    c2->Print(plotPath);
    delete c2; 
 
@@ -500,7 +520,7 @@ int DeltaB_pp_prod(std::string configFile){
    c3->Update(); 
    
    
-   plotPath = Form("%s/pp_dB_%s-grad_all-events_pr-%02d.png",plotDir.c_str(),gradName.c_str(),probeNumber); 
+   plotPath = Form("%s/pp_dB%s_all-events_pr-%02d.png",plotDir.c_str(),axisName.c_str(),probeNumber); 
    c3->Print(plotPath);
    delete c3;  
 
@@ -513,7 +533,7 @@ int DeltaB_pp_prod(std::string configFile){
    gFXPR->Draw("alp");
    c4->Update();
 
-   plotPath = Form("%s/pp_dB_%s-grad_fxpr-data_pr-%02d.png",plotDir.c_str(),gradName.c_str(),probeNumber);
+   plotPath = Form("%s/pp_dB%s_fxpr-data_pr-%02d.png",plotDir.c_str(),axisName.c_str(),probeNumber);
    c4->Print(plotPath);
 
    delete inputMgr;

@@ -76,8 +76,8 @@ int DeltaB_trly_prod(std::string configFile){
    int systDirNum          = inputMgr->GetSystDirNum(); 
    double dB_delta         = inputMgr->GetDeltaTime("tr","db");  
 
-   // update the analysis method according to Ran's guidance 
-   if(prodVersion.compare("v9_21_01")==0) method = gm2fieldUtil::Constants::kHilbertPhaseLinear;
+   // update the analysis method according to Ran's guidance -- do we use this anymore?? 
+   // if(prodVersion.compare("v9_21_06_dev")==0) method = gm2fieldUtil::Constants::kHilbertPhaseLinear;
 
    // date_t theDate; 
    // GetDate(theDate);
@@ -90,6 +90,11 @@ int DeltaB_trly_prod(std::string configFile){
    if(axis==0) gradName = "rad"; 
    if(axis==1) gradName = "vert"; 
    if(axis==2) gradName = "azi";
+
+   std::string axisName;
+   if(axis==0) axisName = "x"; 
+   if(axis==1) axisName = "y"; 
+   if(axis==2) axisName = "z";
 
    std::string trLabel; 
    if(axis==0) trLabel = "trx"; 
@@ -143,6 +148,21 @@ int DeltaB_trly_prod(std::string configFile){
       for(int i=0;i<NRUN;i++) rc = GetSurfaceCoilData(run[i],sccData,prodVersion);
       if(rc!=0) return 1;
    } 
+
+   // Delta-B scale factor for dBz (we use Azi = 0.82 A for our standard dB procedure; sometimes we messed up)
+   bool needSF=false;
+   double sf=1.,mean_scc=0,err_scc=0,tgt=0.82,diff_pct=0;
+   if(axis==2){
+      GetAvgSCCMagnitude("azi",sccData,mean_scc,err_scc);
+      // apply a correction scale factor if difference from 0.82 exceeds 10% 
+      diff_pct = 100.*TMath::Abs(mean_scc-tgt)/tgt;
+      if(diff_pct>10.){
+         sf = tgt/mean_scc;
+         needSF = true;
+         std::cout << Form("[DeltaB_pp_prod]: WARNING!  SCC azi current = %.3lf A.",mean_scc);
+         std::cout << Form("  Applying a scale factor = %.3lf to the dB result.",sf) << std::endl;
+      }
+   }
    
    bool sccStartOn = false; 
    std::vector<double> sccOff,sccOn;
@@ -338,10 +358,15 @@ int DeltaB_trly_prod(std::string configFile){
 
    dB[1]     = mean_aba;
    dB_err[1] = stdev_aba;  
-  
+ 
    // if we have a single ABA trial, use statistical uncertainty as the error 
    if(NDA==1) dB_err[1] = diffErr_aba[0];
  
+   // apply a scale factor if necessary 
+   if(axis==2 && needSF){
+      for(int i=0;i<3;i++) dB[i] *= sf;
+   }
+
    // Plots
 
    TGraph *gTR               = GetTRLYTGraph(probeNumber-1,"GpsTimeStamp","freq",trlyData);
@@ -401,7 +426,7 @@ int DeltaB_trly_prod(std::string configFile){
    c1->Update();
 
    c1->cd();
-   TString plotPath = Form("%s/trly_dB_%s-grad_pr-%02d.png",plotDir.c_str(),gradName.c_str(),probeNumber); 
+   TString plotPath = Form("%s/trly_dB%s_pr-%02d.png",plotDir.c_str(),axisName.c_str(),probeNumber); 
    c1->Print(plotPath);
    delete c1;  
 
@@ -409,7 +434,7 @@ int DeltaB_trly_prod(std::string configFile){
 
    c2->cd();
    gTR->Draw("alp");
-   gm2fieldUtil::Graph::SetGraphLabels(gTR,Form("TRLY %02d Data",probeNumber),"","Frequency (Hz)"); 
+   gm2fieldUtil::Graph::SetGraphLabels(gTR,Form("TRLY %02d Data (red = SCC off, green = SCC on)",probeNumber),"","Frequency (Hz)"); 
    gm2fieldUtil::Graph::UseTimeDisplay(gTR);
    gTR->Draw("alp");
    for(int i=0;i<NL;i++){
@@ -419,7 +444,7 @@ int DeltaB_trly_prod(std::string configFile){
    c2->Update();
 
    c2->cd();
-   plotPath = Form("%s/trly_dB_%s-grad_pr-%02d_all-data.png",plotDir.c_str(),gradName.c_str(),probeNumber); 
+   plotPath = Form("%s/trly_dB%s_pr-%02d_all-data.png",plotDir.c_str(),axisName.c_str(),probeNumber); 
    c2->Print(plotPath);
    delete c2;  
 
@@ -453,7 +478,7 @@ int DeltaB_trly_prod(std::string configFile){
    c3->Update(); 
 
    c3->cd();
-   plotPath = Form("%s/trly_dB_scc-currents_%s-grad_pr-%02d.png",plotDir.c_str(),gradName.c_str(),probeNumber); 
+   plotPath = Form("%s/trly_dB%s_scc-currents_pr-%02d.png",plotDir.c_str(),axisName.c_str(),probeNumber); 
    c3->Print(plotPath);
    delete c3;
 
@@ -521,7 +546,7 @@ int DeltaB_trly_prod(std::string configFile){
    c4->Update();
 
    c4->cd(); 
-   plotPath = Form("%s/trly_dB_%s-grad_all-events_pr-%02d.png",plotDir.c_str(),gradName.c_str(),probeNumber); 
+   plotPath = Form("%s/trly_dB%s_all-events_pr-%02d.png",plotDir.c_str(),axisName.c_str(),probeNumber); 
    c4->Print(plotPath);
    delete c4;
 
@@ -534,7 +559,7 @@ int DeltaB_trly_prod(std::string configFile){
    gFXPR->Draw("alp");
    c5->Update(); 
 
-   plotPath = Form("%s/trly_dB_%s-grad_fxpr-data_pr-%02d.png",plotDir.c_str(),gradName.c_str(),probeNumber); 
+   plotPath = Form("%s/trly_dB%s_fxpr-data_pr-%02d.png",plotDir.c_str(),axisName.c_str(),probeNumber); 
    c5->Print(plotPath);
 
    delete inputMgr; 
