@@ -180,9 +180,10 @@ void FreeProton::CalculateBulkMagneticSusceptibility(double T,double &delta_b,do
 }
 //______________________________________________________________________________
 void FreeProton::CalculateMagneticSusceptibility(double T,double &CHI,double &CHI_ERR){
-   // compute magnetic susceptibility when accounting for temperature dependence 
+   // compute magnetic susceptibility when accounting for temperature dependence
+   double DT   = T - 20.; 
    double a[3] = {1.38810E-4,-1.2685E-7,8.09E-10};
-   double ARG  = 1. + a[0]*(T-20.) + a[1]*TMath::Power(T-20.,2.) + a[2]*TMath::Power(T-20.,3.);
+   double ARG  = 1. + a[0]*DT + a[1]*TMath::Power(DT,2.) + a[2]*TMath::Power(DT,3.);
    CHI     = fchi*ARG;
    CHI_ERR = fchi_err*ARG;
 }
@@ -190,10 +191,11 @@ void FreeProton::CalculateMagneticSusceptibility(double T,double &CHI,double &CH
 void FreeProton::CalculateDiamagneticShielding(double T,double &SIG,double &ERR){
    // compute diamagnetic shielding with temperature dependence
    // sigma_T0 = sigma @ T = 25 deg C
+   double DT         = T - 25.; // FIXME: Check this sign! 
    double dsigdT     = -10.36E-9; 
-   double dsigdT_err = 0.3E-9;
-   SIG = fsigma + dsigdT*(T-25);
-   ERR = TMath::Sqrt(fsigma_err*fsigma_err + (T-25.)*(T-25.)*dsigdT_err*dsigdT_err);  
+   double dsigdT_err =   0.30E-9;
+   SIG = fsigma + dsigdT*DT;
+   ERR = TMath::Sqrt(fsigma_err*fsigma_err + DT*DT*dsigdT_err*dsigdT_err);  
 }
 //______________________________________________________________________________
 void FreeProton::Print(std::string units){

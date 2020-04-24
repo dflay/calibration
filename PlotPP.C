@@ -64,7 +64,7 @@ int PlotPP(){
    // run.push_back(5522);     // run 1, probe 4 swap  
 
    int runPeriod   = 1;
-   int probeNumber = 15; 
+   int probeNumber = 10; 
    int axis        = 0;  
    int prMethod    = gm2fieldUtil::Constants::kPhaseDerivative;
    int ppMethod    = plungingProbeAnalysis::kLeastSquaresPhase;
@@ -72,8 +72,9 @@ int PlotPP(){
    std::vector<int> run; 
    if(runPeriod==1 && probeNumber==5)  run.push_back(5480); 
    if(runPeriod==1 && probeNumber==6)  run.push_back(5586); 
-   if(runPeriod==1 && probeNumber==7)  run.push_back(5577); 
-   if(runPeriod==1 && probeNumber==10) run.push_back(5532); 
+   if(runPeriod==1 && probeNumber==7)  run.push_back(5579);  // 5577 
+   if(runPeriod==1 && probeNumber==10) run.push_back(5553); 
+   if(runPeriod==1 && probeNumber==13) run.push_back(5625); 
    if(runPeriod==1 && probeNumber==15) run.push_back(5610); 
 
    std::string axisName; 

@@ -9,8 +9,20 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as md
 import numpy as np
+import seaborn as sns
 import math
 
+#_______________________________________________________________________________
+def printToScreen(axis1,axis2,df):
+   print("Data for {0} and {1}".format(axis1,axis2) ) 
+   x = df[axis1].tolist()
+   y = df[axis2].tolist()
+
+   N = len(x) 
+   for i in xrange(0,N): 
+      print("probe {0:2d}: {1:.3f}, {2:.3f}".format(i+1,x[i],y[i]) )
+
+   return
 #_______________________________________________________________________________
 def getDiff_2df(axis,axisErr,newAxis,newAxisErr,df1,df2,df3):
    # take differences of specific columns from different datafames 
@@ -71,23 +83,39 @@ def getDiff_lists(x,xe,y,ye,z,ze):
       ze.append(arg_err) 
    return
 #_______________________________________________________________________________
+def getStats(colName,df):
+   # get mean and standard deviation of a column from dataframe df
+   # first convert to float just to make sure
+   x     = df[colName].tolist()
+   xf    = []
+   N = len(x)
+   for entry in x:
+      xf.append( float(entry) )
+   mean  = np.mean(xf)
+   stdev = np.std(xf)
+   return mean,stdev
+#_______________________________________________________________________________
 
-plt.tight_layout()
+plotBingzhi = True
 
-# create file paths
+print("Loading data...") 
 
 # create a pandas dataframe, reading in the csv file  
-csv_path = "./output/blinded/flay/04-07-20/run-1/calibData_04-07-20.csv"
+csv_path = "./output/blinded/flay/04-16-20/run-1/calibData_04-16-20.csv"
 print("Reading data from: {0}".format(csv_path)) 
 data_df1 = pd.read_csv(csv_path,index_col=False) # index_col = False when you don't have an index column
 
-csv_path = "./input/ran-hong/run-1_04-11-20.csv"
+csv_path = "./input/ran-hong/run-1_04-14-20.csv"
 print("Reading data from: {0}".format(csv_path)) 
 data_df2 = pd.read_csv(csv_path,index_col=False) # index_col = False when you don't have an index column
 
-csv_path = "./input/bingzhi-li/run-1_04-06-20.csv"
+csv_path = "./input/bingzhi-li/run-1_04-14-20.csv"
 print("Reading data from: {0}".format(csv_path)) 
 data_df3 = pd.read_csv(csv_path,index_col=False) # index_col = False when you don't have an index column
+
+print("--> Done.") 
+
+print("Making plots...") 
 
 # marker parameters  
 color  = ["blue","red","#20B010"]
@@ -157,9 +185,18 @@ getDiff_2df("calibCoeff_cor"    ,"calibCoeffErr_cor"    ,"bl_ccc_diff" ,"bl_ccce
 # getDiff_2df("calibCoeffFree"    ,"calibCoeffFreeErr"    ,"fcc_diff"  ,"fcce_diff"  ,data_df1,data_df2,data_diff)
 # getDiff_2df("calibCoeffFree_cor","calibCoeffFreeErr_cor","fccc_diff" ,"fccce_diff" ,data_df1,data_df2,data_diff)
 
-print data_diff
+print("DF") 
+printToScreen("calibCoeff","calibCoeffErr",data_df1) 
+print("RH") 
+printToScreen("calibCoeff","calibCoeffErr",data_df2) 
 
-# plot data
+# some stats
+mean=0
+stdev=0
+mean,stdev = getStats("rh_cc_diff",data_diff)
+print("cc_rhdf: mean = {0:.3f}, stdev = {1:.3f}".format(mean,stdev) )
+mean,stdev = getStats("bl_cc_diff",data_diff)
+print("cc_bldf: mean = {0:.3f}, stdev = {1:.3f}".format(mean,stdev) )
 
 # general setup  
 NCOL = 1
@@ -169,51 +206,64 @@ tickSize      = 16
 xAxisFontSize = 16
 yAxisFontSize = 16
 
+myFont = 'Helvetica'
+
+legend = ['DF','RH']
+
+if plotBingzhi:
+   legend.append('BL')
+
+# sns.set_style("ticks")
+
 # calib coeffs (NO FREE PROTON)
 fig = plt.figure(1) 
 plt.subplot(NROW,NCOL,1)
 
 currentAxis = plt.gca() # grab current axis 
-axis    = "calibCoeff_cor"
-axisErr = "calibCoeffErr_cor"
+axis    = "calibCoeff"
+axisErr = "calibCoeffErr"
 data_df1.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[0], s=mSize, color=color[0], ax=currentAxis)
 data_df2.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
-data_df3.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
-currentAxis.legend(["DF","RH","BL"])
-currentAxis.set_xlabel("Probe"           , fontsize=xAxisFontSize) 
-currentAxis.set_ylabel("Calib Coeff [Cor] (Hz)", fontsize=yAxisFontSize) 
+if plotBingzhi:
+   data_df3.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+# currentAxis.legend(legend)
+currentAxis.set_xlabel("Probe"                   , fontsize=xAxisFontSize,fontname=myFont) 
+currentAxis.set_ylabel("Blinded Calib Coeff (Hz)", fontsize=yAxisFontSize,fontname=myFont) 
+currentAxis.set_ylim(bottom=100, top=300)
 currentAxis.tick_params(labelsize=tickSize)
 
 plt.subplot(NROW,NCOL,2)
 currentAxis = plt.gca() # grab current axis 
-axis    = "rh_ccc_diff"
-axisErr = "rh_ccce_diff"
+axis    = "rh_cc_diff"
+axisErr = "rh_cce_diff"
 data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
-axis    = "bl_ccc_diff"
-axisErr = "bl_ccce_diff"
-data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
-currentAxis.set_xlabel("Probe"                , fontsize=xAxisFontSize) 
-currentAxis.set_ylabel("Calib Coeff [Cor] Diff (Hz)", fontsize=yAxisFontSize) 
+if plotBingzhi:
+   axis    = "bl_cc_diff"
+   axisErr = "bl_cce_diff"
+   data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.set_xlabel("Probe"                  , fontsize=xAxisFontSize,fontname=myFont) 
+currentAxis.set_ylabel("Blinded Difference (Hz)", fontsize=yAxisFontSize,fontname=myFont) 
+currentAxis.set_ylim(bottom=-4, top=12)
 currentAxis.tick_params(labelsize=tickSize)
 
 for ax in fig.get_axes():
     ax.label_outer()
-
-# plot calib coeffs against one another 
-fig = plt.figure(2) 
-
-label_1 = "Calibration Coefficients (DF)"
-label_2 = "Calibration Coefficients (RH or BL)"
-
-currentAxis = plt.gca() # grab current axis 
-data_comp.plot(kind="scatter", x="calibCoeff_cor_1", y="calibCoeff_cor_2", yerr="calibCoeff_cor_2Err", marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
-data_comp.plot(kind="scatter", x="calibCoeff_cor_1", y="calibCoeff_cor_3", yerr="calibCoeff_cor_3Err", marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
-currentAxis.set_xlabel(label_1, fontsize = xAxisFontSize) 
-currentAxis.set_ylabel(label_2, fontsize = yAxisFontSize)
-currentAxis.tick_params(labelsize=tickSize)
-
-for ax in fig.get_axes():
-    ax.label_outer()
+ 
+# # plot calib coeffs against one another 
+# fig = plt.figure(2) 
+# 
+# label_1 = "Calibration Coefficients (DF)"
+# label_2 = "Calibration Coefficients (RH or BL)"
+# 
+# currentAxis = plt.gca() # grab current axis 
+# data_comp.plot(kind="scatter", x="calibCoeff_cor_1", y="calibCoeff_cor_2", yerr="calibCoeff_cor_2Err", marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
+# data_comp.plot(kind="scatter", x="calibCoeff_cor_1", y="calibCoeff_cor_3", yerr="calibCoeff_cor_3Err", marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+# currentAxis.set_xlabel(label_1, fontsize = xAxisFontSize) 
+# currentAxis.set_ylabel(label_2, fontsize = yAxisFontSize)
+# currentAxis.tick_params(labelsize=tickSize)
+# 
+# for ax in fig.get_axes():
+#     ax.label_outer()
 
 # # calib coeffs (WITH FREE PROTON)
 # fig = plt.figure(2) 
@@ -241,7 +291,7 @@ for ax in fig.get_axes():
 # for ax in fig.get_axes():
 #     ax.label_outer()
 
-
 # show all plots
+plt.tight_layout()
 plt.show()
 

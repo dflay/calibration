@@ -71,6 +71,7 @@ int PrintTableOfResults_grad(const char *outpath,int probe,double dBdx,double dB
 int PrintTableOfResults_mis(const char *outpath,int probe,double dx,double dB_x,
                             double dy,double dB_y,double dz,double dB_z);
 
+int GetImposedGradients_xyz(const char *theDir,int probe,std::vector<imposed_gradient_t> &imp_grad);
 int GetImposedGradients(const char *inpath,std::vector<imposed_gradient_t> &imp_grad); 
 int GetShimmedGradients(const char *prefix,int probe,std::string prodVersion,std::vector<std::string> gradName,
                         std::vector<grad_meas_t> &shim_grad);
@@ -187,8 +188,9 @@ int MakeTables_prod(int runPeriod,std::string theDate,int isSyst,int systDirNum)
       // clean up 
       grad.clear(); 
       // get imposed gradients 
-      sprintf(inpath,"%s/imposed-gradients_pr-%02d.csv",outDir.c_str(),probeNumber); 
-      rc = GetImposedGradients(inpath,ig); 
+      // sprintf(inpath,"%s/imposed-gradients_pr-%02d.csv",outDir.c_str(),probeNumber); 
+      // rc = GetImposedGradients(inpath,ig); 
+      rc = GetImposedGradients_xyz(outDir.c_str(),probeNumber,ig); 
       if(rc!=0) return 1;
       impGrad.push_back(ig); 
       // clean up 
@@ -848,6 +850,51 @@ int GetJSONObject(std::vector<calib_result_t> data,json &jData){
       jData["systErr"][i]               = data[i].systErr;  
    }
    return 0; 
+}
+//______________________________________________________________________________
+int GetImposedGradients_xyz(const char *theDir,int probe,std::vector<imposed_gradient_t> &imp_grad){
+
+   // Load imposed gradient results
+   // - We use the 2D fit results for x and y, and separately fit results for z
+   // - 2D fit results have all 17 probes, so we need to choose the right one
+   // - Fill the output vector, imp_grad, with three entries, corresponding to x, y, and z 
+
+   // gather imposed gradients from 2D fits (xy) 
+
+   int rc=0;
+   std::vector<double> igx,igxe,igy,igye; 
+
+   char inpath[200];
+   sprintf(inpath,"%s/imposed-grad-x_2D.csv",theDir);
+   std::string path = inpath; 
+
+   rc = gm2fieldUtil::Import::ImportData2<double,double>(path,"csv",igx,igxe);
+
+   sprintf(inpath,"%s/imposed-grad-y_2D.csv",theDir);
+   path = inpath; 
+   rc = gm2fieldUtil::Import::ImportData2<double,double>(path,"csv",igy,igye);
+   
+   // gather z gradient 
+   double igz=0,igze=0;
+   sprintf(inpath,"%s/imposed-grad_z_pr-%02d.csv",theDir,probe);
+   rc = LoadImposedAziGradData(inpath,igz,igze); 
+
+   // now fill the imp_grad vector 
+   imposed_gradient_t v;
+   // x 
+   v.grad     = igx[probe-1]; 
+   v.grad_err = igxe[probe-1]; 
+   imp_grad.push_back(v);
+   // y 
+   v.grad     = igy[probe-1]; 
+   v.grad_err = igye[probe-1]; 
+   imp_grad.push_back(v);
+   // z 
+   v.grad     = igz; 
+   v.grad_err = igze; 
+   imp_grad.push_back(v);
+  
+   return 0;
 }
 //______________________________________________________________________________
 int GetImposedGradients(const char *inpath,std::vector<imposed_gradient_t> &imp_grad){
