@@ -11,6 +11,7 @@
 
 #include "gm2fieldImport.h"
 #include "gm2fieldFunc.h"
+#include "gm2fieldMath.h"
 
 #include "plungingProbeAnaEvent.h"
 #include "fixedProbeEvent.h"
@@ -35,14 +36,17 @@ class Cut {
       bool CheckEvent_trly(); 
       bool CheckEvent_nmrAna(int run,int trace,int nzc,double ampl,double freq);  
 
-      // specialized function 
+      // specialized functions 
       int FilterPPData(int runPeriod,int probe,std::string type,std::string axis,
                        std::vector<plungingProbeAnaEvent_t> in,std::vector<plungingProbeAnaEvent_t> &out,
                        std::string inpath);
 
       int FilterFXPRData(int runPeriod,int probe,
 	                 std::vector<averageFixedProbeEvent_t> in,std::vector<averageFixedProbeEvent_t> &out,
-	                 std::string inpath); 
+	                 std::string inpath);
+
+      int FilterFXPRForJump(int runPeriod,int probe,std::vector<averageFixedProbeEvent_t> in,
+	                    std::vector<averageFixedProbeEvent_t> &out,std::string inpath);  
 
 }; 
 

@@ -51,6 +51,7 @@ int RedefineOrigin(std::vector<plungingProbeAnaEvent_t> &data,std::vector<double
 
 int GetShimmedGradient_alt(int probe,int axis,std::string outDir,
                            std::vector<double> par,std::vector<double> parErr,
+                           std::vector<double> par_syst,std::vector<double> parErr_syst,
                            double &grad,double &grad_err); 
 
 int LocalScanGrad_pp_prod(std::string configFile){
@@ -71,6 +72,7 @@ int LocalScanGrad_pp_prod(std::string configFile){
    std::string nmrAnaVersion = inputMgr->GetNMRANATag();
    std::string date          = inputMgr->GetRunDate(); 
    std::string fitFunc       = inputMgr->GetValue("fit");
+   std::string fitFunc_syst  = "pol1";    // use to estimate systematic uncertainty
    std::string blindLabel    = inputMgr->GetBlindLabel();
    std::string cutFile       = inputMgr->GetCutFile();
 
@@ -189,7 +191,6 @@ int LocalScanGrad_pp_prod(std::string configFile){
  
    // now parse PP data using subrun list 
    rc = FilterPlungingProbeData(subRun,ppInput,ppInput2); 
-
 
    std::vector<int> fxprList;
    inputMgr->GetFXPRList(fxprList);
@@ -315,6 +316,9 @@ int LocalScanGrad_pp_prod(std::string configFile){
    TGraphErrors *g = GetPPTGraphErrors2(Axis.c_str(),"freq",ppEvent);
    // TGraphErrors *g = GetPPScanGraph(Axis.c_str(),"freq",ppEvent,X);
    gm2fieldUtil::Graph::SetGraphParameters(g,20,kBlack);
+   
+   TGraphErrors *g2 = GetPPTGraphErrors2(Axis.c_str(),"freq",ppEvent);
+   gm2fieldUtil::Graph::SetGraphParameters(g2,20,kBlack);
 
    // Fixed probe plot 
    TGraph *gFXPR = GetFXPRTGraph_avg("GpsTimeStamp","freq","NONE",fxprData);
@@ -328,13 +332,23 @@ int LocalScanGrad_pp_prod(std::string configFile){
    }
 
    TCanvas *c1 = new TCanvas("c1","PP Data",1200,600);
+   c1->Divide(1,2); 
   
-   c1->cd(); 
+   c1->cd(1); 
    g->Draw("ap");
    gm2fieldUtil::Graph::SetGraphLabels(g,"Shimmed Field (Gradient Evaluated at Dotted Line)",xAxisLabel,"Frequency (Hz)"); 
    g->Draw("ap");
    g->GetYaxis()->SetRangeUser(min,max); 
    TFitResultPtr fitResult = g->Fit(fitFunc.c_str(),"QS"); 
+   evalPoint->Draw("same"); 
+   c1->Update(); 
+
+   c1->cd(2); 
+   g2->Draw("ap");
+   gm2fieldUtil::Graph::SetGraphLabels(g,"Shimmed Field (Linear Fit)",xAxisLabel,"Frequency (Hz)"); 
+   g2->Draw("ap");
+   g2->GetYaxis()->SetRangeUser(min,max); 
+   TFitResultPtr fitResult_syst = g2->Fit(fitFunc_syst.c_str(),"QS"); 
    evalPoint->Draw("same"); 
    c1->Update(); 
 
@@ -356,9 +370,10 @@ int LocalScanGrad_pp_prod(std::string configFile){
    c2->Print(plotPath);
 
    // get fit info 
-   TF1 *myFit = g->GetFunction(fitFunc.c_str()); 
+   TF1 *myFit      = g->GetFunction(fitFunc.c_str()); 
+   TF1 *myFit_syst = g2->GetFunction(fitFunc_syst.c_str()); 
 
-   std::cout << "Fit Parameters: " << std::endl;
+   std::cout << "Standard fit (pol2) results: " << std::endl;
    const int NPAR = myFit->GetNpar();
    std::vector<std::string> parLabel; 
    std::vector<double> par,parErr; 
@@ -369,10 +384,29 @@ int LocalScanGrad_pp_prod(std::string configFile){
       std::cout << Form("%s = %.3lf +/- %.3lf",parLabel[i].c_str(),par[i],parErr[i]) << std::endl; 
    }
 
+   std::cout << "Linear fit results: " << std::endl;
+   const int NPAR_syst = myFit_syst->GetNpar();
+
+   // systematic uncertainty estimate 
+   std::vector<std::string> parLabel_syst; 
+   std::vector<double> par_syst,parErr_syst; 
+
+   for(int i=0;i<NPAR_syst;i++){
+      parLabel_syst.push_back( "p"+std::to_string(i) ); 
+      par_syst.push_back( myFit_syst->GetParameter(i) ); 
+      parErr_syst.push_back( myFit_syst->GetParError(i) );
+      std::cout << Form("%s = %.3lf +/- %.3lf",parLabel_syst[i].c_str(),par_syst[i],parErr_syst[i]) << std::endl; 
+   }
+   std::cout << "------------------" << std::endl;
+
    // save parameters to file
    char outpath_par[200]; 
    sprintf(outpath_par,"%s/shimmed-grad-%s_pars_pr-%02d.csv",outDir.c_str(),Axis.c_str(),probeNumber); 
    rc = PrintToFile(outpath_par,parLabel,par,parErr);  
+
+   // save parameters to file
+   sprintf(outpath_par,"%s/shimmed-grad-%s_pol1-pars_pr-%02d.csv",outDir.c_str(),Axis.c_str(),probeNumber); 
+   rc = PrintToFile(outpath_par,parLabel_syst,par_syst,parErr_syst);  
 
    // get gradient based on fit type and which trolley probe we're looking at  
    double dBdr=0,dBdr_err=0,dBdr_cor=0,dBdr_cor_err=0;
@@ -402,7 +436,7 @@ int LocalScanGrad_pp_prod(std::string configFile){
    double dBdr_alt=0,dBdr_alt_err=0;
    if(shimGradAlt){
       std::cout << "[LocalScanGrad_pp_prod]: Using ALTERNATE evaluation!" << std::endl;
-      rc = GetShimmedGradient_alt(probeNumber,axis,outDir,par,parErr,dBdr_alt,dBdr_alt_err);
+      rc = GetShimmedGradient_alt(probeNumber,axis,outDir,par,parErr,par_syst,parErr_syst,dBdr_alt,dBdr_alt_err);
       if(dBdr_alt==-1000){
 	 // fall back to old method if this one fails
 	 dBdr_alt     = dBdr; 
@@ -541,11 +575,22 @@ int GetAziGrad(TGraph *g,double &grad,double &gradErr){
 //______________________________________________________________________________
 int GetShimmedGradient_alt(int probe,int axis,std::string outDir,
                            std::vector<double> par,std::vector<double> parErr,
+                           std::vector<double> par_syst,std::vector<double> parErr_syst,
                            double &grad,double &grad_err){
    // alternative way of getting the shimmed gradient
    // evaluate shimmed gradient using shimmed field fit parameters of polynomial form 
    // f(q) = p0 + p1*q + p2*q^2
    // evaluate at q0 = delta dB/imp_grad  
+
+   int NN = par.size();
+   for(int i=0;i<NN;i++){
+      std::cout << Form("%d, %.3lf, %.3lf",i,par[i],parErr[i]) << std::endl;
+   }
+   std::cout << "----" << std::endl;
+   NN = par_syst.size();
+   for(int i=0;i<NN;i++){
+      std::cout << Form("%d, %.3lf, %.3lf",i,par_syst[i],parErr_syst[i]) << std::endl;
+   }
 
    int rc=0;
 
@@ -610,13 +655,19 @@ int GetShimmedGradient_alt(int probe,int axis,std::string outDir,
       dBdq_imp_err = azi_grad_err; 
    }
 
+   std::cout << Form("dB(TR) = %.3lf +/- %.3lf Hz",dB_tr,dB_tr_err)       << std::endl; 
+   std::cout << Form("dB(PP) = %.3lf +/- %.3lf Hz",dB_pp,dB_pp_err)       << std::endl; 
+   std::cout << Form("dBi/dq = %.3lf +/- %.3lf Hz",dBdq_imp,dBdq_imp_err) << std::endl; 
+
    double q0     = (dB_tr-dB_pp)/dBdq_imp;  // NOTE the Delta dB order! We evaluate where the TRLY is!  
    double q0_err = 0.;                      // FIXME: probably need an uncertainty due to q0... 
                                             // error on Delta-B is supressed by dB/dq, and dB/dq is usually very good.  
 
+   double fitErr=0,fitDiff=0;
+
    const int NP = par.size();
    if(NP<2){
-      std::cout << "[Misalignment_prod::GetShimmedGradient_alt]: ERROR!  Number of fit parameters < 2!" << std::endl;
+      std::cout << "[LocalScanGrad_pp_prod::GetShimmedGradient_alt]: ERROR!  Number of fit parameters < 2!" << std::endl;
       grad     = -1000; 
       grad_err =  1000; 
    }else if(NP==2){
@@ -626,7 +677,10 @@ int GetShimmedGradient_alt(int probe,int axis,std::string outDir,
    }else if(NP==3){
       // polynomial fit, order 2
       grad     = par[1] + 2.*par[2]*q0;
-      grad_err = TMath::Sqrt( parErr[1]*parErr[1] + 2.*2.*parErr[2]*parErr[2] );
+      fitErr   = TMath::Sqrt( parErr[1]*parErr[1] + 2.*2.*parErr[2]*parErr[2] );
+      fitDiff  = TMath::Abs(grad-par_syst[1]);  // consider difference in the gradients of higher order fit and linear fit as an error
+      grad_err = TMath::Sqrt( fitErr*fitErr + fitDiff*fitDiff );  // quadrature sum 
+      std::cout << Form("[LocalScanGrad_pp_prod::GetShimmedGradient_alt]: grad = %.3lf +/- %.3lf",grad,grad_err) << std::endl;
    }
    return 0;
 }

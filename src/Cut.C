@@ -71,7 +71,7 @@ int Cut::FilterFXPRData(int runPeriod,int probe,
                         std::vector<averageFixedProbeEvent_t> in,std::vector<averageFixedProbeEvent_t> &out,
                         std::string inpath){
 
-   // FILTER PP DATA
+   // FILTER FXPR DATA
    // we may have multiple runs with different data sets in them 
    // this function filters data based on an input file 
    // type = data type we are analyzing.  Can be either dB or shim 
@@ -300,6 +300,158 @@ int Cut::FilterPPData(int runPeriod,int probe,std::string type,std::string axis,
    // }
 
    std::cout << "[Cut::FilterPPData]: Size of output vector = " << out.size() << std::endl;
+
+   return 0;
+}
+//______________________________________________________________________________
+int Cut::FilterFXPRForJump(int runPeriod,int probe,std::vector<averageFixedProbeEvent_t> in,
+                           std::vector<averageFixedProbeEvent_t> &out,std::string inpath){
+   // remove a jump from a FXPR data set based on cut values
+
+   // load json data with cut info  
+   json jData;
+   int rc = gm2fieldUtil::Import::ImportJSON(inpath,jData);
+   if(rc!=0) return 1;
+
+   // create probe key 
+   char pr[20];
+   sprintf(pr,"probe-%02d",probe);
+   std::string probeStr = pr;
+
+   int N = in.size(); 
+
+   auto it_key = jData.find(probeStr);  // this is an iterator 
+   if (it_key!=jData.end() ){
+      // not at the end of jData -- found the key 
+      std::cout << Form("[Cut::FilterFXPRForJump] Found key: %s",probeStr.c_str()) << std::endl;
+   }else{
+      std::cout << Form("[Cut::FilterFXPRForJump]: No key named: %s.  Keeping all data and returning.",probeStr.c_str()) << std::endl;
+      for(int i=0;i<N;i++) out.push_back(in[i]);  
+      return 0;  // at the end of jData -- didn't find the key 
+   }
+   
+   // std::cout << jData << std::endl;
+
+   // get values: NOTE: This only works for single cut instances! 
+   std::string timeStr   = jData[probeStr]["swap-jump"]["time"][0];
+   std::string state_str = jData[probeStr]["swap-jump"]["state"][0]; 
+
+   if(timeStr.compare("NONE")==0){
+      std::cout << Form("[Cut::FilterFXPRForJump]: No cut indicated.  Keeping all data and returning.") << std::endl;
+      for(int i=0;i<N;i++) out.push_back(in[i]);  
+      return 0;
+   }
+
+   // now we will actually make the cut; start with the timestamp 
+
+   // check if the time string is actually more than one timestamp (i.e., defines a cut range)
+   int cutType=-1;
+   bool isCutRange=false;
+   std::vector<std::string> tsv;
+   std::string::size_type n;
+   n = timeStr.find(',');  // search for a comma character from beginning of string  
+   if(n==std::string::npos){
+      // no comma, this is a single timestamp
+      tsv.push_back(timeStr);
+   }else{
+      // comma found, is a cut range 
+      isCutRange = true;
+      rc = gm2fieldUtil::SplitString(',',timeStr,tsv); // split to a vector 
+   }
+
+   // verify cut type  
+   if( state_str.compare("lower")==0 ){
+      cutType = kLOWER;
+   }else if( state_str.compare("upper")==0){
+      cutType = kUPPER;
+   }else if( state_str.compare("range")==0){
+      cutType = kRANGE;
+   }
+
+   // consistency check
+   if(isCutRange==true && cutType!=kRANGE){
+      std::cout << "[Cut::FilterFXPRForJump]: ERROR! Time vector size is > 1, state is not range!" << std::endl;
+      std::cout << "                                   Keeping all data and returning." << std::endl;
+      for(int i=0;i<N;i++) out.push_back(in[i]);  
+      return 0;
+   }
+
+   // convert to UTC
+   int M=0;
+   bool isDST=false;
+   unsigned long long TIME=0;
+   const int NT = tsv.size();
+   std::vector<unsigned long long> timeCut;
+   std::string substr;
+   for(int i=0;i<NT;i++){
+      // determine if STD or DST  
+      M = tsv[i].size();
+      substr = tsv[i].substr(M-3,M-1);
+      if( substr.compare("CST")==0 ){
+         isDST = false; // standard time
+      }else{
+         isDST = true;  // daylight savings time 
+      }
+      TIME = 1E+9*gm2fieldUtil::GetUTCTimeStampFromString(tsv[i],isDST); // convert to ns
+      timeCut.push_back(TIME);
+   }
+
+   std::cout << Form("[Cut::FilterFXPRForJump]: Applying the cut to run %d, probe %02d data: time = %s, cut type = %s",
+	             runPeriod,probe,timeStr.c_str(),state_str.c_str()) << std::endl;
+
+   std::vector<averageFixedProbeEvent_t> data,lo,hi;
+   const int ND = in.size();
+   unsigned long long theTime=0;
+   for(int i=0;i<ND;i++){
+      theTime = in[i].time; 
+      if(cutType==kLOWER && theTime>timeCut[0] ) out.push_back(in[i]); 
+      if(cutType==kUPPER && theTime<timeCut[0] ) out.push_back(in[i]); 
+      if(cutType==kRANGE){
+	 // this is different from a typical range! We want separate data sets for lo and hi 
+         if(theTime<timeCut[0]) lo.push_back(in[i]); 
+         if(theTime>timeCut[1]) hi.push_back(in[i]); 
+      } 
+   }
+  
+   // now if we have a range, have to subtract off the slope of each segment
+   int NL = lo.size(); 
+   int NH = hi.size(); 
+
+   // determine slope of data
+   averageFixedProbeEvent_t dataPt;  
+   double slope=0,intercept=0,r=0,arg=0;
+   std::vector<double> TT,FF;
+   if(cutType==kRANGE){
+      // subtract off linear component of lo data 
+      for(int i=0;i<NL;i++){
+	 TT.push_back(lo[i].time/1E+9);
+	 FF.push_back(lo[i].freq);
+      }
+      rc = gm2fieldUtil::Math::LeastSquaresFitting(TT,FF,intercept,slope,r);
+      for(int i=0;i<NL;i++){
+	 arg = FF[i] - (intercept + slope*TT[i]);
+	 dataPt.freq    = arg;
+	 dataPt.time    = (unsigned long long)(TT[i]*1E+9);  // this needs to be unsigned long long 
+	 dataPt.freqErr = 0;
+	 out.push_back(dataPt);
+      }
+      // clear for next data set 
+      TT.clear();
+      FF.clear();
+      // subtract off linear component of hi data 
+      for(int i=0;i<NH;i++){
+	 TT.push_back(hi[i].time/1E+9);
+	 FF.push_back(hi[i].freq);
+      }
+      rc = gm2fieldUtil::Math::LeastSquaresFitting(TT,FF,intercept,slope,r);
+      for(int i=0;i<NH;i++){
+	 arg = FF[i] - (intercept + slope*TT[i]);
+	 dataPt.freq    = arg;
+	 dataPt.time    = (unsigned long long)(TT[i]*1E+9);  // this needs to be unsigned long long 
+	 dataPt.freqErr = 0;
+	 out.push_back(dataPt);
+      }
+   } 
 
    return 0;
 }

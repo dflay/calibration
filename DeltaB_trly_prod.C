@@ -288,21 +288,27 @@ int DeltaB_trly_prod(std::string configFile){
    // find the reference time t0 for oscillation corrections
    // WARNING: Can't do this here because we're CHANGING THE FIELD using SCC!  
    double t0=-1;
+   double mean_phi=0,stdev_phi=0;
 
    // get the mean field with SCC off and on 
    std::vector<double> bareTime,bare,bareErr,sccTime,scc,sccErr;  
    if(useOscCor) std::cout << "[DeltaB_trly_prod]: Bare field data" << std::endl;
-   rc = GetTRLYStats_sccToggle(useOscCor,probeNumber-1,nev,sccOff,fxprData,trlyData,bareTime,bare,bareErr,t0);
+   rc = GetTRLYStats_sccToggle(useOscCor,probeNumber-1,nev,sccOff,fxprData,trlyData,bareTime,bare,bareErr,mean_phi,stdev_phi,t0);
    if(rc!=0){
       std::cout << "[DeltaB_trly_prod]: ERROR at line " << __LINE__ << std::endl;
       return 1;
    } 
    if(useOscCor) std::cout << "[DeltaB_trly_prod]: Grad field data" << std::endl;
-   rc = GetTRLYStats_sccToggle(useOscCor,probeNumber-1,nev,sccOn ,fxprData,trlyData,sccTime ,scc ,sccErr ,t0); 
+   rc = GetTRLYStats_sccToggle(useOscCor,probeNumber-1,nev,sccOn ,fxprData,trlyData,sccTime ,scc ,sccErr ,mean_phi,stdev_phi,t0); 
    if(rc!=0){
       std::cout << "[DeltaB_trly_prod]: ERROR at line " << __LINE__ << std::endl;
       return 1;
    } 
+
+   // print diagnostic data (TRLY dBz only!) 
+   char outpath_enc[200]; 
+   sprintf(outpath_enc,"%s/trly_dBz_enc.csv",outDir.c_str());  
+   if(axis==2) rc = PrintToFile_TRLY_dBz_enc(outpath_enc,probeNumber,run[0],mean_phi,stdev_phi);
 
    // do delta B calcs
    // raw difference 

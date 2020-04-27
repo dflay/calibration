@@ -119,7 +119,7 @@ int Process_pptr_prod(std::string configFile){
    sprintf(outPath,"%s/pp-swap-data_free-prot_pr-%02d.csv",outDir.c_str(),probeNumber);
    std::string outpath_free = outPath;  
    sprintf(outPath,"%s/trly-swap-data_pr-%02d.csv",outDir.c_str(),probeNumber);
-   std::string outpath_trly = outPath;  
+   std::string outpath_trly = outPath; 
    sprintf(outPath,"%s/pp-swap_fpc_pr-%02d.csv",outDir.c_str(),probeNumber);
    std::string outpath_fpc = outPath;  
 
@@ -142,7 +142,7 @@ int Process_pptr_prod(std::string configFile){
    inputMgr->GetFXPRList(fxprList);
 
    bool subtractDrift = inputMgr->GetFXPRDriftStatus();  
-   std::vector<averageFixedProbeEvent_t> fxprData;
+   std::vector<averageFixedProbeEvent_t> fxprData,fxprFltr;
    int period = inputMgr->GetNumEventsTimeWindow(); // 10;
    for(int i=0;i<NRUNS;i++){
       rc = GetFixedProbeData_avg(run[i],prMethod,fxprList,fxprData,prodVersion,subtractDrift,period,0);
@@ -151,6 +151,20 @@ int Process_pptr_prod(std::string configFile){
 	 return 1;
       }
    }
+
+   // check for and remove field jumps from FXPR data 
+   char inpath_jump[200];
+   sprintf(inpath_jump,"./input/json/run-%d/jump-cuts.json",runPeriod); 
+   std::string cutpath_jump = inpath_jump;
+
+   Cut *myCut = new Cut();
+   rc = myCut->FilterFXPRForJump(runPeriod,probeNumber,fxprData,fxprFltr,cutpath_jump);
+   delete myCut; 
+
+   // overwrite FXPR data 
+   fxprData.clear();
+   int NF2 = fxprFltr.size();
+   for(int i=0;i<NF2;i++) fxprData.push_back(fxprFltr[i]); 
 
    // PP data 
    bool useNMRANA = true;
@@ -360,7 +374,10 @@ int GetSwapStatsForPP(int runPeriod,std::string probeID,std::vector<plungingProb
    // gather stats for the PP; recall a single PP-DAQ run has N traces in it. 
    // here, a PP-DAQ run is a single swap!
 
-   FreeProton *fp = new FreeProton(probeID,runPeriod);
+   char inpath[200];
+   sprintf(inpath,"./input/perturbation/run-%d/%s.json",runPeriod,probeID.c_str()); 
+
+   FreeProton *fp = new FreeProton(inpath);
 
    min = 50E+3; 
    max = 0; 

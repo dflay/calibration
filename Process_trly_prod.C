@@ -137,7 +137,7 @@ int Process_trly_prod(std::string configFile){
    inputMgr->GetFXPRList(fxprList);
 
    bool subtractDrift = inputMgr->GetFXPRDriftStatus();  
-   std::vector<averageFixedProbeEvent_t> fxprData;  
+   std::vector<averageFixedProbeEvent_t> fxprData,fxprFltr;  
    int period = inputMgr->GetNumEventsTimeWindow();
    for(int i=0;i<NRUNS;i++){
       rc = GetFixedProbeData_avg(run[i],method,fxprList,fxprData,prodVersion,subtractDrift,period,0);
@@ -146,6 +146,20 @@ int Process_trly_prod(std::string configFile){
 	 return 1;
       }
    }
+
+   // check for and remove field jumps from FXPR data 
+   char inpath_jump[200];
+   sprintf(inpath_jump,"./input/json/run-%d/jump-cuts.json",runPeriod);
+   std::string cutpath_jump = inpath_jump;
+
+   Cut *myCut = new Cut();
+   rc = myCut->FilterFXPRForJump(runPeriod,probeNumber,fxprData,fxprFltr,cutpath_jump);
+   delete myCut;
+
+   // overwrite FXPR data 
+   fxprData.clear();
+   int NF2 = fxprFltr.size();
+   for(int i=0;i<NF2;i++) fxprData.push_back(fxprFltr[i]);
 
    // TGraph *gSig  = GetTRLYVelocityTGraph(probeNumber-1,"GpsTimeStamp","vSig" ,trlyGalil,trlyData);
    // TGraph *gFish = GetTRLYVelocityTGraph(probeNumber-1,"GpsTimeStamp","vFish",trlyGalil,trlyData);

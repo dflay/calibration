@@ -1,10 +1,11 @@
 #include "../include/FreeProton.h"
 //______________________________________________________________________________
-FreeProton::FreeProton(std::string probeName,int runPeriod){
+FreeProton::FreeProton(const char *inpath){
    Clear();
    int rc=0;
-   if(probeName.compare("NONE")!=0){
-      rc = LoadData(probeName,runPeriod);
+   std::string thePath = inpath;
+   if(thePath.compare("NONE")!=0){
+      rc = LoadData(inpath);
    }
 }
 //______________________________________________________________________________
@@ -34,10 +35,8 @@ void FreeProton::Clear(){
    fdelta_v_err  = 0;
 }
 //______________________________________________________________________________
-int FreeProton::LoadData(std::string probeName,int runPeriod){
+int FreeProton::LoadData(const char *inpath){
    json obj;
-   char inpath[200];
-   sprintf(inpath,"./input/perturbation/run-%d/%s.json",runPeriod,probeName.c_str());
    std::string inpath_str = inpath;
    int rc = gm2fieldUtil::Import::ImportJSON(inpath_str,obj);
    if(rc!=0){
@@ -181,7 +180,7 @@ void FreeProton::CalculateBulkMagneticSusceptibility(double T,double &delta_b,do
 //______________________________________________________________________________
 void FreeProton::CalculateMagneticSusceptibility(double T,double &CHI,double &CHI_ERR){
    // compute magnetic susceptibility when accounting for temperature dependence
-   double DT   = T - 20.; 
+   double DT   = 20. - T;  // NOTE: SIGN WAS FLIPPED TO MATCH SHIELDING BELOW 4/24/20
    double a[3] = {1.38810E-4,-1.2685E-7,8.09E-10};
    double ARG  = 1. + a[0]*DT + a[1]*TMath::Power(DT,2.) + a[2]*TMath::Power(DT,3.);
    CHI     = fchi*ARG;
@@ -191,7 +190,7 @@ void FreeProton::CalculateMagneticSusceptibility(double T,double &CHI,double &CH
 void FreeProton::CalculateDiamagneticShielding(double T,double &SIG,double &ERR){
    // compute diamagnetic shielding with temperature dependence
    // sigma_T0 = sigma @ T = 25 deg C
-   double DT         = T - 25.; // FIXME: Check this sign! 
+   double DT         = 25. - T;  
    double dsigdT     = -10.36E-9; 
    double dsigdT_err =   0.30E-9;
    SIG = fsigma + dsigdT*DT;

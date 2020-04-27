@@ -64,7 +64,7 @@ int PlotPP(){
    // run.push_back(5522);     // run 1, probe 4 swap  
 
    int runPeriod   = 1;
-   int probeNumber = 10; 
+   int probeNumber = 7; 
    int axis        = 0;  
    int prMethod    = gm2fieldUtil::Constants::kPhaseDerivative;
    int ppMethod    = plungingProbeAnalysis::kLeastSquaresPhase;
@@ -121,7 +121,7 @@ int PlotPP(){
  
    bool subtractDrift = true;
    int period         = 10;
-   std::vector<averageFixedProbeEvent_t> fxprData,fxprFltr;
+   std::vector<averageFixedProbeEvent_t> fxprData,fxprFltr,fxprFltr2;
    for(int i=0;i<N;i++){
       rc = GetFixedProbeData_avg(run[i],prMethod,fxprList,fxprData,prodVersion,subtractDrift,period);
       rc = GetFixedProbeData_avg(run[i],prMethod,fxprList,fxprFltr,prodVersion,subtractDrift,period,tMin,tMax);
@@ -136,12 +136,20 @@ int PlotPP(){
    // rc = myCut->FilterPPData(runPeriod,probeNumber,"shim",axisName,ppData,ppEvent,cutpath);
    // delete myCut;  
 
+   // filter FXPR data 
+   cutpath = "./input/json/run-1/jump-cuts.json"; 
+   Cut *myCut = new Cut();
+   rc = myCut->FilterFXPRForJump(runPeriod,probeNumber,fxprData,fxprFltr2,cutpath);
+
    // Fixed probe plot 
    TGraph *gFXPR = GetFXPRTGraph_avg("GpsTimeStamp","freq","NONE",fxprData);
    gm2fieldUtil::Graph::SetGraphParameters(gFXPR,21,kBlack);
 
    TGraph *gFXPRf = GetFXPRTGraph_avg("GpsTimeStamp","freq","NONE",fxprFltr);
    gm2fieldUtil::Graph::SetGraphParameters(gFXPRf,20,kRed);
+
+   TGraph *gFXPRf2 = GetFXPRTGraph_avg("GpsTimeStamp","freq","NONE",fxprFltr2);
+   gm2fieldUtil::Graph::SetGraphParameters(gFXPRf2,20,kBlue);
 
    // Plunging probe plots 
    TGraph *g1 = GetPPTGraph1("TimeStamp","freq",ppData);
@@ -163,6 +171,7 @@ int PlotPP(){
    TMultiGraph *mgfp = new TMultiGraph();
    mgfp->Add(gFXPR ,"lp"); 
    mgfp->Add(gFXPRf,"lp"); 
+   mgfp->Add(gFXPRf2,"lp"); 
 
    const int NFP = fxprData.size(); 
    double xMin = fxprData[0].time/1E+9; 

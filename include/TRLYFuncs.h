@@ -46,7 +46,8 @@ int GetTRLYStatsAtTime_old(int probe,int nev,double fLO,std::vector<double> time
 
 int GetTRLYStats_sccToggle(bool useOscCor,int probe,int nev,std::vector<double> time,
                            std::vector<averageFixedProbeEvent_t> fxpr,std::vector<trolleyAnaEvent_t> Data,
-                           std::vector<double> &TIME,std::vector<double> &MEAN,std::vector<double> &STDEV,double t0=0);  
+                           std::vector<double> &TIME,std::vector<double> &MEAN,std::vector<double> &STDEV,
+                           double &mean_phi,double &stdev_phi,double t0=0);  
 
 int GetTRLYStatsAtTime(int probe,int nev,double fLO,std::vector<double> time,std::vector<trolleyAnaEvent_t> Data,
                        std::vector<double> &FREQ,std::vector<double> &FREQ_ERR,

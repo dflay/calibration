@@ -129,7 +129,9 @@ int ProcessResults_prod(std::string configFile){
    // sprintf(inpath_pert,"./input/perturbation/pp-pert_run-%d.json",runPeriod);
    // LoadPerturbationData_json(inpath_pert,ppPert);
 
-   FreeProton *fp = new FreeProton(ppID,runPeriod); 
+   char inpath[200];
+   sprintf(inpath,"./input/perturbation/run-%d/%s.json",runPeriod,ppID.c_str());
+   FreeProton *fp = new FreeProton(inpath); 
 
    // compute errors from free proton corrections
    double T0 = 25.0; // use T = 25 deg for the uncertainty calculation -- weak T dependence, so this is OK  

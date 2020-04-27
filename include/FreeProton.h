@@ -29,13 +29,15 @@ class FreeProton {
 
    public:
 
-      FreeProton(std::string probeName="NONE",int runPeriod=1); 
+      FreeProton(const char *inpath="NONE"); 
       ~FreeProton(); 
 
       void Clear(); 
       void Print(std::string units="ppb"); 
 
-      int LoadData(std::string probeName,int runPeriod); 
+      int LoadData(const char *inpath); 
+      
+      std::string GetProbeID()     const { return fProbeID; }   
 
       // These don't change as a function of T
       double GetDelta_s()          const { return fdelta_s;      } 
@@ -59,8 +61,6 @@ class FreeProton {
       double GetOmegaP_free(double freq,double T); 
       double GetDelta_t(double T);
       double GetDelta_t_err(double T);
-
-      std::string GetProbeID()     const { return fProbeID; }   
 
 }; 
 

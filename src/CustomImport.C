@@ -249,15 +249,15 @@ int GetFixedProbeData_avg(int run,int method,std::vector<int> probe,
       F.clear();
    }
 
-   // construct moving average over time 
-   double x,y;
+   // construct moving average over time; also check for field jumps
+   double x=0,y=0;
    std::vector<double> TT,FF;
-   gm2fieldUtil::Algorithm::MovingAverage<double> *mvAvg1 = new gm2fieldUtil::Algorithm::MovingAverage<double>(period);
-   gm2fieldUtil::Algorithm::MovingAverage<double> *mvAvg2 = new gm2fieldUtil::Algorithm::MovingAverage<double>(period);
+   gm2fieldUtil::Algorithm::MovingAverage<double> *mvAvg1  = new gm2fieldUtil::Algorithm::MovingAverage<double>(period);
+   gm2fieldUtil::Algorithm::MovingAverage<double> *mvAvg2  = new gm2fieldUtil::Algorithm::MovingAverage<double>(period);
    const int NN = tt.size();
    for(int i=0;i<NN;i++){
-      x = mvAvg1->GetUpdatedAverage(tt[i]);
-      y = mvAvg2->GetUpdatedAverage(ff[i]);
+      x  = mvAvg1->GetUpdatedAverage(tt[i]);
+      y  = mvAvg2->GetUpdatedAverage(ff[i]);
       TT.push_back(x);
       FF.push_back(y);
    }
@@ -266,11 +266,10 @@ int GetFixedProbeData_avg(int run,int method,std::vector<int> probe,
    delete mvAvg2; 
 
    // determine slope of data 
-   double slope=0,intercept=0,r=0;
+   double slope=0,intercept=0,r=0,arg=0;
    rc = gm2fieldUtil::Math::LeastSquaresFitting(TT,FF,intercept,slope,r);
 
-   // subtract off slope
-   double arg=0;
+   // subtract off slope if necessary 
    for(int i=0;i<NN;i++){
       arg = FF[i] - (intercept + slope*TT[i]);
       if(subtractDrift){
@@ -392,17 +391,21 @@ int GetTrolleyData(int run,int method,std::vector<trolleyAnaEvent_t> &trlyEvent,
    if(run==3030) startIndex = 10;
    if(run==4911) startIndex = 35;
 
-   double arg_phi=0,arg_freq=0,arg_time=0,arg_temp=0;
+   double arg_phi=0,arg_phi_galil=0,arg_phi_bc=0,arg_freq=0,arg_time=0,arg_temp=0;
    bool validEvent = false;
    for(int i=startIndex;i<NT;i++){
       for(int j=0;j<NUM_TRLY;j++){
          if(version.compare("nearline")==0 || version.compare("pp-img")==0){
-            arg_phi  = trlyPos[i].Phi[j][0]*gm2fieldUtil::Constants::DEG_PER_RAD;
-            arg_freq = trlyFreq[i].Frequency[j][method];
+            arg_phi       = trlyPos[i].Phi[j][0]*gm2fieldUtil::Constants::DEG_PER_RAD;
+            arg_freq      = trlyFreq[i].Frequency[j][method];
+            arg_phi_galil = 0;
+            arg_phi_bc    = 0;
          }else{
             // arg_phi  = trlyPos_new[i].Phi[j][0]*gm2fieldUtil::Constants::DEG_PER_RAD;
-            arg_phi  = trlyPos_new[i].Phi[j][0];
-            arg_freq = trlyFreq_new[i].Frequency[j][method];
+            arg_phi       = trlyPos_new[i].Phi[j][0];
+            arg_phi_galil = 0; // trlyPos_new[i].Phi[j][1];
+            arg_phi_bc    = 0; // trlyPos_new[i].Phi[j][2];
+            arg_freq      = trlyFreq_new[i].Frequency[j][method];
          }
          arg_time = trlyTime[i].GpsCycleStart[j];
          arg_temp = trlyMon[i].TemperatureExt[j];
@@ -414,7 +417,9 @@ int GetTrolleyData(int run,int method,std::vector<trolleyAnaEvent_t> &trlyEvent,
             data.r[j]    = GetTrolleyProbeTransverseCoordinate(j,"r"); 
             data.y[j]    = GetTrolleyProbeTransverseCoordinate(j,"y"); 
             data.phi[j]  = arg_phi;
-            data.temp[j] = arg_temp;
+            data.phi_galil[j] = arg_phi_galil; 
+            data.phi_bc[j]    = arg_phi_bc; 
+            data.temp[j]      = arg_temp;
          }
          // if(data.freq[j]<20E+3){
          //    std::cout << gm2fieldUtil::GetStringTimeStampFromUTC( data.time[j]/1E+9 ) << " " << data.freq[j] << std::endl; 

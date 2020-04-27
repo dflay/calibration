@@ -1,5 +1,23 @@
 #include "../include/CustomExport.h"
 //______________________________________________________________________________
+int PrintToFile_TRLY_dBz_enc(const char *outpath,int probe,int run,double phi,double phi_err){
+   // print trolley encoder details 
+   // WARNING: This appends to a file! 
+   char outStr[200]; 
+
+   std::ofstream outfile;
+   outfile.open(outpath,std::ios::app);
+   if( outfile.fail() ){
+      std::cout << "[CustomExport::PrintToFile_TRLY_dBz_enc]: Cannot open the file: " << outpath << std::endl;
+      return 1;
+   }else{
+      sprintf(outStr,"%02d,%05d,%.3lf,%.3lf",probe,run,phi,phi_err);
+      outfile << outStr << std::endl;
+      outfile.close();
+   }
+   return 0;
+}
+//______________________________________________________________________________
 int PrintToFile_sccTimes(const char *outpath,std::vector<double> off,std::vector<double> on){
    // print SCC time stamps to file (as a string)  
    const int NOFF = off.size();

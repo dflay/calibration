@@ -127,12 +127,14 @@ int FilterSingle(std::string var,int probe,int nev,double T,std::vector<trolleyA
    // }
 
    for(int i=start;i<end;i++){
-      if( var.compare("time")==0 ) x.push_back(in[i].time[probe]/1E+9); 
-      if( var.compare("freq")==0 ) x.push_back(in[i].freq[probe]     );
-      if( var.compare("temp")==0 ) x.push_back(in[i].temp[probe]     );
-      if( var.compare("r")==0    ) x.push_back(in[i].r[probe]        );
-      if( var.compare("y")==0    ) x.push_back(in[i].y[probe]        );
-      if( var.compare("phi")==0  ) x.push_back(in[i].phi[probe]      );
+      if( var.compare("time")==0      ) x.push_back( in[i].time[probe]/1E+9 ); 
+      if( var.compare("freq")==0      ) x.push_back( in[i].freq[probe]      );
+      if( var.compare("temp")==0      ) x.push_back( in[i].temp[probe]      );
+      if( var.compare("r")==0         ) x.push_back( in[i].r[probe]         );
+      if( var.compare("y")==0         ) x.push_back( in[i].y[probe]         );
+      if( var.compare("phi")==0       ) x.push_back( in[i].phi[probe]       );
+      if( var.compare("phi_galil")==0 ) x.push_back( in[i].phi_galil[probe] );
+      if( var.compare("phi_bc")==0    ) x.push_back( in[i].phi_bc[probe]    );
    }
 
    // const int NX = x.size();
@@ -188,7 +190,7 @@ int GetTRLYStatsAtTime_old(bool UseTempCor,bool UseOscCor,int probe,int nev,doub
 	 if(UseTempCor){
 	    // FIXME: apply a temperature correction if necessary
 	    // accounts for the trolley being at a temperature other than 25 deg c  
-	    delta_t = (4.0E-9)*(temp[j]-25.0);
+	    delta_t = (4.0E-9)*(25.-temp[j]);
 	 }
          if(UseOscCor){
 	    gm2fieldUtil::Algorithm::BinarySearch<double>(tt,trt[j],lo,hi);
@@ -276,7 +278,7 @@ int GetTRLYStatsAtTime(bool UseTempCor,bool UseOscCor,int probe,int nev,double f
 	    if(UseTempCor){
 	       // FIXME: apply a temperature correction if necessary
 	       // accounts for the trolley being at a temperature other than 25 deg c  
-	       delta_t = dSigdT*(temp[j]-25.0);
+	       delta_t = dSigdT*(25.-temp[j]);
 	    }
 	    if(UseOscCor){
 	       arg_freq = (fLO + trFreq_cor[j])/(1.-delta_t);  
@@ -372,7 +374,7 @@ int GetTRLYStatsAtTime_hybrid(bool UseTempCor,bool UseOscCor,int probe,int nev,d
 	    if(UseTempCor){
 	       // FIXME: apply a temperature correction if necessary
 	       // accounts for the trolley being at a temperature other than 25 deg c  
-	       delta_t = dSigdT*(temp[j]-25.0);
+	       delta_t = dSigdT*(25.-temp[j]);
 	    }
 	    if(UseOscCor){
 	       arg_freq = (fLO + trFreq_cor[j])/(1.-delta_t);  
@@ -476,25 +478,36 @@ int GetTRLYStats_sccToggle_old(bool useOscCor,int probe,int nev,std::vector<doub
 //______________________________________________________________________________
 int GetTRLYStats_sccToggle(bool useOscCor,int probe,int nev,std::vector<double> time,
                            std::vector<averageFixedProbeEvent_t> fxpr,std::vector<trolleyAnaEvent_t> Data,
-                           std::vector<double> &TIME,std::vector<double> &MEAN,std::vector<double> &STDEV,double t0){
+                           std::vector<double> &TIME,std::vector<double> &MEAN,std::vector<double> &STDEV,
+                           double &mean_phi,double &stdev_phi,double t0){
 
    // find the mean field at the times specified in the time vector 
 
    // do oscillation correction and obtain ALL data associated with toggle times in time vector 
-   std::vector<double> trTime,trFreq,trFreq_cor; 
+   std::vector<double> trTime,trFreq,trFreq_cor,trPhi; 
    int rc=0;
    const int NT = time.size();
    if(useOscCor){
       std::cout << "[GetTRLYStats_sccToggle]: USING OSCILLATION CORRECTION" << std::endl;
+      // get the time stamps 
       CorrectOscillation_trly(probe,nev,time,fxpr,Data,trTime,trFreq,trFreq_cor,"time",t0);
+      trFreq.clear();
+      trFreq_cor.clear();
+      // get phi and frequencies  
+      CorrectOscillation_trly(probe,nev,time,fxpr,Data,trPhi,trFreq,trFreq_cor,"phi",t0);
    }else{
       // no oscillation correction; gather all events relevant for each time stamp
       for(int i=0;i<NT;i++){
 	 rc = FilterSingle("time",probe,nev,time[i],Data,trTime);
 	 rc = FilterSingle("freq",probe,nev,time[i],Data,trFreq);
+	 rc = FilterSingle("phi" ,probe,nev,time[i],Data,trPhi);
       }
    }
    if(rc!=0) return 1;
+
+   // trolley encoder stats 
+   mean_phi  = gm2fieldUtil::Math::GetMean<double>(trPhi); 
+   stdev_phi = gm2fieldUtil::Math::GetStandardDeviation<double>(trPhi); 
 
    const int ND = trTime.size();
    // std::cout << "[GetTRLYStats_sccToggle]: Found " << ND << " events associated with SCC cut times" << std::endl;
@@ -509,7 +522,7 @@ int GetTRLYStats_sccToggle(bool useOscCor,int probe,int nev,std::vector<double> 
    std::string timeStr; 
    int n=0;
    double lastTime=0,mean=0,stdev=0;
-   std::vector<double> tt,ff; 
+   std::vector<double> tt,ff,phi; 
    for(int i=0;i<NT;i++){
       timeStr = gm2fieldUtil::GetStringTimeStampFromUTC(time[i]);  
       // find events that satisfy the timestamp
@@ -518,6 +531,7 @@ int GetTRLYStats_sccToggle(bool useOscCor,int probe,int nev,std::vector<double> 
 	 if(trTime[j]>lastTime && trTime[j]<time[i]){
 	    // std::cout << "event " << j << " passed the cut, LINE " << __LINE__ << std::endl; 
 	    tt.push_back(trTime[j]);
+            phi.push_back(trPhi[j]); 
 	    if(useOscCor){
 	       ff.push_back(trFreq_cor[j]);
             }else{

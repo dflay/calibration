@@ -57,7 +57,7 @@ int CheckShimGrad(int probe,std::vector<grad_meas_t> &data){
       }else{
          // invalid gradient.  Make an update using the worst gradient we have 
          sprintf(msg,"[CustomAlgorithms::CheckShimGrad]: Warning for probe %02d, axis %d!",probe,i);
-         sprintf(msg,"%s Gradient is 0!  Using worst gradient as uncertainty = %.3lf Hz (ABA %.3lf Hz)",msg,probe,i,max,max_fxpr);
+         sprintf(msg,"%s Gradient is 0!  Using worst gradient as uncertainty = %.3lf Hz (ABA %.3lf Hz)",msg,max,max_fxpr);
          Logger::PrintMessage(Logger::kINFO,"default",msg,'a');
 	 // use 100% uncertainty, ZERO FOR CENTRAL VALUE (4/22/20)  
          data[i].grad          = 0; // max;

@@ -17,17 +17,15 @@ TGraphErrors *GetTGraphErrors(int probe,std::string xAxis,std::string yAxis,std:
 
 int TestFree(){
 
-   std::string probeID = "PP-145-01";
-   int runPeriod       = 1;  
+   char inpath[200];
+   sprintf(inpath,"./input/perturbation/PP-145-01_test.json"); 
 
-   FreeProton *fp = new FreeProton(probeID,runPeriod);
+   FreeProton *fp = new FreeProton(inpath);
    fp->Print(); 
 
-
-
-   const int NPTS = 10; 
-   double min = 19;
-   double max = 30; 
+   const int NPTS = 20; 
+   double min = 0.1;
+   double max = 55; 
    double step = (max-min)/( (double)NPTS ); 
 
    double it=0,arg=0,arg_err=0;
@@ -94,35 +92,27 @@ int TestFree(){
    gm2fieldUtil::Graph::SetGraphParameters(gDT ,20,kBlack); 
    gm2fieldUtil::Graph::SetGraphParameters(gCHI,20,kBlack); 
    gm2fieldUtil::Graph::SetGraphParameters(gSIG,20,kBlack); 
-  
-   // load free proton, TRLY data from calibration analysis 
-   json ccData;
-   std::string inpath_data = "./output/blinded/flay/04-06-20/run-1/calibData_04-06-20.json"; 
-   int rc = gm2fieldUtil::Import::ImportJSON(inpath_data,ccData);
 
-   TLegend *L = new TLegend(0.6,0.6,0.8,0.8);
-   TMultiGraph *mg = new TMultiGraph(); 
-   mg->Add(gDT,"lp"); 
-
-   // build graphs
-   int color=0,color_last=2; 
-   const int NP = 17;  
-   TGraphErrors **gpp = new TGraphErrors*[NP];
-   for(int i=0;i<NP;i++){
-      color = color_last + i;
-      if(color==10 || color==19) color++;
-      gpp[i] = GetTGraphErrors(i+1,"ppTemp","fpCor","fpCorErr",ccData); 
-      gm2fieldUtil::Graph::SetGraphParameters(gpp[i],21,color);
-      color = color_last;
-      mg->Add(gpp[i],"p"); 
-      L->AddEntry(gpp[i],Form("Probe %02d",i+1),"p"); 
-   }
-    
-   TGraphErrors *gTR  = GetTGraphErrors(-1,"probe","trTemp","trTempErr",ccData);
-   gm2fieldUtil::Graph::SetGraphParameters(gTR,20,kBlack);  
- 
    double xSize = 0.05; 
    double ySize = 0.06; 
+   
+   TMultiGraph *mg = new TMultiGraph(); 
+   mg->Add(gDT,"lp"); 
+   
+   TLegend *L = new TLegend(0.6,0.6,0.8,0.8);
+   
+   TMultiGraph *mgs = new TMultiGraph();
+   mgs->Add(gSIG  ,"lp"); 
+   L->AddEntry(gSIG,"DF Calculation","p");  
+
+   // other test data from Metrologia 20, 84 (1984)
+   std::vector<double> TT,SS;
+   int rc = gm2fieldUtil::Import::ImportData2<double,double>("./input/test/metrologia-20-81-1984.csv","csv",TT,SS);
+
+   TGraph *gMetro = gm2fieldUtil::Graph::GetTGraph(TT,SS);
+   gm2fieldUtil::Graph::SetGraphParameters(gMetro,20,kRed);  
+   mgs->Add(gMetro,"lp"); 
+   L->AddEntry(gMetro,"Metrologia #bf{20}, 81 (1984)","p");  
 
    TCanvas *c1 = new TCanvas("c1","Free Proton Terms",1200,600);
    c1->Divide(2,2); 
@@ -135,10 +125,11 @@ int TestFree(){
    c1->Update();
 
    c1->cd(2);
-   gSIG->Draw("alp"); 
-   gm2fieldUtil::Graph::SetGraphLabels(gSIG,"Water Diamagnetic Shielding","Temperature (#circC)","#sigma (ppb)"); 
-   gm2fieldUtil::Graph::SetGraphLabelSizes(gSIG,xSize,ySize);  
-   gSIG->Draw("alp"); 
+   mgs->Draw("a"); 
+   gm2fieldUtil::Graph::SetGraphLabels(mgs,"Water Diamagnetic Shielding","Temperature (#circC)","#sigma (ppb)"); 
+   gm2fieldUtil::Graph::SetGraphLabelSizes(mgs,xSize,ySize);  
+   mgs->Draw("a");
+   L->Draw("same"); 
    c1->Update();
 
    c1->cd(3);
@@ -153,17 +144,40 @@ int TestFree(){
    gm2fieldUtil::Graph::SetGraphLabels(mg,"Total Correction","Temperature (#circC)","#delta_{t} (ppb)"); 
    gm2fieldUtil::Graph::SetGraphLabelSizes(mg,xSize,ySize);  
    mg->Draw("a");
-   L->Draw("same");
+   // L->Draw("same");
    c1->Update();
 
-   TCanvas *c2 = new TCanvas("c2","TRLY Temperatures",1200,600);
+   // load free proton, TRLY data from calibration analysis 
+   // json ccData;
+   // std::string inpath_data = "./output/blinded/flay/04-06-20/run-1/calibData_04-06-20.json"; 
+   // int rc = gm2fieldUtil::Import::ImportJSON(inpath_data,ccData);
 
-   c2->cd(1);
-   gTR->Draw("alp"); 
-   gm2fieldUtil::Graph::SetGraphLabels(gTR,"TRLY Temperatures","Probe","Temperature (#circC)"); 
-   // gm2fieldUtil::Graph::SetGraphLabelSizes(gTR,xSize,ySize);  
-   gTR->Draw("alp"); 
-   c2->Update();
+
+   // // build graphs
+   // int color=0,color_last=2; 
+   // const int NP = 17;  
+   // TGraphErrors **gpp = new TGraphErrors*[NP];
+   // for(int i=0;i<NP;i++){
+   //    color = color_last + i;
+   //    if(color==10 || color==19) color++;
+   //    gpp[i] = GetTGraphErrors(i+1,"ppTemp","fpCor","fpCorErr",ccData); 
+   //    gm2fieldUtil::Graph::SetGraphParameters(gpp[i],21,color);
+   //    color = color_last;
+   //    mg->Add(gpp[i],"p"); 
+   //    L->AddEntry(gpp[i],Form("Probe %02d",i+1),"p"); 
+   // }
+   //  
+   // TGraphErrors *gTR  = GetTGraphErrors(-1,"probe","trTemp","trTempErr",ccData);
+   // gm2fieldUtil::Graph::SetGraphParameters(gTR,20,kBlack);  
+
+   // TCanvas *c2 = new TCanvas("c2","TRLY Temperatures",1200,600);
+
+   // c2->cd(1);
+   // gTR->Draw("alp"); 
+   // gm2fieldUtil::Graph::SetGraphLabels(gTR,"TRLY Temperatures","Probe","Temperature (#circC)"); 
+   // // gm2fieldUtil::Graph::SetGraphLabelSizes(gTR,xSize,ySize);  
+   // gTR->Draw("alp"); 
+   // c2->Update();
 
    delete fp; 
 

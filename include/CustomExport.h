@@ -9,6 +9,8 @@
 
 #include "TString.h"
 
+int PrintToFile_TRLY_dBz_enc(const char *outpath,int probe,int run,double phi,double phi_err); 
+
 int PrintTRLYFrequencies(const char *outpath,int probe,std::vector<trolleyAnaEvent_t> data); 
 int PrintTRLYPositions(const char *outpath,std::vector<int> probe,
                        std::vector<double> r,std::vector<double> dr,

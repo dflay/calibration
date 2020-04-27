@@ -101,7 +101,7 @@ plotBingzhi = True
 print("Loading data...") 
 
 # create a pandas dataframe, reading in the csv file  
-csv_path = "./output/blinded/flay/04-16-20/run-1/calibData_04-16-20.csv"
+csv_path = "./output/blinded/flay/04-25-20/run-1/calibData_04-25-20.csv"
 print("Reading data from: {0}".format(csv_path)) 
 data_df1 = pd.read_csv(csv_path,index_col=False) # index_col = False when you don't have an index column
 
@@ -189,6 +189,13 @@ print("DF")
 printToScreen("calibCoeff","calibCoeffErr",data_df1) 
 print("RH") 
 printToScreen("calibCoeff","calibCoeffErr",data_df2) 
+
+print("DF, dB/dx (shim)")
+printToScreen("dBdx_shim","dBdx_shimErr",data_df1) 
+print("DF, dB/dy (shim)")
+printToScreen("dBdy_shim","dBdy_shimErr",data_df1) 
+print("DF, dB/dz (shim)")
+printToScreen("dBdz_shim","dBdz_shimErr",data_df1) 
 
 # some stats
 mean=0
