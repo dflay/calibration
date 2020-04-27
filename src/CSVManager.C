@@ -132,6 +132,15 @@ int CSVManager::GetColumn_byName_str(std::string colName,std::vector<std::string
    return 0;
 }
 //______________________________________________________________________________
+int CSVManager::SetHeader(std::vector<std::string> header){
+   // set a new header line
+   // don't check for existing column sizes in case the user sets this first  
+   fHeader.clear();
+   int N = header.size();
+   for(int i=0;i<N;i++) fHeader.push_back(header[i]); 
+   return 0;
+}
+//______________________________________________________________________________
 int CSVManager::GetHeader(std::vector<std::string> &header){
    int N=0;
    if(fHeaderExists){

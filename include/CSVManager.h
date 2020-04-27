@@ -43,6 +43,9 @@ class CSVManager {
      int ReadFile(const char *inpath,bool header=false); 
      int WriteFile(const char *outpath);
 
+     // setter methods 
+     int SetHeader(std::vector<std::string> header);  
+
      // getter methods
      std::string GetElement_str(int rowIndex,int colIndex);  
      int GetHeader(std::vector<std::string> &header);  
