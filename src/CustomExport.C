@@ -318,6 +318,25 @@ int PrintToFile_2dbl(const char *outpath,std::vector<double> x1,std::vector<doub
    return 0;
 }
 //______________________________________________________________________________
+int PrintToFile_4dbl(const char *outpath,std::vector<double> x1,std::vector<double> x2,
+                     std::vector<double> x3,std::vector<double> x4){
+   char outStr[200];
+   const int N = x1.size();
+
+   std::ofstream outfile;
+   outfile.open(outpath);
+   if( outfile.fail() ){
+      std::cout << "Cannot open the file: " << outpath << std::endl;
+      return 1;
+   }else{
+      for(int i=0;i<N;i++){
+         sprintf(outStr,"%.3lf,%.3lf,%.3lf,%.3lf",x1[i],x2[i],x3[i],x4[i]);
+         outfile << outStr << std::endl;
+      }
+   }
+   return 0;
+}
+//______________________________________________________________________________
 int PrintToFile(const char *outpath,std::vector<std::string> label,
                 std::vector<double> x1,std::vector<double> x2){
    char outStr[200];

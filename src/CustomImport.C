@@ -2,6 +2,7 @@
 #include "TRLYCoordinates.C"
 #include "Cut.C"
 #include "Logger.C"
+#include "CSVManager.C"
 //______________________________________________________________________________
 int SetDataFileParameters(std::string version,std::string &fileName,std::string &dataPath){
    // determine file name prefix and data path based upon version tag 
@@ -995,6 +996,12 @@ int LoadResultsProdFinalData(const char *inpath,result_prod_t &data){
 	    data.diffErr_opt = std::atof( sShot.c_str() );
 	    data.mErr_opt    = std::atof( sMisalign.c_str() );
 	    data.pErr_opt    = std::atof( sFree.c_str() );
+         }else if(cntr==4){
+	    data.diff_opt       = std::atof( sx.c_str() ); 
+	    data.diffCorBar_opt = std::atof( sxmc.c_str() );
+	    data.diffErr_opt    = std::atof( sShot.c_str() );  // shot uncertainty doesn't change compared to other methods!
+	    data.mErr_opt       = std::atof( sMisalign.c_str() );
+	    data.pErr_opt       = std::atof( sFree.c_str() );
          }
 	 // systematic uncertainty is identical for raw, ABA, or opt  
 	 data.systErr        = std::atof( sSyst.c_str() );
@@ -1068,6 +1075,11 @@ int LoadResultsProdData(const char *inpath,result_prod_t &data){
 	    data.diffCor_opt    = std::atof( sx2.c_str() ); 
 	    data.diffErr_opt    = std::atof( sdx.c_str() );
 	    data.diffCorErr_opt = std::atof( sdx.c_str() );
+         }else if(cntr==4){
+	    data.diff_opt          = std::atof( sx1.c_str() ); 
+	    data.diffCorBar_opt    = std::atof( sx2.c_str() ); 
+	    data.diffErr_opt       = std::atof( sdx.c_str() );
+	    data.diffCorBarErr_opt = std::atof( sdx.c_str() );
          } 
       }
       infile.close();
@@ -1081,7 +1093,7 @@ int LoadResultsProdData(const char *inpath,result_prod_t &data){
 //______________________________________________________________________________
 int LoadMisalignmentData(const char *inpath,misalignment_t &data){
 
-   std::string sname,sdq,sdB_q,sdq_aba,sdB_q_aba,sdq_opt,sdB_q_opt;
+   std::string sname,sq,sqe,sq_aba,sqe_aba,sq_opt,sqe_opt,sq_bar_opt,sqe_bar_opt; 
 
    ifstream infile;
    infile.open(inpath);
@@ -1090,34 +1102,38 @@ int LoadMisalignmentData(const char *inpath,misalignment_t &data){
       return 1;
    }else{
       while( !infile.eof() ){
-         std::getline(infile,sname    ,',');
-         std::getline(infile,sdq      ,',');
-         std::getline(infile,sdB_q    ,',');
-         std::getline(infile,sdq_aba  ,',');
-         std::getline(infile,sdB_q_aba,',');
-         std::getline(infile,sdq_opt  ,',');
-         std::getline(infile,sdB_q_opt);
+         std::getline(infile,sname     ,',');
+         std::getline(infile,sq        ,',');
+         std::getline(infile,sqe       ,',');
+         std::getline(infile,sq_aba    ,',');
+         std::getline(infile,sqe_aba   ,',');
+         std::getline(infile,sq_opt    ,',');
+         std::getline(infile,sqe_opt   ,',');
+         std::getline(infile,sq_bar_opt,',');
+         std::getline(infile,sqe_bar_opt);
          if( sname.compare("r")==0 ){
-	    data.dx       = std::atof( sdq.c_str()       );
-	    data.dB_x     = std::atof( sdB_q.c_str()     );
-	    data.dx_aba   = std::atof( sdq_aba.c_str()   );
-	    data.dB_x_aba = std::atof( sdB_q_aba.c_str() );
-	    data.dx_opt   = std::atof( sdq_opt.c_str()   );
-	    data.dB_x_opt = std::atof( sdB_q_opt.c_str() );
+	    data.dx             = std::atof( sq.c_str()       );
+	    data.dx_err         = std::atof( sqe.c_str()      );
+	    data.dx_aba         = std::atof( sq_aba.c_str()   );
+	    data.dx_aba_err     = std::atof( sqe_aba.c_str()  );
+	    data.dx_opt         = std::atof( sq_opt.c_str()   );
+	    data.dx_opt_err     = std::atof( sqe_opt.c_str()  );
          }else if( sname.compare("y")==0 ) {
-	    data.dy       = std::atof( sdq.c_str()       );
-	    data.dB_y     = std::atof( sdB_q.c_str()     );
-	    data.dy_aba   = std::atof( sdq_aba.c_str()   );
-	    data.dB_y_aba = std::atof( sdB_q_aba.c_str() );
-	    data.dy_opt   = std::atof( sdq_opt.c_str()   );
-	    data.dB_y_opt = std::atof( sdB_q_opt.c_str() );
+	    data.dy             = std::atof( sq.c_str()       );
+	    data.dy_err         = std::atof( sqe.c_str()      );
+	    data.dy_aba         = std::atof( sq_aba.c_str()   );
+	    data.dy_aba_err     = std::atof( sqe_aba.c_str()  );
+	    data.dy_opt         = std::atof( sq_opt.c_str()   );
+	    data.dy_opt_err     = std::atof( sqe_opt.c_str()  );
 	 }else if( sname.compare("z")==0 ){
-	    data.dz       = std::atof( sdq.c_str()       );
-	    data.dB_z     = std::atof( sdB_q.c_str()     );
-	    data.dz_aba   = std::atof( sdq_aba.c_str()   );
-	    data.dB_z_aba = std::atof( sdB_q_aba.c_str() );
-	    data.dz_opt   = std::atof( sdq_opt.c_str()   );
-	    data.dB_z_opt = std::atof( sdB_q_opt.c_str() );
+	    data.dz             = std::atof( sq.c_str()       );
+	    data.dz_err         = std::atof( sqe.c_str()      );
+	    data.dz_aba         = std::atof( sq_aba.c_str()   );
+	    data.dz_aba_err     = std::atof( sqe_aba.c_str()  );
+	    data.dz_opt         = std::atof( sq_opt.c_str()   );
+	    data.dz_opt_err     = std::atof( sqe_opt.c_str()  );
+	    data.dz_bar_opt     = std::atof( sq_bar_opt.c_str()   );
+	    data.dz_bar_opt_err = std::atof( sqe_bar_opt.c_str()  );
 	 }
       }
       infile.close();

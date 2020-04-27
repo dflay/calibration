@@ -49,6 +49,7 @@ double gYSize      = 0.06;
 
 int PrintResults(std::string outpath,result_prod_t result); 
 int LoadSystematicUncertainties(const char *inpath,int probe,std::vector<std::string> type,double &err); 
+int LoadSystematicUncertainty_final(int runPeriod,int probe,double &err); 
 
 int ProcessResults_prod(std::string configFile){
 
@@ -101,33 +102,26 @@ int ProcessResults_prod(std::string configFile){
 
    // misalignments 
    char outPath_misalign[500]; 
-   sprintf(outPath_misalign,"%s/misalignment_results_pr-%02d.csv",outDir.c_str(),probeNumber);
+   // sprintf(outPath_misalign,"%s/misalignment_results_pr-%02d.csv",outDir.c_str(),probeNumber);
 
-   // load misalignment results 
-   misalignment_t mErr; 
-   rc = LoadMisalignmentData(outPath_misalign,mErr); 
+   // // load misalignment results 
+   // misalignment_t mErr; 
+   // rc = LoadMisalignmentData(outPath_misalign,mErr); 
 
-   double tot_misalign_err     = TMath::Sqrt(mErr.dB_x*mErr.dB_x + mErr.dB_y*mErr.dB_y + mErr.dB_z*mErr.dB_z);
-   double tot_misalign_err_aba = TMath::Sqrt(mErr.dB_x_aba*mErr.dB_x_aba + mErr.dB_y_aba*mErr.dB_y_aba + mErr.dB_z_aba*mErr.dB_z_aba);
-   double tot_misalign_err_opt = TMath::Sqrt(mErr.dB_x_opt*mErr.dB_x_opt + mErr.dB_y_opt*mErr.dB_y_opt + mErr.dB_z_opt*mErr.dB_z_opt);
+   // double tot_misalign_err     = TMath::Sqrt(mErr.dB_x*mErr.dB_x + mErr.dB_y*mErr.dB_y + mErr.dB_z*mErr.dB_z);
+   // double tot_misalign_err_aba = TMath::Sqrt(mErr.dB_x_aba*mErr.dB_x_aba + mErr.dB_y_aba*mErr.dB_y_aba + mErr.dB_z_aba*mErr.dB_z_aba);
+   // double tot_misalign_err_opt = TMath::Sqrt(mErr.dB_x_opt*mErr.dB_x_opt + mErr.dB_y_opt*mErr.dB_y_opt + mErr.dB_z_opt*mErr.dB_z_opt);
 
    // misalignment correction
-   // index 0 = raw, 1 = ABA, 2 = opt 
+   // index 0 = raw, 1 = ABA, 2 = opt, 3 = bar-opt 
    std::vector<misalignCor_t> mCor;  
    sprintf(outPath_misalign,"%s/misalign-cor_pr-%02d.csv",outDir.c_str(),probeNumber);
    rc = LoadMisalignmentCorData(outPath_misalign,mCor);
 
-   // if(isMisalignCor){
-      tot_misalign_err     = mCor[0].err;
-      tot_misalign_err_aba = mCor[1].err;
-      tot_misalign_err_opt = mCor[2].err;
-   // } 
-
-   // load in perturbation data (just in case we need it) 
-   // char inpath_pert[200];
-   // perturbation_t ppPert;
-   // sprintf(inpath_pert,"./input/perturbation/pp-pert_run-%d.json",runPeriod);
-   // LoadPerturbationData_json(inpath_pert,ppPert);
+   double tot_misalign_err         = mCor[0].err;
+   double tot_misalign_err_aba     = mCor[1].err;
+   double tot_misalign_err_opt     = mCor[2].err;
+   double tot_misalign_err_bar_opt = mCor[3].err;
 
    char inpath[200];
    sprintf(inpath,"./input/perturbation/run-%d/%s.json",runPeriod,ppID.c_str());
@@ -148,46 +142,58 @@ int ProcessResults_prod(std::string configFile){
  
    // now load systematic uncertainty
    double systErr=0;
-   char inpath_syst[200];
-   sprintf(inpath_syst,"./input/json/run-%d/syst-err.json",runPeriod); 
-   std::vector<std::string> systType; 
-   systType.push_back("dB-tr"); 
-   systType.push_back("pp-freq-swap"); 
-   systType.push_back("pp-freq-dB"); 
-   systType.push_back("tr-freq-swap"); 
-   systType.push_back("tr-freq-dB");
-   rc = LoadSystematicUncertainties(inpath_syst,probeNumber-1,systType,systErr);  
+   // char inpath_syst[200];
+   // sprintf(inpath_syst,"./input/json/run-%d/syst-err.json",runPeriod); 
+   // std::vector<std::string> systType; 
+   // systType.push_back("dB-tr"); 
+   // systType.push_back("pp-freq-swap"); 
+   // systType.push_back("pp-freq-dB"); 
+   // systType.push_back("tr-freq-swap"); 
+   // systType.push_back("tr-freq-dB");
+   // rc = LoadSystematicUncertainties(inpath_syst,probeNumber-1,systType,systErr);  
+   rc = LoadSystematicUncertainty_final(runPeriod,probeNumber,systErr);  
 
-   char errStr[200],errStr_aba[200],errStr_opt[200];
-   sprintf(errStr    ,"%.3lf",shot_err    ); 
-   sprintf(errStr_aba,"%.3lf",shot_err_aba); 
-   sprintf(errStr_opt,"%.3lf",shot_err_opt); 
+   char errStr[200],errStr_aba[200],errStr_opt[200],errStr_bar_opt[200];
+   sprintf(errStr        ,"%.3lf",shot_err    ); 
+   sprintf(errStr_aba    ,"%.3lf",shot_err_aba); 
+   sprintf(errStr_opt    ,"%.3lf",shot_err_opt); 
+   sprintf(errStr_bar_opt,"%.3lf",shot_err_opt); 
 
-   char errStr_cor[200],errStr_cor_aba[200],errStr_cor_opt[200];
-   sprintf(errStr_cor    ,"%.3lf +/- %.3lf",shot_err    ,tot_misalign_err); 
-   sprintf(errStr_cor_aba,"%.3lf +/- %.3lf",shot_err_aba,tot_misalign_err_aba); 
-   sprintf(errStr_cor_opt,"%.3lf +/- %.3lf",shot_err_opt,tot_misalign_err_opt); 
+   char errStr_cor[200],errStr_cor_aba[200],errStr_cor_opt[200],errStr_cor_bar_opt[200];
+   sprintf(errStr_cor        ,"%.3lf +/- %.3lf",shot_err    ,tot_misalign_err); 
+   sprintf(errStr_cor_aba    ,"%.3lf +/- %.3lf",shot_err_aba,tot_misalign_err_aba); 
+   sprintf(errStr_cor_opt    ,"%.3lf +/- %.3lf",shot_err_opt,tot_misalign_err_opt); 
+   sprintf(errStr_cor_bar_opt,"%.3lf +/- %.3lf",shot_err_opt,tot_misalign_err_bar_opt); 
 
-   char errStr_free[200],errStr_free_aba[200],errStr_free_opt[200];
-   sprintf(errStr_free    ,"%.3lf +/- %.3lf",shot_err_free    ,freeProtErr); 
-   sprintf(errStr_free_aba,"%.3lf +/- %.3lf",shot_err_free_aba,freeProtErr); 
-   sprintf(errStr_free_opt,"%.3lf +/- %.3lf",shot_err_free_opt,freeProtErr);
+   char errStr_free[200],errStr_free_aba[200],errStr_free_opt[200],errStr_free_opt[200];
+   sprintf(errStr_free        ,"%.3lf +/- %.3lf",shot_err_free        ,freeProtErr); 
+   sprintf(errStr_free_aba    ,"%.3lf +/- %.3lf",shot_err_free_aba    ,freeProtErr); 
+   sprintf(errStr_free_opt    ,"%.3lf +/- %.3lf",shot_err_free_opt    ,freeProtErr);
  
-   char errStr_cor_free[200],errStr_cor_free_aba[200],errStr_cor_free_opt[200];
-   sprintf(errStr_cor_free    ,"%.3lf +/- %.3lf +/- %.3lf",shot_err_free    ,tot_misalign_err    ,freeProtErr); 
-   sprintf(errStr_cor_free_aba,"%.3lf +/- %.3lf +/- %.3lf",shot_err_free_aba,tot_misalign_err_aba,freeProtErr); 
-   sprintf(errStr_cor_free_opt,"%.3lf +/- %.3lf +/- %.3lf",shot_err_free_opt,tot_misalign_err_opt,freeProtErr); 
+   char errStr_cor_free[200],errStr_cor_free_aba[200],errStr_cor_free_opt[200],errStr_cor_free_bar_opt[200];
+   sprintf(errStr_cor_free        ,"%.3lf +/- %.3lf +/- %.3lf",shot_err_free    ,tot_misalign_err        ,freeProtErr); 
+   sprintf(errStr_cor_free_aba    ,"%.3lf +/- %.3lf +/- %.3lf",shot_err_free_aba,tot_misalign_err_aba    ,freeProtErr); 
+   sprintf(errStr_cor_free_opt    ,"%.3lf +/- %.3lf +/- %.3lf",shot_err_free_opt,tot_misalign_err_opt    ,freeProtErr); 
+   sprintf(errStr_cor_free_bar_opt,"%.3lf +/- %.3lf +/- %.3lf",shot_err_free_opt,tot_misalign_err_bar_opt,freeProtErr); 
 
    // apply TRLY footprint if necessary 
    if(applyTrlyFP){
       std::cout << "[ProcessResults_prod]: Applying TRLY footprint! " << std::endl;
       systErr               = TMath::Sqrt( systErr*systErr + trlyFPErr*trlyFPErr ); // update the systematic uncertainty
-      result.diff          += trlyFP;
-      result.diff_aba      += trlyFP;
-      result.diff_opt      += trlyFP;
-      result_free.diff     += trlyFP;
-      result_free.diff_aba += trlyFP;
-      result_free.diff_opt += trlyFP;
+      result.diff                += trlyFP;
+      result.diff_aba            += trlyFP;
+      result.diff_opt            += trlyFP;
+      result_free.diff           += trlyFP;
+      result_free.diff_aba       += trlyFP;
+      result_free.diff_opt       += trlyFP;
+      result.diffCor             += trlyFP;
+      result.diffCor_aba         += trlyFP;
+      result.diffCor_opt         += trlyFP;
+      result.diffCorBar_opt      += trlyFP;
+      result_free.diffCor        += trlyFP;
+      result_free.diffCor_aba    += trlyFP;
+      result_free.diffCor_opt    += trlyFP;
+      result_free.diffCorBar_opt += trlyFP;
    }
 
    result.systErr        = systErr; 
@@ -207,20 +213,23 @@ int ProcessResults_prod(std::string configFile){
    sprintf(errStr_cor_free    ,"%s +/- %.3lf",errStr_cor_free    ,systErr);  
    sprintf(errStr_cor_free_aba,"%s +/- %.3lf",errStr_cor_free_aba,systErr);  
    sprintf(errStr_cor_free_opt,"%s +/- %.3lf",errStr_cor_free_opt,systErr);  
+   sprintf(errStr_cor_free_bar_opt,"%s +/- %.3lf",errStr_cor_free_bar_opt,systErr);  
 
-   result.mErr     = tot_misalign_err; 
-   result.mErr_aba = tot_misalign_err_aba; 
-   result.mErr_opt = tot_misalign_err_opt; 
-   result.pErr     = 0.; 
-   result.pErr_aba = 0.; 
-   result.pErr_opt = 0.; 
+   result.mErr         = tot_misalign_err; 
+   result.mErr_aba     = tot_misalign_err_aba; 
+   result.mErr_opt     = tot_misalign_err_opt; 
+   result.mErr_bar_opt = tot_misalign_err_bar_opt; 
+   result.pErr         = 0.; 
+   result.pErr_aba     = 0.; 
+   result.pErr_opt     = 0.; 
 
-   result_free.mErr     = tot_misalign_err; 
-   result_free.mErr_aba = tot_misalign_err_aba; 
-   result_free.mErr_opt = tot_misalign_err_opt; 
-   result_free.pErr     = freeProtErr; 
-   result_free.pErr_aba = freeProtErr; 
-   result_free.pErr_opt = freeProtErr; 
+   result_free.mErr         = tot_misalign_err; 
+   result_free.mErr_aba     = tot_misalign_err_aba; 
+   result_free.mErr_opt     = tot_misalign_err_opt; 
+   result_free.mErr_bar_opt = tot_misalign_err_bar_opt; 
+   result_free.pErr         = freeProtErr; 
+   result_free.pErr_aba     = freeProtErr; 
+   result_free.pErr_opt     = freeProtErr; 
   
    std::cout << Form("******************************************************************") << std::endl;
    std::cout << Form("************************* PROBE %02d RESULTS ***********************",probeNumber) << std::endl;
@@ -235,13 +244,15 @@ int ProcessResults_prod(std::string configFile){
    std::cout << Form("[opt]: %.3lf +/- %s Hz",result_free.diff_opt,errStr_free_opt) << std::endl;
    std::cout << "WITH Misalignment correction" << std::endl;
    std::cout << "Bare" << std::endl;
-   std::cout << Form("[RAW]: %.3lf +/- %s Hz",result.diffCor    ,errStr_cor)     << std::endl;
-   std::cout << Form("[ABA]: %.3lf +/- %s Hz",result.diffCor_aba,errStr_cor_aba) << std::endl;
-   std::cout << Form("[opt]: %.3lf +/- %s Hz",result.diffCor_opt,errStr_cor_opt) << std::endl;
+   std::cout << Form("[RAW]:    %.3lf +/- %s Hz",result.diffCor       ,errStr_cor)         << std::endl;
+   std::cout << Form("[ABA]:    %.3lf +/- %s Hz",result.diffCor_aba   ,errStr_cor_aba)     << std::endl;
+   std::cout << Form("[opt]:    %.3lf +/- %s Hz",result.diffCor_opt   ,errStr_cor_opt)     << std::endl;
+   std::cout << Form("[opt,bc]: %.3lf +/- %s Hz",result.diffCorBar_opt,errStr_cor_bar_opt) << std::endl;
    std::cout << "Free proton" << std::endl;
-   std::cout << Form("[RAW]: %.3lf +/- %s Hz",result_free.diffCor    ,errStr_cor_free)     << std::endl;
-   std::cout << Form("[ABA]: %.3lf +/- %s Hz",result_free.diffCor_aba,errStr_cor_free_aba) << std::endl;
-   std::cout << Form("[opt]: %.3lf +/- %s Hz",result_free.diffCor_opt,errStr_cor_free_opt) << std::endl;
+   std::cout << Form("[RAW]:    %.3lf +/- %s Hz",result_free.diffCor       ,errStr_cor_free)         << std::endl;
+   std::cout << Form("[ABA]:    %.3lf +/- %s Hz",result_free.diffCor_aba   ,errStr_cor_free_aba)     << std::endl;
+   std::cout << Form("[opt]:    %.3lf +/- %s Hz",result_free.diffCor_opt   ,errStr_cor_free_opt)     << std::endl;
+   std::cout << Form("[opt,bc]: %.3lf +/- %s Hz",result_free.diffCorBar_opt,errStr_cor_free_bar_opt) << std::endl;
    std::cout << Form("******************************************************************") << std::endl;
    std::cout << Form("******************************************************************") << std::endl;
 
@@ -257,6 +268,44 @@ int ProcessResults_prod(std::string configFile){
    rc = PrintResults(outpath_final_free,result_free);
 
    return 0;
+}
+//______________________________________________________________________________
+int LoadSystematicUncertainty_final(int runPeriod,int probe,double &err){
+   // load final systematic uncertainties
+   // uses the CSV manager 
+   char prefix[200],inpath[200]; 
+   sprintf(prefix,"./input/systematic-errors/run-%d",runPeriod);
+
+   CSVManager *csvMgr = new CSVManager(); 
+ 
+   // get frequency extraction uncertainties 
+   bool headerStatus = true; 
+   sprintf(inpath,"%s/freq-extraction.csv",prefix);
+   csvMgr->ReadFile(inpath,headerStatus); 
+
+   int rc=0;
+   std::vector<double> freq_misalignErr,freq_swapErr;
+   rc = csvMgr->GetColumn_byName<double>("Tot_Cor_sys_freq",freq_misalignErr); 
+   rc = csvMgr->GetColumn_byName<double>("calibration_sys" ,freq_swapErr); 
+
+   csvMgr->ClearData(); 
+
+   // now cut data 
+   std::vector<double> dBtrErr,rapidSwapErr;
+   sprintf(inpath,"%s/ana-cuts.csv",prefix);
+   csvMgr->ReadFile(inpath,headerStatus); 
+   rc = csvMgr->GetColumn_byName<double>("dB_tr"     ,dBtrErr); 
+   rc = csvMgr->GetColumn_byName<double>("rapid_swap",rapidSwapErr);
+
+   delete csvMgr;  
+  
+   // now take quadrature sum 
+   int k = probe-1;
+   double sum = TMath::Power(freq_misalignErr[k],2.) + TMath::Power(freq_swapErr[k],2.) 
+              + TMath::Power(dBtrErr[k],2.)          + TMath::Power(rapidSwapErr[k],2.);
+   double err = TMath::Sqrt(sum);
+ 
+   return err;  
 }
 //______________________________________________________________________________
 int LoadSystematicUncertainties(const char *inpath,int probe,std::vector<std::string> type,double &err){
@@ -287,6 +336,8 @@ int PrintResults(std::string outpath,result_prod_t result){
    sprintf(myStr_aba,"ABA,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf",result.diff_aba,result.diffCor_aba,result.diffErr_aba,result.mErr_aba,result.pErr_aba,result.systErr); 
    char myStr_opt[1000]; 
    sprintf(myStr_opt,"opt,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf",result.diff_opt,result.diffCor_opt,result.diffErr_opt,result.mErr_opt,result.pErr_opt,result.systErr); 
+   char myStr_bar_opt[1000]; 
+   sprintf(myStr_bar_opt,"optbc,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf",result.diff_opt,result.diffCorBar_opt,result.diffErr_opt,result.mErr_bar_opt,result.pErr_opt,result.systErr); 
 
    std::ofstream outfile;
    outfile.open(outpath.c_str());
@@ -294,10 +345,11 @@ int PrintResults(std::string outpath,result_prod_t result){
       std::cout << "Cannot open the file: " << outpath << std::endl;
       return 1;
    }else{
-      outfile << header    << std::endl; 
-      outfile << myStr     << std::endl;
-      outfile << myStr_aba << std::endl;
-      outfile << myStr_opt << std::endl;
+      outfile << header        << std::endl; 
+      outfile << myStr         << std::endl;
+      outfile << myStr_aba     << std::endl;
+      outfile << myStr_opt     << std::endl;
+      outfile << myStr_bar_opt << std::endl;
       std::cout << "The data has been written to file: " << outpath << std::endl;
       outfile.close(); 
    }  

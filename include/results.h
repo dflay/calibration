@@ -48,10 +48,10 @@ typedef struct result_prod{
    double ppTempErr;        // temperature uncertainty in deg C   
    double trTemp;           // temperature in deg C 
    double trTempErr;        // temperature uncertainty in deg C  
-   // cor = misalignment corrected 
+   // Cor = misalignment corrected 
    // raw 
    double diff;
-   double diffCor;   
+   double diffCor;       
    double diffErr;         // shot error 
    double diffCorErr;      // shot error 
    double mErr;            // misalignment error 
@@ -63,12 +63,16 @@ typedef struct result_prod{
    double diffCorErr_aba;
    double mErr_aba;
    double pErr_aba;      
-   // optimized (mix of raw and ABA for Delta-B values; affects misalignment error) 
+   // optimized (mix of raw and ABA for Delta-B values; affects misalignment error)
+   // also has the barcode correction (Bar)  
    double diff_opt;
    double diffCor_opt;
+   double diffCorBar_opt;
    double diffErr_opt;
    double diffCorErr_opt;
+   double diffCorBarErr_opt;
    double mErr_opt;
+   double mErr_bar_opt;
    double pErr_opt;      
    double systErr;  
 
@@ -117,7 +121,7 @@ typedef struct calib_result {
    double calibCoeffFree_opt;     // [opt] free-proton calib coeff   
    double calibCoeffFreeErr_opt;  // [opt] shot uncertainty  
 
-   // with free proton, with misalignment
+   // with free proton, with misalignment -- INCLUDES BARCODE
    double calibCoeffCorFree;         // [raw] free-proton calib coeff  
    double calibCoeffCorFreeErr;      // [raw] shot uncertainty  
    double calibCoeffCorFree_aba;     // [ABA] free-proton calib coeff   
@@ -133,10 +137,18 @@ typedef struct calib_result {
    double misCor;                 // misalignment correction along x axis in Hz        
    double misCor_err;             // misalignment correction uncertainty along x axis in Hz 
 
-   double dB_x;                   // misalignment error along x axis in Hz 
-   double dB_y;                   // misalignment error along y axis in Hz 
-   double dB_z;                   // misalignment error along z axis in Hz 
-   double dB_r_tot;               // misalignment error: combines (x,y,z) errors added in quadrature 
+   // dB(TR-PP) data 
+   double dB_x;                   // dB(TR-PP) along x axis in Hz 
+   double dB_y;                   // dB(TR-PP) along y axis in Hz 
+   double dB_z;                   // dB(TR-PP) along z axis in Hz 
+   double dB_xErr;                // dB(TR-PP) stat uncertainty along x axis in Hz 
+   double dB_yErr;                // dB(TR-PP) stat uncertainty along y axis in Hz 
+   double dB_zErr;                // dB(TR-PP) stat uncertainty along z axis in Hz 
+   double dB_xSystErr;            // dB(TR-PP) syst uncertainty along x axis in Hz 
+   double dB_ySystErr;            // dB(TR-PP) syst uncertainty along y axis in Hz 
+   double dB_zSystErr;            // dB(TR-PP) syst uncertainty along z axis in Hz 
+
+   // double dB_r_tot;               // misalignment error: combines (x,y,z) errors added in quadrature 
 
    double deltaB_pp_x;            // deltaB(PP) for x gradient 
    double deltaB_pp_y;            // deltaB(PP) for y gradient

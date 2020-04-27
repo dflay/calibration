@@ -51,6 +51,10 @@ double gYSize      = 0.06;
 
 bool keyExists(std::string key,std::vector<std::string> header); 
 
+int GetDBDiff(int runPeriod,int probe,int axis,
+              double db_tr,double tr_err,double db_pp,double db_pp_err,
+              double &f,double &df_stat,double &df_syst); 
+
 int GetTemperatures(const char *outdir,int probeNumber,result_prod_t &res,result_prod_t &resFree); 
 int GetFreeProtonCorrection(const char *outdir,int probeNumber,result_prod_t &resFree); 
 int GetShimmedGradientFitPars(const char *outdir,int probeNumber,std::vector<grad_meas_t> &data); 
@@ -83,7 +87,7 @@ int PrintToFile_csv(const char *outpath,std::vector<calib_result_t> data);
 int PrintToFile_json(const char *outpath,std::vector<calib_result_t> data); 
 int GetJSONObject(std::vector<calib_result_t> data,json &jData);
 
- int CollectData(std::vector<result_prod_t> r,std::vector<result_prod_t> rFree,
+ int CollectData(int runPeriod,std::vector<result_prod_t> r,std::vector<result_prod_t> rFree,
                 std::vector<std::vector<imposed_gradient_t>> ig,std::vector<std::vector<grad_meas_t> > mg,
                 std::vector<deltab_prod_t> dB_pp,std::vector<deltab_prod_t> dB_tr,
                 std::vector<misalignment_t> mis,std::vector< std::vector<misalignCor_t> > mCor,
@@ -312,20 +316,22 @@ int MakeTables_prod(int runPeriod,std::string theDate,int isSyst,int systDirNum)
    }
 
    std::vector<calib_result_t> data; 
-   rc = CollectData(res,resFree,impGrad,shimGrad,deltaB_pp,deltaB_trly,misalign,mCor,mCor_a,data); 
+   rc = CollectData(runPeriod,res,resFree,impGrad,shimGrad,deltaB_pp,deltaB_trly,misalign,mCor,mCor_a,data); 
 
    rc = PrintResults(outPath,data); 
 
    return 0;
 }
 //______________________________________________________________________________
-int CollectData(std::vector<result_prod_t> r,std::vector<result_prod_t> rFree,
+int CollectData(int runPeriod,
+                std::vector<result_prod_t> r,std::vector<result_prod_t> rFree,
                 std::vector<std::vector<imposed_gradient_t>> ig,std::vector<std::vector<grad_meas_t> > mg,
                 std::vector<deltab_prod_t> dB_pp,std::vector<deltab_prod_t> dB_tr,
                 std::vector<misalignment_t> mis,std::vector< std::vector<misalignCor_t> > mCor,
                 std::vector< std::vector<misalignCor_t> > mCor_a,std::vector<calib_result_t> &data){
 
-   // print the results to a ROOT file
+   // gather data into a single struct 
+   double db_tr=0,db_tr_err=0,db_pp=0,db_pp_err=0,DB=0,DBE_stat=0,DBE_syst=0;
    calib_result_t dataPt; 
    const int N = r.size();
    for(int i=0;i<N;i++){
@@ -341,7 +347,7 @@ int CollectData(std::vector<result_prod_t> r,std::vector<result_prod_t> rFree,
       dataPt.calibCoeffCorErr         = r[i].diffErr;         // note uncertainty is same as without mis cor!
       dataPt.calibCoeffCor_aba        = r[i].diffCor_aba;      
       dataPt.calibCoeffCorErr_aba     = r[i].diffErr_aba;     // note uncertainty is same as without mis cor!
-      dataPt.calibCoeffCor_opt        = r[i].diffCor_opt;      
+      dataPt.calibCoeffCor_opt        = r[i].diffCorBar_opt;      
       dataPt.calibCoeffCorErr_opt     = r[i].diffErr_opt;     // note uncertainty is same as without mis cor!
       // with free proton, without misalignment 
       dataPt.calibCoeffFree           = rFree[i].diff;  
@@ -352,11 +358,11 @@ int CollectData(std::vector<result_prod_t> r,std::vector<result_prod_t> rFree,
       dataPt.calibCoeffFreeErr_opt    = rFree[i].diffErr_opt;  
       // with free proton, with misalignment 
       dataPt.calibCoeffCorFree        = rFree[i].diffCor;  
-      dataPt.calibCoeffCorFreeErr     = rFree[i].diffErr;     // note uncertainty is same as without mis cor! 
+      dataPt.calibCoeffCorFreeErr     = rFree[i].diffErr;           // note uncertainty is same as without mis cor! 
       dataPt.calibCoeffCorFree_aba    = rFree[i].diffCor_aba;  
-      dataPt.calibCoeffCorFreeErr_aba = rFree[i].diffErr_aba; // note uncertainty is same as without mis cor!  
-      dataPt.calibCoeffCorFree_opt    = rFree[i].diffCor_opt;  
-      dataPt.calibCoeffCorFreeErr_opt = rFree[i].diffErr_opt; // note uncertainty is same as without mis cor! 
+      dataPt.calibCoeffCorFreeErr_aba = rFree[i].diffErr_aba;       // note shot uncertainty is same as without mis cor!  
+      dataPt.calibCoeffCorFree_opt    = rFree[i].diffCorBar_opt;  
+      dataPt.calibCoeffCorFreeErr_opt = rFree[i].diffErr_opt;       // note shot uncertainty is same as without mis cor! 
       dataPt.freeErr                  = rFree[i].pErr; 
       // free-proton related details.  
       dataPt.fpCor                 = rFree[i].freeProtCor; 
@@ -411,11 +417,34 @@ int CollectData(std::vector<result_prod_t> r,std::vector<result_prod_t> rFree,
       dataPt.deltaB_tr_xErr        = dB_tr[i].dB_opt_err[0]; 
       dataPt.deltaB_tr_yErr        = dB_tr[i].dB_opt_err[1]; 
       dataPt.deltaB_tr_zErr        = dB_tr[i].dB_opt_err[2];
-      // misalignment data.  note that this is in Hz 
-      dataPt.dB_x                  = mis[i].dB_x_opt; 
-      dataPt.dB_y                  = mis[i].dB_y_opt; 
-      dataPt.dB_z                  = mis[i].dB_z_opt;
-      dataPt.dB_r_tot              = TMath::Sqrt( dataPt.dB_x*dataPt.dB_x + dataPt.dB_y*dataPt.dB_y + dataPt.dB_z*dataPt.dB_z ); 
+      // dB(TR-PP) data.  note that this is in Hz
+      // x 
+      db_tr     = dataPt.deltaB_tr_x;  
+      db_tr_err = dataPt.deltaB_tr_xErr;  
+      db_pp     = dataPt.deltaB_pp_x;  
+      db_pp_err = dataPt.deltaB_pp_xErr;
+      GetDBDiff(runPeriod,i+1,0,db_tr,db_tr_err,db_pp,db_pp_err,DB,DBE_stat,DBE_syst);
+      dataPt.dB_x        = DB; 
+      dataPt.dB_xErr     = DBE_stat; 
+      dataPt.dB_xSystErr = DBE_syst; 
+      // y 
+      db_tr     = dataPt.deltaB_tr_y;  
+      db_tr_err = dataPt.deltaB_tr_yErr;  
+      db_pp     = dataPt.deltaB_pp_y;  
+      db_pp_err = dataPt.deltaB_pp_yErr;
+      GetDBDiff(runPeriod,i+1,1,db_tr,db_tr_err,db_pp,db_pp_err,DB,DBE_stat,DBE_syst);
+      dataPt.dB_y        = DB; 
+      dataPt.dB_yErr     = DBE_stat; 
+      dataPt.dB_ySystErr = DBE_syst;
+      // z 
+      db_tr     = dataPt.deltaB_tr_z;  
+      db_tr_err = dataPt.deltaB_tr_zErr;  
+      db_pp     = dataPt.deltaB_pp_z;  
+      db_pp_err = dataPt.deltaB_pp_zErr;
+      GetDBDiff(runPeriod,i+1,2,db_tr,db_tr_err,db_pp,db_pp_err,DB,DBE_stat,DBE_syst);
+      dataPt.dB_z        = DB; 
+      dataPt.dB_zErr     = DBE_stat; 
+      dataPt.dB_zSystErr = DBE_syst;
       // misalignment CORRECTION. always use the opt result.  this is in Hz 
       // this is a sum over all axes
       dataPt.misCor                = mCor[i][2].val; // index 2 = opt result     
@@ -427,17 +456,17 @@ int CollectData(std::vector<result_prod_t> r,std::vector<result_prod_t> rFree,
       dataPt.misCor_yErr           = TMath::Abs(mCor_a[i][1].err);
       dataPt.misCor_z              = mCor_a[i][2].val;
       dataPt.misCor_zErr           = TMath::Abs(mCor_a[i][2].err);
-      dataPt.misCor_z_bar          = 0.;
-      dataPt.misCor_zErr_bar       = 0.;
-      // misalignment in mm; TODO: uncertainties? 
+      dataPt.misCor_z_bar          = mCor_a[i][2].val_bar;
+      dataPt.misCor_zErr_bar       = TMath::Abs(mCor_a[i][2].err_bar);
+      // misalignment in mm 
       dataPt.mis_x                 = mis[i].dx_opt;  
-      dataPt.mis_xErr              = 0;  
+      dataPt.mis_xErr              = mis[i].dx_err_opt;  
       dataPt.mis_y                 = mis[i].dy_opt;  
-      dataPt.mis_yErr              = 0;  
+      dataPt.mis_yErr              = mis[i].dy_opt_err;  
       dataPt.mis_z                 = mis[i].dz_opt;  
-      dataPt.mis_zErr              = 0;  
-      dataPt.mis_z_bar             = 0;  
-      dataPt.mis_zErr_bar          = 0;  
+      dataPt.mis_zErr              = mis[i].dz_err_opt;  
+      dataPt.mis_z_bar             = mis[i].dz_bar_opt;  
+      dataPt.mis_zErr_bar          = mis[i].dz_bar_opt_err;  
       // systematic uncertainty (this is identical for raw and free results)  
       dataPt.systErr               = r[i].systErr;  
       // fill vector 
@@ -446,22 +475,61 @@ int CollectData(std::vector<result_prod_t> r,std::vector<result_prod_t> rFree,
    return 0;
 }
 //______________________________________________________________________________
+int GetDBDiff(int runPeriod,int probe,int axis,
+              double db_tr,double tr_err,double db_pp,double db_pp_err,
+              double &f,double &df_stat,double &df_syst){
+   // compute dB(TR-PP) difference
+   f       = db_tr - db_pp;
+   df_stat = TMath::Sqrt( db_tr_err*db_tr_err + db_pp_err*db_pp_err ); 
+   // now compute the systematic uncertainty 
+   char inpath[200];
+   sprintf(inpath,"./input/systematic-errors/run-%d/dB_freq-ext.csv",runPeriod); 
+   CSVManager *csvMgr = new CSVManager();
+   csvMgr->ReadFile(inpath,true); 
+
+   std::vector<double> dbx_err,dby_err,dbz_err; 
+   csvMgr->GetColumn_byName<double>("delta_dB_x_sys",dbx_err);  
+   csvMgr->GetColumn_byName<double>("delta_dB_y_sys",dby_err);  
+   csvMgr->GetColumn_byName<double>("delta_dB_z_sys",dbz_err); 
+   delete csvMgr;  
+
+   int k = probe-1;
+   if(axis==0) df_syst = TMath::Abs(dbx_err[k]);  
+   if(axis==1) df_syst = TMath::Abs(dby_err[k]);  
+   if(axis==2) df_syst = TMath::Abs(dbz_err[k]);  
+
+   return 0; 
+}
+//______________________________________________________________________________
 int GetMisalignmentCorByAxisData(const char *outdir,int probeNumber,std::vector<misalignCor_t> &data){
 
    misalignCor_t inData;
-   std::vector<double> v,ve;
    char inpath[200];
    sprintf(inpath,"%s/misalign-cor-opt_by-axis_pr-%02d.csv",outdir,probeNumber); 
-   int rc = gm2fieldUtil::Import::ImportData2<double>(inpath,"csv",v,ve);
+
+   int rc=0;
+   CSVManager *csvMgr = new CSVManager();
+   csvMgr->ReadFile(inpath,false);  // no header
+
+   std::vector<double> mc,mce,mcb,mcbe; 
+   rc = csvMgr->GetColumn_byIndex<double>(0,mc  ); 
+   rc = csvMgr->GetColumn_byIndex<double>(1,mce ); 
+   rc = csvMgr->GetColumn_byIndex<double>(2,mcb ); 
+   rc = csvMgr->GetColumn_byIndex<double>(3,mcbe);
+   delete csvMgr; 
 
    std::string axis[3] = {"x","y","z"}; 
 
    // size is number of axes = 3
-   const int N = v.size();
+   const int N = mc.size();
    for(int i=0;i<N;i++){
-      inData.label = axis[i]; 
-      inData.val   = v[i];
-      inData.err   = ve[i];
+      inData.label   = axis[i]; 
+      // standard 
+      inData.val     = mc[i];
+      inData.err     = mce[i];
+      // with barcode 
+      inData.val_bar = mcb[i];
+      inData.err_bar = mcbe[i];
       // std::cout << Form("probe %02d, misCor_%s = %.3lf +/- %.3lf",probeNumber,axis[i].c_str(),inData.val,inData.err) << std::endl;
       data.push_back(inData);
    }
@@ -667,7 +735,9 @@ int PrintToFile_csv(const char *outpath,std::vector<calib_result_t> data){
          sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].calibCoeff_opt,data[i].calibCoeffErr_opt); 
          sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].calibCoeffCor_opt,data[i].calibCoeffCorErr_opt); 
          sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].calibCoeffFree_opt,data[i].calibCoeffFreeErr_opt); 
-         sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].calibCoeffCorFree_opt,data[i].calibCoeffCorFreeErr_opt); 
+         sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].calibCoeffCorFree_opt,data[i].calibCoeffCorFreeErr_opt);
+
+         sprintf(outStr,"%s,%.3lf,%.3lf",data[i].freeErr,data[i].systErr);  
 
          sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].deltaB_tr_x,data[i].deltaB_tr_xErr); 
          sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].deltaB_tr_y,data[i].deltaB_tr_yErr); 
@@ -707,6 +777,10 @@ int PrintToFile_csv(const char *outpath,std::vector<calib_result_t> data){
 
          sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].mis_z_bar,data[i].mis_zErr_bar); 
          sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].misCor_z_bar,data[i].misCor_zErr_bar); 
+
+         sprintf(outStr,"%s,%.3lf,%.3lf,%.3lf",outStr,data[i].dB_diff_x,data[i].dB_diff_xErr,data[i].dB_diff_xSystErr); 
+         sprintf(outStr,"%s,%.3lf,%.3lf,%.3lf",outStr,data[i].dB_diff_y,data[i].dB_diff_yErr,data[i].dB_diff_ySystErr); 
+         sprintf(outStr,"%s,%.3lf,%.3lf,%.3lf",outStr,data[i].dB_diff_z,data[i].dB_diff_zErr,data[i].dB_diff_zSystErr);
 
 	 outfile << outStr << std::endl;
       }
@@ -821,11 +895,17 @@ int GetJSONObject(std::vector<calib_result_t> data,json &jData){
       jData["deltaB_tr_xErr"][i]        = data[i].deltaB_tr_xErr; 
       jData["deltaB_tr_yErr"][i]        = data[i].deltaB_tr_yErr; 
       jData["deltaB_tr_zErr"][i]        = data[i].deltaB_tr_zErr; 
-      // misalignment data 
+      // dB(TR-PP) data 
       jData["dB_x"][i]                  = data[i].dB_x;
       jData["dB_y"][i]                  = data[i].dB_y;
       jData["dB_z"][i]                  = data[i].dB_z;
-      jData["dB_r_tot"][i]              = data[i].dB_r_tot;
+      jData["dB_xErr"][i]               = data[i].dB_xErr;
+      jData["dB_yErr"][i]               = data[i].dB_yErr;
+      jData["dB_zErr"][i]               = data[i].dB_zErr;
+      jData["dB_xSystErr"][i]           = data[i].dB_xSystErr;
+      jData["dB_ySystErr"][i]           = data[i].dB_ySystErr;
+      jData["dB_zSystErr"][i]           = data[i].dB_zSystErr;
+      // jData["dB_r_tot"][i]              = data[i].dB_r_tot;
       // misalignment CORRECTION data 
       jData["misCor"][i]                = data[i].misCor;   
       jData["misCor_err"][i]            = data[i].misCor_err;
