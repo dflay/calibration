@@ -138,15 +138,15 @@ typedef struct calib_result {
    double misCor_err;             // misalignment correction uncertainty along x axis in Hz 
 
    // dB(TR-PP) data 
-   double dB_x;                   // dB(TR-PP) along x axis in Hz 
-   double dB_y;                   // dB(TR-PP) along y axis in Hz 
-   double dB_z;                   // dB(TR-PP) along z axis in Hz 
-   double dB_xErr;                // dB(TR-PP) stat uncertainty along x axis in Hz 
-   double dB_yErr;                // dB(TR-PP) stat uncertainty along y axis in Hz 
-   double dB_zErr;                // dB(TR-PP) stat uncertainty along z axis in Hz 
-   double dB_xSystErr;            // dB(TR-PP) syst uncertainty along x axis in Hz 
-   double dB_ySystErr;            // dB(TR-PP) syst uncertainty along y axis in Hz 
-   double dB_zSystErr;            // dB(TR-PP) syst uncertainty along z axis in Hz 
+   double dB_diff_x;                   // dB(TR-PP) along x axis in Hz 
+   double dB_diff_y;                   // dB(TR-PP) along y axis in Hz 
+   double dB_diff_z;                   // dB(TR-PP) along z axis in Hz 
+   double dB_diff_xErr;                // dB(TR-PP) stat uncertainty along x axis in Hz 
+   double dB_diff_yErr;                // dB(TR-PP) stat uncertainty along y axis in Hz 
+   double dB_diff_zErr;                // dB(TR-PP) stat uncertainty along z axis in Hz 
+   double dB_diff_xSystErr;            // dB(TR-PP) syst uncertainty along x axis in Hz 
+   double dB_diff_ySystErr;            // dB(TR-PP) syst uncertainty along y axis in Hz 
+   double dB_diff_zSystErr;            // dB(TR-PP) syst uncertainty along z axis in Hz 
 
    // double dB_r_tot;               // misalignment error: combines (x,y,z) errors added in quadrature 
 

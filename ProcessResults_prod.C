@@ -165,7 +165,7 @@ int ProcessResults_prod(std::string configFile){
    sprintf(errStr_cor_opt    ,"%.3lf +/- %.3lf",shot_err_opt,tot_misalign_err_opt); 
    sprintf(errStr_cor_bar_opt,"%.3lf +/- %.3lf",shot_err_opt,tot_misalign_err_bar_opt); 
 
-   char errStr_free[200],errStr_free_aba[200],errStr_free_opt[200],errStr_free_opt[200];
+   char errStr_free[200],errStr_free_aba[200],errStr_free_opt[200];
    sprintf(errStr_free        ,"%.3lf +/- %.3lf",shot_err_free        ,freeProtErr); 
    sprintf(errStr_free_aba    ,"%.3lf +/- %.3lf",shot_err_free_aba    ,freeProtErr); 
    sprintf(errStr_free_opt    ,"%.3lf +/- %.3lf",shot_err_free_opt    ,freeProtErr);
@@ -280,10 +280,10 @@ int LoadSystematicUncertainty_final(int runPeriod,int probe,double &err){
  
    // get frequency extraction uncertainties 
    bool headerStatus = true; 
-   sprintf(inpath,"%s/freq-extraction.csv",prefix);
-   csvMgr->ReadFile(inpath,headerStatus); 
+   sprintf(inpath,"%s/freq-ext.csv",prefix);
+   int rc = csvMgr->ReadFile(inpath,headerStatus);
+   if(rc!=0) return rc; 
 
-   int rc=0;
    std::vector<double> freq_misalignErr,freq_swapErr;
    rc = csvMgr->GetColumn_byName<double>("Tot_Cor_sys_freq",freq_misalignErr); 
    rc = csvMgr->GetColumn_byName<double>("calibration_sys" ,freq_swapErr); 
@@ -303,9 +303,8 @@ int LoadSystematicUncertainty_final(int runPeriod,int probe,double &err){
    int k = probe-1;
    double sum = TMath::Power(freq_misalignErr[k],2.) + TMath::Power(freq_swapErr[k],2.) 
               + TMath::Power(dBtrErr[k],2.)          + TMath::Power(rapidSwapErr[k],2.);
-   double err = TMath::Sqrt(sum);
- 
-   return err;  
+   err = TMath::Sqrt(sum);
+   return 0;  
 }
 //______________________________________________________________________________
 int LoadSystematicUncertainties(const char *inpath,int probe,std::vector<std::string> type,double &err){

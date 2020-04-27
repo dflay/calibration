@@ -45,6 +45,7 @@ int CSVManager::ReadFile(const char *inpath,bool headerExists){
       std::cout << "[CSVManager::ReadFile]: Cannot open the file: " << inpath << std::endl;
       return 1;
    }else{
+      std::cout << "[CSVManager::ReadFile]: Opened the file: " << inpath << std::endl;
       while( !infile.eof() ){
 	 std::getline(infile,aLine);
          line.push_back(aLine); 

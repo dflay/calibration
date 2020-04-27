@@ -52,7 +52,7 @@ double gYSize      = 0.06;
 bool keyExists(std::string key,std::vector<std::string> header); 
 
 int GetDBDiff(int runPeriod,int probe,int axis,
-              double db_tr,double tr_err,double db_pp,double db_pp_err,
+              double db_tr,double db_tr_err,double db_pp,double db_pp_err,
               double &f,double &df_stat,double &df_syst); 
 
 int GetTemperatures(const char *outdir,int probeNumber,result_prod_t &res,result_prod_t &resFree); 
@@ -273,18 +273,18 @@ int MakeTables_prod(int runPeriod,std::string theDate,int isSyst,int systDirNum)
 
    std::cout << "===================================== MISALIGNMENTS =====================================" << std::endl;
    for(int i=0;i<NPROBES;i++){
-      sum_sq = misalign[i].dB_x_opt*misalign[i].dB_x_opt + misalign[i].dB_y_opt*misalign[i].dB_y_opt + misalign[i].dB_z_opt*misalign[i].dB_z_opt;
-      sum    = TMath::Sqrt(sum_sq); 
+      // sum_sq = misalign[i].dB_x_opt*misalign[i].dB_x_opt + misalign[i].dB_y_opt*misalign[i].dB_y_opt + misalign[i].dB_z_opt*misalign[i].dB_z_opt;
+      sum    = 0; // TMath::Sqrt(sum_sq); 
       std::cout << Form("%02d,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf",probe[i],
-                        misalign[i].dx_opt,misalign[i].dB_x_opt,
-                        misalign[i].dy_opt,misalign[i].dB_y_opt,
-                        misalign[i].dz_opt,misalign[i].dB_z_opt,
+                        misalign[i].dx_opt,misalign[i].dx_opt_err,
+                        misalign[i].dy_opt,misalign[i].dy_opt_err,
+                        misalign[i].dz_opt,misalign[i].dz_opt_err,
                         sum) << std::endl;
 
       rc = PrintTableOfResults_mis(outpath_mis,probe[i],
-                                   misalign[i].dx_opt,misalign[i].dB_x_opt,
-                                   misalign[i].dy_opt,misalign[i].dB_y_opt,
-                                   misalign[i].dz_opt,misalign[i].dB_z_opt);
+                                   misalign[i].dx_opt,misalign[i].dx_opt_err,
+                                   misalign[i].dy_opt,misalign[i].dy_opt_err,
+                                   misalign[i].dz_opt,misalign[i].dz_opt_err);
    }
    
    std::cout << "===================================== MISALIGNMENT CORRECTION =====================================" << std::endl;
@@ -424,27 +424,27 @@ int CollectData(int runPeriod,
       db_pp     = dataPt.deltaB_pp_x;  
       db_pp_err = dataPt.deltaB_pp_xErr;
       GetDBDiff(runPeriod,i+1,0,db_tr,db_tr_err,db_pp,db_pp_err,DB,DBE_stat,DBE_syst);
-      dataPt.dB_x        = DB; 
-      dataPt.dB_xErr     = DBE_stat; 
-      dataPt.dB_xSystErr = DBE_syst; 
+      dataPt.dB_diff_x        = DB; 
+      dataPt.dB_diff_xErr     = DBE_stat; 
+      dataPt.dB_diff_xSystErr = DBE_syst; 
       // y 
       db_tr     = dataPt.deltaB_tr_y;  
       db_tr_err = dataPt.deltaB_tr_yErr;  
       db_pp     = dataPt.deltaB_pp_y;  
       db_pp_err = dataPt.deltaB_pp_yErr;
       GetDBDiff(runPeriod,i+1,1,db_tr,db_tr_err,db_pp,db_pp_err,DB,DBE_stat,DBE_syst);
-      dataPt.dB_y        = DB; 
-      dataPt.dB_yErr     = DBE_stat; 
-      dataPt.dB_ySystErr = DBE_syst;
+      dataPt.dB_diff_y        = DB; 
+      dataPt.dB_diff_yErr     = DBE_stat; 
+      dataPt.dB_diff_ySystErr = DBE_syst;
       // z 
       db_tr     = dataPt.deltaB_tr_z;  
       db_tr_err = dataPt.deltaB_tr_zErr;  
       db_pp     = dataPt.deltaB_pp_z;  
       db_pp_err = dataPt.deltaB_pp_zErr;
       GetDBDiff(runPeriod,i+1,2,db_tr,db_tr_err,db_pp,db_pp_err,DB,DBE_stat,DBE_syst);
-      dataPt.dB_z        = DB; 
-      dataPt.dB_zErr     = DBE_stat; 
-      dataPt.dB_zSystErr = DBE_syst;
+      dataPt.dB_diff_z        = DB; 
+      dataPt.dB_diff_zErr     = DBE_stat; 
+      dataPt.dB_diff_zSystErr = DBE_syst;
       // misalignment CORRECTION. always use the opt result.  this is in Hz 
       // this is a sum over all axes
       dataPt.misCor                = mCor[i][2].val; // index 2 = opt result     
@@ -460,11 +460,11 @@ int CollectData(int runPeriod,
       dataPt.misCor_zErr_bar       = TMath::Abs(mCor_a[i][2].err_bar);
       // misalignment in mm 
       dataPt.mis_x                 = mis[i].dx_opt;  
-      dataPt.mis_xErr              = mis[i].dx_err_opt;  
+      dataPt.mis_xErr              = mis[i].dx_opt_err;  
       dataPt.mis_y                 = mis[i].dy_opt;  
       dataPt.mis_yErr              = mis[i].dy_opt_err;  
       dataPt.mis_z                 = mis[i].dz_opt;  
-      dataPt.mis_zErr              = mis[i].dz_err_opt;  
+      dataPt.mis_zErr              = mis[i].dz_opt_err;  
       dataPt.mis_z_bar             = mis[i].dz_bar_opt;  
       dataPt.mis_zErr_bar          = mis[i].dz_bar_opt_err;  
       // systematic uncertainty (this is identical for raw and free results)  
@@ -476,7 +476,7 @@ int CollectData(int runPeriod,
 }
 //______________________________________________________________________________
 int GetDBDiff(int runPeriod,int probe,int axis,
-              double db_tr,double tr_err,double db_pp,double db_pp_err,
+              double db_tr,double db_tr_err,double db_pp,double db_pp_err,
               double &f,double &df_stat,double &df_syst){
    // compute dB(TR-PP) difference
    f       = db_tr - db_pp;
@@ -737,7 +737,7 @@ int PrintToFile_csv(const char *outpath,std::vector<calib_result_t> data){
          sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].calibCoeffFree_opt,data[i].calibCoeffFreeErr_opt); 
          sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].calibCoeffCorFree_opt,data[i].calibCoeffCorFreeErr_opt);
 
-         sprintf(outStr,"%s,%.3lf,%.3lf",data[i].freeErr,data[i].systErr);  
+         sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].freeErr,data[i].systErr);  
 
          sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].deltaB_tr_x,data[i].deltaB_tr_xErr); 
          sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].deltaB_tr_y,data[i].deltaB_tr_yErr); 
@@ -896,15 +896,15 @@ int GetJSONObject(std::vector<calib_result_t> data,json &jData){
       jData["deltaB_tr_yErr"][i]        = data[i].deltaB_tr_yErr; 
       jData["deltaB_tr_zErr"][i]        = data[i].deltaB_tr_zErr; 
       // dB(TR-PP) data 
-      jData["dB_x"][i]                  = data[i].dB_x;
-      jData["dB_y"][i]                  = data[i].dB_y;
-      jData["dB_z"][i]                  = data[i].dB_z;
-      jData["dB_xErr"][i]               = data[i].dB_xErr;
-      jData["dB_yErr"][i]               = data[i].dB_yErr;
-      jData["dB_zErr"][i]               = data[i].dB_zErr;
-      jData["dB_xSystErr"][i]           = data[i].dB_xSystErr;
-      jData["dB_ySystErr"][i]           = data[i].dB_ySystErr;
-      jData["dB_zSystErr"][i]           = data[i].dB_zSystErr;
+      jData["dB_diff_x"][i]             = data[i].dB_diff_x;
+      jData["dB_diff_y"][i]             = data[i].dB_diff_y;
+      jData["dB_diff_z"][i]             = data[i].dB_diff_z;
+      jData["dB_diff_xErr"][i]          = data[i].dB_diff_xErr;
+      jData["dB_diff_yErr"][i]          = data[i].dB_diff_yErr;
+      jData["dB_diff_zErr"][i]          = data[i].dB_diff_zErr;
+      jData["dB_diff_xSystErr"][i]      = data[i].dB_diff_xSystErr;
+      jData["dB_diff_ySystErr"][i]      = data[i].dB_diff_ySystErr;
+      jData["dB_diff_zSystErr"][i]      = data[i].dB_diff_zSystErr;
       // jData["dB_r_tot"][i]              = data[i].dB_r_tot;
       // misalignment CORRECTION data 
       jData["misCor"][i]                = data[i].misCor;   

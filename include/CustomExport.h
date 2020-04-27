@@ -34,7 +34,12 @@ int PrintToFile(const char *outpath,std::vector<std::string> label,
 int PrintToFile(const char *outpath,std::vector<std::string> label,
                 std::vector<double> x1,std::vector<double> x2,
                 std::vector<double> x3,std::vector<double> x4, 
-                std::vector<double> x5,std::vector<double> x6); 
+                std::vector<double> x5,std::vector<double> x6);
+int PrintToFile(const char *outpath,std::vector<std::string> label,
+                std::vector<double> x1,std::vector<double> x2,
+                std::vector<double> x3,std::vector<double> x4,
+                std::vector<double> x5,std::vector<double> x6,
+                std::vector<double> x7,std::vector<double> x8);  
 
 int PrintToFile(const char *outpath,std::string label,const int N,double *x,double *x_err);
 int PrintToFile(const char *outpath,std::string label,const int N,double *x);
