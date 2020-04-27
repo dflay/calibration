@@ -5,13 +5,13 @@ CSVManager::CSVManager(){
 }
 //______________________________________________________________________________
 CSVManager::~CSVManager(){
-
+   ClearData();
 }
 //______________________________________________________________________________
 int CSVManager::ClearData(){
+   // delete all data 
    fHeader.clear();
    int NROW = fData.size();
-   int NCOL = fData[0].size();
    for(int i=0;i<NROW;i++){
       fData[i].clear();
    }
