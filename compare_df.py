@@ -13,6 +13,18 @@ import seaborn as sns
 import math
 
 #_______________________________________________________________________________
+def printToScreen(axis,df):
+   # input axis = list of axes 
+   print("Data for {0}".format(axis) ) 
+   x = df[axis1].tolist()
+   y = df[axis2].tolist()
+
+   N = len(x) 
+   for i in xrange(0,N): 
+      print("probe {0:2d}: {1:.3f}, {2:.3f}".format(i+1,x[i],y[i]) )
+
+   return
+#_______________________________________________________________________________
 def printToScreen(axis1,axis2,df):
    print("Data for {0} and {1}".format(axis1,axis2) ) 
    x = df[axis1].tolist()
@@ -104,6 +116,7 @@ print("Loading data...")
 csv_path = "./output/blinded/flay/04-28-20/run-1/calibData_04-28-20.csv"
 print("Reading data from: {0}".format(csv_path)) 
 data_df1 = pd.read_csv(csv_path,index_col=False) # index_col = False when you don't have an index column
+print data_df1
 
 csv_path = "./input/ran-hong/run-1_04-27-20.csv"
 print("Reading data from: {0}".format(csv_path)) 
@@ -186,25 +199,25 @@ getDiff_2df("calibCoeff_cor"    ,"calibCoeffErr_cor"    ,"bl_ccc_diff" ,"bl_ccce
 # getDiff_2df("calibCoeffFree"    ,"calibCoeffFreeErr"    ,"fcc_diff"  ,"fcce_diff"  ,data_df1,data_df2,data_diff)
 # getDiff_2df("calibCoeffFree_cor","calibCoeffFreeErr_cor","fccc_diff" ,"fccce_diff" ,data_df1,data_df2,data_diff)
 
-print("DF") 
-printToScreen("calibCoeff","calibCoeffErr",data_df1) 
-print("RH") 
-printToScreen("calibCoeff","calibCoeffErr",data_df2) 
+# print("DF") 
+# printToScreen("calibCoeff","calibCoeffErr",data_df1) 
+# print("RH") 
+# printToScreen("calibCoeff","calibCoeffErr",data_df2) 
 
-print("DF, dB/dx (shim)")
-printToScreen("dBdx_shim","dBdx_shimErr",data_df1) 
-print("DF, dB/dy (shim)")
-printToScreen("dBdy_shim","dBdy_shimErr",data_df1) 
-print("DF, dB/dz (shim)")
-printToScreen("dBdz_shim","dBdz_shimErr",data_df1) 
+# print("DF, dB/dx (shim)")
+# printToScreen("dBdx_shim","dBdx_shimErr",data_df1) 
+# print("DF, dB/dy (shim)")
+# printToScreen("dBdy_shim","dBdy_shimErr",data_df1) 
+# print("DF, dB/dz (shim)")
+# printToScreen("dBdz_shim","dBdz_shimErr",data_df1) 
 
 # some stats
 mean=0
 stdev=0
-mean,stdev = getStats("rh_cc_diff",data_diff)
-print("cc_rhdf: mean = {0:.3f}, stdev = {1:.3f}".format(mean,stdev) )
-mean,stdev = getStats("bl_cc_diff",data_diff)
-print("cc_bldf: mean = {0:.3f}, stdev = {1:.3f}".format(mean,stdev) )
+mean,stdev = getStats("rh_ccc_diff",data_diff)
+print("ccc_rhdf: mean = {0:.3f}, stdev = {1:.3f}".format(mean,stdev) )
+mean,stdev = getStats("bl_ccc_diff",data_diff)
+print("ccc_bldf: mean = {0:.3f}, stdev = {1:.3f}".format(mean,stdev) )
 
 # general setup  
 NCOL = 1
@@ -228,8 +241,8 @@ fig = plt.figure(1)
 plt.subplot(NROW,NCOL,1)
 
 currentAxis = plt.gca() # grab current axis 
-axis    = "calibCoeff"
-axisErr = "calibCoeffErr"
+axis    = "calibCoeff_cor"
+axisErr = "calibCoeffErr_cor"
 data_df1.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[0], s=mSize, color=color[0], ax=currentAxis)
 data_df2.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
 if plotBingzhi:
@@ -242,8 +255,8 @@ currentAxis.tick_params(labelsize=tickSize)
 
 plt.subplot(NROW,NCOL,2)
 currentAxis = plt.gca() # grab current axis 
-axis    = "rh_cc_diff"
-axisErr = "rh_cce_diff"
+axis    = "rh_ccc_diff"
+axisErr = "rh_ccce_diff"
 data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
 if plotBingzhi:
    axis    = "bl_cc_diff"

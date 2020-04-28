@@ -44,6 +44,7 @@ class CSVManager {
      int WriteFile(const char *outpath);
 
      // setter methods 
+     int SetHeader(std::string fullHeader);  
      int SetHeader(std::vector<std::string> header);  
 
      // getter methods

@@ -131,6 +131,19 @@ int CSVManager::GetColumn_byName_str(std::string colName,std::vector<std::string
    return 0;
 }
 //______________________________________________________________________________
+int CSVManager::SetHeader(std::string fullHeader){
+   // set a new header line
+   // the input is a single string with commas separating entries
+   std::vector<std::string> header;
+   int rc = SplitString(',',fullHeader,header); 
+   // clear existing header
+   // don't check for existing column sizes in case the user sets this first  
+   fHeader.clear();
+   int N = header.size();
+   for(int i=0;i<N;i++) fHeader.push_back(header[i]); 
+   return 0;
+}
+//______________________________________________________________________________
 int CSVManager::SetHeader(std::vector<std::string> header){
    // set a new header line
    // don't check for existing column sizes in case the user sets this first  
