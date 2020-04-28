@@ -47,11 +47,12 @@ class CSVManager {
      int SetHeader(std::vector<std::string> header);  
 
      // getter methods
-     std::string GetElement_str(int rowIndex,int colIndex);  
      int GetHeader(std::vector<std::string> &header);  
+     std::string GetElement_str(int rowIndex,int colIndex);  
      int GetColumn_byIndex_str(int colIndex,std::vector<std::string> &data); 
      int GetColumn_byName_str(std::string colName,std::vector<std::string> &data);
 
+     // templated getter methods (to obtain arithmetic types)
      template <typename T>
 	int GetColumn_byIndex(int colIndex,std::vector<T> &data){
 	   // find the data by col index 
@@ -75,12 +76,12 @@ class CSVManager {
 	      GetColumn_byIndex<T>(k,data);
 	   }else{
 	      std::cout << "[CSVManager::GetColumn_byName]: Cannot find the key '"
-		 << colName << "' in header!" << std::endl;
+		        << colName << "' in header!" << std::endl;
 	      return 1;
 	   }
 	}else{
 	   std::cout << "[CSVManager::GetColumn_byName]: No header to search!";
-	   std::cout << "  Try CSVManager::GetColumn_byName" << std::endl;
+	   std::cout << "  Try CSVManager::GetColumn_byIndex" << std::endl;
 	   return 1;
 	}
 	return 0;

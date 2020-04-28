@@ -96,20 +96,21 @@ def getStats(colName,df):
    return mean,stdev
 #_______________________________________________________________________________
 
-plotBingzhi = True
+plotBingzhi = False 
 
 print("Loading data...") 
 
 # create a pandas dataframe, reading in the csv file  
-csv_path = "./output/blinded/flay/04-25-20/run-1/calibData_04-25-20.csv"
+csv_path = "./output/blinded/flay/04-28-20/run-1/calibData_04-28-20.csv"
 print("Reading data from: {0}".format(csv_path)) 
 data_df1 = pd.read_csv(csv_path,index_col=False) # index_col = False when you don't have an index column
 
-csv_path = "./input/ran-hong/run-1_04-14-20.csv"
+csv_path = "./input/ran-hong/run-1_04-27-20.csv"
 print("Reading data from: {0}".format(csv_path)) 
 data_df2 = pd.read_csv(csv_path,index_col=False) # index_col = False when you don't have an index column
+print data_df2
 
-csv_path = "./input/bingzhi-li/run-1_04-14-20.csv"
+csv_path = "./input/bingzhi-li/run-1_04-27-20.csv"
 print("Reading data from: {0}".format(csv_path)) 
 data_df3 = pd.read_csv(csv_path,index_col=False) # index_col = False when you don't have an index column
 

@@ -56,7 +56,6 @@ int CSVManager::ReadFile(const char *inpath,bool headerExists){
    
    int NROW = line.size();
    std::vector<std::string> row;
-   // fData.resize(NROW); 
 
    // now parse the data
    int rc=0,k=0,NCOL=0; 
@@ -65,8 +64,6 @@ int CSVManager::ReadFile(const char *inpath,bool headerExists){
       rc   = SplitString(',',line[i],row);
       // get number of columns 
       NCOL = row.size();
-      // set up the size of the columns
-      // fData[i].resize(NCOL);
       if(i==0 && fHeaderExists){
 	 // this is the header
 	 for(int j=0;j<NCOL;j++) fHeader.push_back(row[j]);  
@@ -91,12 +88,13 @@ int CSVManager::ReadFile(const char *inpath,bool headerExists){
 std::string CSVManager::GetElement_str(int rowIndex,int colIndex){
    int NROW = fData.size();
    int NCOL = fData[0].size();
+   char msg[200]; 
    std::string data="NONE";
    if(NROW>0 && NCOL>0){
       data = fData[rowIndex][colIndex];
    }else{
-      std::cout << "[CSVManager::GetElement]: NO data for row "
-	 << rowIndex << ", col " << colIndex << std::endl;
+      sprintf(msg,"[CSVManager::GetElement]: NO data for row %d, col %d",rowIndex,colIndex); 
+      std::cout << msg << std::endl;
    }
    return data;
 }

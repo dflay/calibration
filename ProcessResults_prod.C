@@ -285,8 +285,10 @@ int LoadSystematicUncertainty_final(int runPeriod,int probe,double &err){
    if(rc!=0) return rc; 
 
    std::vector<double> freq_misalignErr,freq_swapErr;
-   rc = csvMgr->GetColumn_byName<double>("Tot_Cor_sys_freq",freq_misalignErr); 
+   rc = csvMgr->GetColumn_byName<double>("Tot_Corr_sys_freq",freq_misalignErr); 
+   if(rc!=0) return rc; 
    rc = csvMgr->GetColumn_byName<double>("calibration_sys" ,freq_swapErr); 
+   if(rc!=0) return rc; 
 
    csvMgr->ClearData(); 
 
@@ -295,7 +297,9 @@ int LoadSystematicUncertainty_final(int runPeriod,int probe,double &err){
    sprintf(inpath,"%s/ana-cuts.csv",prefix);
    csvMgr->ReadFile(inpath,headerStatus); 
    rc = csvMgr->GetColumn_byName<double>("dB_tr"     ,dBtrErr); 
+   if(rc!=0) return rc; 
    rc = csvMgr->GetColumn_byName<double>("rapid_swap",rapidSwapErr);
+   if(rc!=0) return rc; 
 
    delete csvMgr;  
   
