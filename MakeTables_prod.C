@@ -318,7 +318,8 @@ int MakeTables_prod(int runPeriod,std::string theDate,int isSyst,int systDirNum)
    std::vector<calib_result_t> data; 
    rc = CollectData(runPeriod,res,resFree,impGrad,shimGrad,deltaB_pp,deltaB_trly,misalign,mCor,mCor_a,data); 
 
-   rc = PrintResults(outPath,data); 
+   bool toROOT=false,toJSON=true,toCSV=true;
+   rc = PrintResults(outPath,data,toROOT,toJSON,toCSV); 
 
    return 0;
 }
@@ -692,7 +693,10 @@ int PrintResults(const char *filename,std::vector<calib_result_t> data,bool toRO
    rd.leafStructure = calib_result_str; 
 
    int rc=0;
-   if(toROOT) rc = gm2fieldUtil::Export::PrintToROOTFile<calib_result_t>(rd,data); 
+   if(toROOT){
+      rc = gm2fieldUtil::Export::PrintToROOTFile<calib_result_t>(rd,data);
+      std::cout << "The data has been written to the file: " << outpath_root << std::endl;
+   } 
    if(toJSON) rc = PrintToFile_json(outpath_json,data); 
    if(toCSV)  rc = PrintToFile_csv(outpath_csv,data); 
    
@@ -737,7 +741,7 @@ int PrintToFile_csv(const char *outpath,std::vector<calib_result_t> data){
          sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].calibCoeffFree_opt,data[i].calibCoeffFreeErr_opt); 
          sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].calibCoeffCorFree_opt,data[i].calibCoeffCorFreeErr_opt);
 
-         sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].freeErr,data[i].systErr);  
+         sprintf(outStr,"%s,%.3lf,%.3lf,%.3lf",outStr,data[i].fpCor,data[i].fpCorErr,data[i].systErr);  
 
          sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].deltaB_tr_x,data[i].deltaB_tr_xErr); 
          sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].deltaB_tr_y,data[i].deltaB_tr_yErr); 
@@ -804,6 +808,7 @@ int PrintToFile_json(const char *outpath,std::vector<calib_result_t> data){
    }else{
       outfile << std::setw(5) << jData << std::endl;
       outfile.close();
+      std::cout << "The data has been written to the file: " << outpath << std::endl;
    }
    return 0;
 }
@@ -841,10 +846,10 @@ int GetJSONObject(std::vector<calib_result_t> data,json &jData){
       jData["calibCoeffCorFreeErr"][i]     = data[i].calibCoeffCorFreeErr; 
       jData["calibCoeffCorFreeErr_aba"][i] = data[i].calibCoeffCorFreeErr_aba;
       jData["calibCoeffCorFreeErr_opt"][i] = data[i].calibCoeffCorFreeErr_opt;
-      jData["freeErr"][i]                  = data[i].freeErr;
       // free-proton related numbers
-      jData["fpCor"][i]                 = data[i].fpCor;  
-      jData["fpCorErr"][i]              = data[i].fpCorErr;  
+      // jData["freeErr"][i]               = data[i].freeErr;
+      jData["freeProt"][i]              = data[i].fpCor;  
+      jData["freeProtErr"][i]           = data[i].fpCorErr;  
       jData["ppTemp"][i]                = data[i].ppTemp;  
       jData["ppTempErr"][i]             = data[i].ppTempErr;  
       jData["trTemp"][i]                = data[i].trTemp;  
@@ -896,15 +901,15 @@ int GetJSONObject(std::vector<calib_result_t> data,json &jData){
       jData["deltaB_tr_yErr"][i]        = data[i].deltaB_tr_yErr; 
       jData["deltaB_tr_zErr"][i]        = data[i].deltaB_tr_zErr; 
       // dB(TR-PP) data 
-      jData["dB_diff_x"][i]             = data[i].dB_diff_x;
-      jData["dB_diff_y"][i]             = data[i].dB_diff_y;
-      jData["dB_diff_z"][i]             = data[i].dB_diff_z;
-      jData["dB_diff_xErr"][i]          = data[i].dB_diff_xErr;
-      jData["dB_diff_yErr"][i]          = data[i].dB_diff_yErr;
-      jData["dB_diff_zErr"][i]          = data[i].dB_diff_zErr;
-      jData["dB_diff_xSystErr"][i]      = data[i].dB_diff_xSystErr;
-      jData["dB_diff_ySystErr"][i]      = data[i].dB_diff_ySystErr;
-      jData["dB_diff_zSystErr"][i]      = data[i].dB_diff_zSystErr;
+      jData["deltaB_diff_x"][i]         = data[i].dB_diff_x;
+      jData["deltaB_diff_y"][i]         = data[i].dB_diff_y;
+      jData["deltaB_diff_z"][i]         = data[i].dB_diff_z;
+      jData["deltaB_diff_xErr"][i]      = data[i].dB_diff_xErr;
+      jData["deltaB_diff_yErr"][i]      = data[i].dB_diff_yErr;
+      jData["deltaB_diff_zErr"][i]      = data[i].dB_diff_zErr;
+      jData["deltaB_diff_xSystErr"][i]  = data[i].dB_diff_xSystErr;
+      jData["deltaB_diff_ySystErr"][i]  = data[i].dB_diff_ySystErr;
+      jData["deltaB_diff_zSystErr"][i]  = data[i].dB_diff_zSystErr;
       // jData["dB_r_tot"][i]              = data[i].dB_r_tot;
       // misalignment CORRECTION data 
       jData["misCor"][i]                = data[i].misCor;   
@@ -927,7 +932,7 @@ int GetJSONObject(std::vector<calib_result_t> data,json &jData){
       jData["mis_z_bar"][i]             = data[i].mis_z_bar;  
       jData["mis_zErr_bar"][i]          = data[i].mis_zErr_bar;  
       // systematic uncertainty 
-      jData["systErr"][i]               = data[i].systErr;  
+      jData["TotalSystematicError"][i]  = data[i].systErr;  
    }
    return 0; 
 }

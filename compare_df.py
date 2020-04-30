@@ -116,16 +116,17 @@ print("Loading data...")
 csv_path = "./output/blinded/flay/04-28-20/run-1/calibData_04-28-20.csv"
 print("Reading data from: {0}".format(csv_path)) 
 data_df1 = pd.read_csv(csv_path,index_col=False) # index_col = False when you don't have an index column
-print data_df1
+print data_df1.columns
 
 csv_path = "./input/ran-hong/run-1_04-27-20.csv"
 print("Reading data from: {0}".format(csv_path)) 
 data_df2 = pd.read_csv(csv_path,index_col=False) # index_col = False when you don't have an index column
-print data_df2
+print data_df2.columns
 
 csv_path = "./input/bingzhi-li/run-1_04-27-20.csv"
 print("Reading data from: {0}".format(csv_path)) 
 data_df3 = pd.read_csv(csv_path,index_col=False) # index_col = False when you don't have an index column
+print data_df3.columns
 
 print("--> Done.") 
 

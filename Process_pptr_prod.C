@@ -49,6 +49,8 @@
 double gMarkerSize = 0.8; 
 
 TGraphErrors *GetPPFreeGraph(TString xAxis,TString yAxis,std::vector<calibSwap_t> data); 
+TGraphErrors *GetTGraphErrors_swap(std::string xAxis,std::string yAxis,std::string yAxisErr,std::vector<calibSwap_t> data,double offset=0); 
+int FillVector_swap(std::string type,std::vector<calibSwap_t> data,std::vector<double> &x,double offset=0); 
 
 int GetSwapStatsForPP(int runPeriod,std::string probeID,std::vector<plungingProbeAnaEvent_t> data,
                       std::vector<calibSwap_t> &raw,std::vector<calibSwap_t> &free,double &min,double &max,
@@ -120,6 +122,8 @@ int Process_pptr_prod(std::string configFile){
    std::string outpath_free = outPath;  
    sprintf(outPath,"%s/trly-swap-data_pr-%02d.csv",outDir.c_str(),probeNumber);
    std::string outpath_trly = outPath; 
+   sprintf(outPath,"%s/trly-swap-data_temp-cor_pr-%02d.csv",outDir.c_str(),probeNumber);
+   std::string outpath_trly_tc = outPath; 
    sprintf(outPath,"%s/pp-swap_fpc_pr-%02d.csv",outDir.c_str(),probeNumber);
    std::string outpath_fpc = outPath;  
 
@@ -240,18 +244,20 @@ int Process_pptr_prod(std::string configFile){
    // now get TRLY values
    double fLO = 61.74E+6;
    double dsigdT = inputMgr->GetTempCor_tr(); 
-   std::vector<calibSwap_t> trlySwap;
-   rc = GetTRLYStatsAtTime_hybrid(useTempCor,useOscCor,probeNumber-1,nev,fLO,time,fxprData,trlyData,trlySwap,T0,dsigdT);
+   std::vector<calibSwap_t> trlySwap,trlySwap_tc; // _tc => temp corrected 
+   rc = GetTRLYStatsAtTime_hybrid(false     ,useOscCor,probeNumber-1,nev,fLO,time,fxprData,trlyData,trlySwap   ,T0,dsigdT);
+   rc = GetTRLYStatsAtTime_hybrid(useTempCor,useOscCor,probeNumber-1,nev,fLO,time,fxprData,trlyData,trlySwap_tc,T0,dsigdT);
 
    // print to file 
-   rc = PrintToFile(outpath_trly,trlySwap);
+   rc = PrintToFile(outpath_trly   ,trlySwap   );
+   rc = PrintToFile(outpath_trly_tc,trlySwap_tc);
   
    // make plots 
    TGraph *gTR = GetTRLYTGraph(probeNumber-1,"GpsTimeStamp","freq",trlyData);
    gm2fieldUtil::Graph::SetGraphParameters(gTR,20,kBlack);
 
-   TGraph **gFreq = new TGraph*[NL];
-   TGraph **gTemp = new TGraph*[NL];
+   TGraph **gFreq    = new TGraph*[NL];
+   TGraph **gTemp    = new TGraph*[NL];
    rc = GetTRLYSwapPlots(useOscCor,probeNumber-1,nev,time,T0,fxprData,trlyData,gFreq,gTemp);
 
    // Fixed probe plot 
@@ -362,7 +368,50 @@ int Process_pptr_prod(std::string configFile){
    c3->cd(); 
    TString fxprPlotPath = Form("%s/fxpr-data_swap-data_pr-%02d.png",plotDir.c_str(),probeNumber);
    c3->Print(fxprPlotPath);
-   delete c3; 
+   delete c3;
+
+   double offset = 61.78E+6;  
+   TGraphErrors *gpp_swap    = GetTGraphErrors_swap("time","freq","freqErr",raw        ,offset);
+   TGraphErrors *gpp_swap_fp = GetTGraphErrors_swap("time","freq","freqErr",free       ,offset);
+   offset = 61.74E+6;  
+   TGraphErrors *gtr_swap    = GetTGraphErrors_swap("time","freq","freqErr",trlySwap   ,offset);
+   TGraphErrors *gtr_swap_tc = GetTGraphErrors_swap("time","freq","freqErr",trlySwap_tc,offset);
+
+   gm2fieldUtil::Graph::SetGraphParameters(gpp_swap   ,21,kBlack); 
+   gm2fieldUtil::Graph::SetGraphParameters(gpp_swap_fp,20,kRed); 
+   gm2fieldUtil::Graph::SetGraphParameters(gtr_swap   ,21,kBlack); 
+   gm2fieldUtil::Graph::SetGraphParameters(gtr_swap_tc,20,kRed); 
+
+   TMultiGraph *mgpp = new TMultiGraph();
+   mgpp->Add(gpp_swap   ,"p"); 
+   mgpp->Add(gpp_swap_fp,"p"); 
+
+   TMultiGraph *mgtr = new TMultiGraph();
+   mgtr->Add(gtr_swap   ,"p"); 
+   mgtr->Add(gtr_swap_tc,"p"); 
+
+   TCanvas *c4 = new TCanvas("c4","Swap Data",1200,600);
+   c4->Divide(1,2); 
+
+   c4->cd(1);
+   mgpp->Draw("a");
+   gm2fieldUtil::Graph::SetGraphLabels(mgpp,"PP Swap Data (black = raw, red = free proton corrected","","Frequency (Hz)");
+   gm2fieldUtil::Graph::UseTimeDisplay(mgpp); 
+   mgpp->Draw("a");
+   c4->Update();
+
+   c4->cd(2);
+   mgtr->Draw("a");
+   gm2fieldUtil::Graph::SetGraphLabels(mgtr,"TRLY Swap Data (black = raw, red = temp corrected)","","Frequency (Hz)");
+   gm2fieldUtil::Graph::UseTimeDisplay(mgtr); 
+   mgtr->Draw("a");
+   c4->Update();
+ 
+   // save the plot 
+   c4->cd();
+   TString swapPlotPath = Form("%s/pptr-swap-data_pr-%02d.png",plotDir.c_str(),probeNumber); 
+   c4->Print(swapPlotPath); 
+   delete c4; 
 
    return 0;
 }
@@ -591,5 +640,40 @@ int GetTRLYSwapData(bool useOscCor,int probe,int nev,double time,double t0,
       }
    }
 
+   return 0;
+}
+//______________________________________________________________________________
+TGraphErrors *GetTGraphErrors_swap(std::string xAxis,std::string yAxis,std::string yAxisErr,std::vector<calibSwap_t> data,double offset){
+   std::vector<double> x,y,ey;
+   FillVector_swap(xAxis   ,data,x ,0     ); 
+   FillVector_swap(yAxis   ,data,y ,offset); 
+   FillVector_swap(yAxisErr,data,ey,0     );
+
+   // int N = x.size();
+   // for(int i=0;i<N;i++) std::cout << Form("%.1lf, %.3lf, %.3lf",x[i],y[i],ey[i]) << std::endl; 
+   // std::cout << "------" << std::endl; 
+
+   TGraphErrors *g = gm2fieldUtil::Graph::GetTGraphErrors(x,y,ey); 
+   return g; 
+}
+//______________________________________________________________________________
+int FillVector_swap(std::string type,std::vector<calibSwap_t> data,std::vector<double> &x,double offset){
+   const int N = data.size();
+   double arg=0;
+   for(int i=0;i<N;i++){
+      if( type.compare("time")==0 )    arg = data[i].time;
+      if( type.compare("freq")==0 )    arg = data[i].freq;
+      if( type.compare("freqErr")==0 ) arg = data[i].freqErr;
+      if( type.compare("temp")==0 )    arg = data[i].temp;
+      if( type.compare("tempErr")==0 ) arg = data[i].tempErr;
+      if( type.compare("r")==0 )       arg = data[i].r;
+      if( type.compare("rErr")==0 )    arg = data[i].rErr;
+      if( type.compare("y")==0 )       arg = data[i].y;
+      if( type.compare("yErr")==0 )    arg = data[i].yErr;
+      if( type.compare("phi")==0 )     arg = data[i].phi;
+      if( type.compare("phiErr")==0 )  arg = data[i].phiErr;
+      arg -= offset;
+      x.push_back(arg);
+   }
    return 0;
 }

@@ -62,7 +62,8 @@ def getStats(colName,df):
    return mean,stdev 
 #_______________________________________________________________________________
 
-plotBingzhi = False 
+plotBingzhi = True 
+plotBarcode = True 
 
 legend = ["DF","RH"]
 
@@ -71,8 +72,8 @@ if(plotBingzhi):
 
 # create file paths
 csv_path_rh = "./input/ran-hong/run-1_04-27-20.csv" 
-csv_path_bl = "./input/bingzhi-li/run-1_04-27-20.csv" 
-csv_path_df = "./output/blinded/flay/04-28-20/run-1/calibData_04-28-20.csv"
+csv_path_bl = "./input/bingzhi-li/run-1_04-29-20.csv" 
+csv_path_df = "./output/blinded/flay/04-29-20/run-1/calibData_04-29-20.csv"
 
 # create a pandas dataframe, reading in the csv file  
 print("Reading data from: {0}".format(csv_path_rh)) 
@@ -83,9 +84,9 @@ print("Reading data from: {0}".format(csv_path_df))
 data_df = pd.read_csv(csv_path_df,index_col=False) # index_col = False when you don't have an index column
 
 # adjust bingzhi coefficients (he plots on absolute scale) 
-data_bl['shim_x_c'] -= 61.78E+6
-data_bl['shim_y_c'] -= 61.78E+6
-data_bl['shim_z_c'] -= 61.78E+6
+# data_bl['shim_x_c'] -= 61.78E+6
+# data_bl['shim_y_c'] -= 61.78E+6
+# data_bl['shim_z_c'] -= 61.78E+6
 
 # marker parameters  
 color  = ["blue","red","#20B010"]
@@ -109,6 +110,7 @@ getDiff("calibCoeff_cor","calibCoeffErr_cor","ccc_rhdf" ,"ccce_rhdf" ,data_df,da
 getDiff("misCor_x"      ,"misCor_xErr"      ,"mcx_rhdf" ,"mcxe_rhdf" ,data_df,data_rh,data_diff)
 getDiff("misCor_y"      ,"misCor_yErr"      ,"mcy_rhdf" ,"mcye_rhdf" ,data_df,data_rh,data_diff)
 getDiff("misCor_z"      ,"misCor_zErr"      ,"mcz_rhdf" ,"mcze_rhdf" ,data_df,data_rh,data_diff)
+getDiff("misCor_z_bar"  ,"misCor_zErr_bar"  ,"mczb_rhdf" ,"mczbe_rhdf",data_df,data_rh,data_diff)
 getDiff("mis_x"         ,"mis_xErr"         ,"mx_rhdf"  ,"mxe_rhdf"  ,data_df,data_rh,data_diff)
 getDiff("mis_y"         ,"mis_yErr"         ,"my_rhdf"  ,"mye_rhdf"  ,data_df,data_rh,data_diff)
 getDiff("mis_z"         ,"mis_zErr"         ,"mz_rhdf"  ,"mze_rhdf"  ,data_df,data_rh,data_diff)
@@ -127,6 +129,11 @@ getDiff("deltaB_pp_z"   ,"deltaB_pp_zErr"   ,"dbppz_rhdf" ,"dbppze_rhdf" ,data_d
 getDiff("deltaB_tr_x"   ,"deltaB_tr_xErr"   ,"dbtrx_rhdf" ,"dbtrxe_rhdf" ,data_df,data_rh,data_diff)
 getDiff("deltaB_tr_y"   ,"deltaB_tr_yErr"   ,"dbtry_rhdf" ,"dbtrye_rhdf" ,data_df,data_rh,data_diff)
 getDiff("deltaB_tr_z"   ,"deltaB_tr_zErr"   ,"dbtrz_rhdf" ,"dbtrze_rhdf" ,data_df,data_rh,data_diff)
+
+getDiff("deltaB_diff_x" ,"deltaB_diff_xErr" ,"dbdiffx_rhdf" ,"dbdiffxe_rhdf" ,data_df,data_rh,data_diff)
+getDiff("deltaB_diff_y" ,"deltaB_diff_yErr" ,"dbdiffy_rhdf" ,"dbdiffye_rhdf" ,data_df,data_rh,data_diff)
+getDiff("deltaB_diff_z" ,"deltaB_diff_zErr" ,"dbdiffz_rhdf" ,"dbdiffze_rhdf" ,data_df,data_rh,data_diff)
+
 getDiff("dBdx_imp"      ,"dBdx_impErr"   ,"impx_rhdf" ,"impxe_rhdf" ,data_df,data_rh,data_diff)
 getDiff("dBdy_imp"      ,"dBdy_impErr"   ,"impy_rhdf" ,"impye_rhdf" ,data_df,data_rh,data_diff)
 getDiff("dBdz_imp"      ,"dBdz_impErr"   ,"impz_rhdf" ,"impze_rhdf" ,data_df,data_rh,data_diff)
@@ -137,6 +144,7 @@ getDiff("calibCoeff_cor","calibCoeffErr_cor","ccc_bldf" ,"ccce_bldf" ,data_df,da
 getDiff("misCor_x"      ,"misCor_xErr"      ,"mcx_bldf" ,"mcxe_bldf" ,data_df,data_bl,data_diff)
 getDiff("misCor_y"      ,"misCor_yErr"      ,"mcy_bldf" ,"mcye_bldf" ,data_df,data_bl,data_diff)
 getDiff("misCor_z"      ,"misCor_zErr"      ,"mcz_bldf" ,"mcze_bldf" ,data_df,data_bl,data_diff)
+getDiff("misCor_z_bar"  ,"misCor_zErr_bar"  ,"mczb_bldf" ,"mczbe_bldf",data_df,data_bl,data_diff)
 getDiff("mis_x"         ,"mis_xErr"         ,"mx_bldf"  ,"mxe_bldf"  ,data_df,data_bl,data_diff)
 getDiff("mis_y"         ,"mis_yErr"         ,"my_bldf"  ,"mye_bldf"  ,data_df,data_bl,data_diff)
 getDiff("mis_z"         ,"mis_zErr"         ,"mz_bldf"  ,"mze_bldf"  ,data_df,data_bl,data_diff)
@@ -155,6 +163,11 @@ getDiff("deltaB_pp_z"   ,"deltaB_pp_zErr"   ,"dbppz_bldf" ,"dbppze_bldf" ,data_d
 getDiff("deltaB_tr_x"   ,"deltaB_tr_xErr"   ,"dbtrx_bldf" ,"dbtrxe_bldf" ,data_df,data_bl,data_diff)
 getDiff("deltaB_tr_y"   ,"deltaB_tr_yErr"   ,"dbtry_bldf" ,"dbtrye_bldf" ,data_df,data_bl,data_diff)
 getDiff("deltaB_tr_z"   ,"deltaB_tr_zErr"   ,"dbtrz_bldf" ,"dbtrze_bldf" ,data_df,data_bl,data_diff)
+
+getDiff("deltaB_diff_x" ,"deltaB_diff_xErr" ,"dbdiffx_bldf" ,"dbdiffxe_bldf" ,data_df,data_bl,data_diff)
+getDiff("deltaB_diff_y" ,"deltaB_diff_yErr" ,"dbdiffy_bldf" ,"dbdiffye_bldf" ,data_df,data_bl,data_diff)
+getDiff("deltaB_diff_z" ,"deltaB_diff_zErr" ,"dbdiffz_bldf" ,"dbdiffze_bldf" ,data_df,data_bl,data_diff)
+
 getDiff("dBdx_imp"      ,"dBdx_impErr"      ,"impx_bldf"  ,"impxe_bldf"  ,data_df,data_bl,data_diff)
 getDiff("dBdy_imp"      ,"dBdy_impErr"      ,"impy_bldf"  ,"impye_bldf"  ,data_df,data_bl,data_diff)
 getDiff("dBdz_imp"      ,"dBdz_impErr"      ,"impz_bldf"  ,"impze_bldf"  ,data_df,data_bl,data_diff)
@@ -245,7 +258,12 @@ for ax in fig.get_axes():
     ax.label_outer()
 
 # misalignment corrections: x
-title = ["misCor_x","misCor_y","misCor_z"]
+title = ["misCor_x","misCor_y"]
+if(plotBarcode):
+   title.append("misCor_z_bar")
+else:
+   title.append("misCor_z")
+
 fig = plt.figure(3)
 NROW = 2
 NCOL = 3
@@ -301,8 +319,13 @@ currentAxis.set_ylabel("")
 # misalignment corrections: z 
 plt.subplot(NROW,NCOL,3)
 currentAxis = plt.gca() # grab current axis 
-axis    = "misCor_z"
-axisErr = "misCor_zErr"
+if(plotBarcode):
+   axis    = "misCor_z_bar"
+   axisErr = "misCor_zErr_bar"
+else:
+   axis    = "misCor_z"
+   axisErr = "misCor_zErr"
+
 data_df.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[2], marker=mStyle[0], s=mSize, color=color[0], ax=currentAxis)
 data_rh.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[2], marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
 if plotBingzhi: 
@@ -313,11 +336,22 @@ currentAxis.set_ylabel("")
 
 plt.subplot(NROW,NCOL,6)
 currentAxis = plt.gca() # grab current axis 
-axis    = "mcz_rhdf"
-axisErr = "mcze_rhdf"
+if(plotBarcode):
+   axis    = "mczb_rhdf"
+   axisErr = "mczbe_rhdf"
+else:
+   axis    = "mcz_rhdf"
+   axisErr = "mcze_rhdf"
+
 data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
-axis    = "mcz_bldf"
-axisErr = "mcze_bldf"
+
+if(plotBarcode):
+   axis    = "mczb_bldf"
+   axisErr = "mczbe_bldf"
+else:
+   axis    = "mcz_bldf"
+   axisErr = "mcze_bldf"
+
 if plotBingzhi: 
    data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
 currentAxis.set_xlabel("Probe") 
@@ -718,6 +752,8 @@ if plotBingzhi:
 currentAxis.set_xlabel("Probe") 
 currentAxis.set_ylabel("") 
 
+
+
 # imposed gradients  
 title = ["dBdx_imp","dBdy_imp","dBdz_imp"]
 fig = plt.figure(9)
@@ -796,6 +832,85 @@ if plotBingzhi:
    data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
 currentAxis.set_xlabel("Probe") 
 currentAxis.set_ylabel("") 
+
+# delta(DeltaB)  
+title = ["deltaB_diff_x","deltaB_diff_y","deltaB_diff_z"]
+fig = plt.figure(10)
+NROW = 2
+NCOL = 3
+plt.subplot(NROW,NCOL,1)
+currentAxis = plt.gca() # grab current axis 
+axis    = "deltaB_diff_x"
+axisErr = "deltaB_diff_xErr"
+data_df.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[0], marker=mStyle[0], s=mSize, color=color[0], ax=currentAxis)
+data_rh.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[0], marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
+if plotBingzhi: 
+   data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[0], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.legend(legend)
+currentAxis.set_xlabel("") 
+currentAxis.set_ylabel("Delta(DeltaB) (Hz)") 
+
+plt.subplot(NROW,NCOL,4)
+currentAxis = plt.gca() # grab current axis 
+axis    = "dbdiffx_rhdf"
+axisErr = "dbdiffxe_rhdf"
+data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
+axis    = "dbdiffx_bldf"
+axisErr = "dbdiffxe_bldf"
+if plotBingzhi: 
+   data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.set_xlabel("Probe") 
+currentAxis.set_ylabel("Delta(DeltaB) Diff (Hz)") 
+
+# y 
+plt.subplot(NROW,NCOL,2)
+currentAxis = plt.gca() # grab current axis 
+axis    = "deltaB_diff_y"
+axisErr = "deltaB_diff_yErr"
+data_df.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[1], marker=mStyle[0], s=mSize, color=color[0], ax=currentAxis)
+data_rh.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[1], marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
+if plotBingzhi: 
+   data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[1], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.legend(legend)
+currentAxis.set_xlabel("") 
+currentAxis.set_ylabel("") 
+
+plt.subplot(NROW,NCOL,5)
+currentAxis = plt.gca() # grab current axis 
+axis    = "dbdiffy_rhdf"
+axisErr = "dbdiffye_rhdf"
+data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
+axis    = "dbdiffy_bldf"
+axisErr = "dbdiffye_bldf"
+if plotBingzhi: 
+   data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.set_xlabel("Probe") 
+currentAxis.set_ylabel("") 
+
+# z 
+plt.subplot(NROW,NCOL,3)
+currentAxis = plt.gca() # grab current axis 
+axis    = "deltaB_diff_z"
+axisErr = "deltaB_diff_zErr"
+data_df.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[2], marker=mStyle[0], s=mSize, color=color[0], ax=currentAxis)
+data_rh.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[2], marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
+if plotBingzhi: 
+   data_bl.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, title=title[2], marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.legend(legend)
+currentAxis.set_xlabel("") 
+currentAxis.set_ylabel("") 
+
+plt.subplot(NROW,NCOL,6)
+currentAxis = plt.gca() # grab current axis 
+axis    = "dbdiffz_rhdf"
+axisErr = "dbdiffze_rhdf"
+data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
+axis    = "dbdiffz_bldf"
+axisErr = "dbdiffze_bldf"
+if plotBingzhi: 
+   data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+currentAxis.set_xlabel("Probe") 
+currentAxis.set_ylabel("")
 
 # show all plots
 plt.show()

@@ -208,9 +208,9 @@ int Process_trly_prod(std::string configFile){
    std::cout << "Found " << NL << " trolley swaps" << std::endl;
 
    // now get average field for 30 seconds BEFORE each time stamp
-   double fLO = 61.74E+6; 
-   double dsigdT = inputMgr->GetTempCor_tr();
-   std::vector<calibSwap_t> trlySwap; 
+   double fLO        = 61.74E+6; 
+   double dsigdT     = inputMgr->GetTempCor_tr();
+   // double dsigdT_err = inputMgr->GetTempCor_trErr();
    rc = GetTRLYStatsAtTime(useTempCor,useOscCor,probeNumber-1,nev,fLO,time,fxprData,trlyData,trlySwap,t0,dsigdT);
 
    char outPath[500];

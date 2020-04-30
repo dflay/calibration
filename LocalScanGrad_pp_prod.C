@@ -627,21 +627,28 @@ int GetShimmedGradient_alt(int probe,int axis,std::string outDir,
 
    double dB_tr=0,dB_pp=0,dB_tr_err=0,dB_pp_err=0;
    double dBdq_imp=0,dBdq_imp_err=0; 
- 
+
+   // NOTE: We choose the zeroth index since ALL dB data is in the first entry of the file 
    // delta-B (ABA is default)  
-   dB_pp     = pp[axis].dB_fxpr;
-   dB_pp_err = pp[axis].dB_fxpr_err;
-   dB_tr     = trly[axis].dB_fxpr; 
-   dB_tr_err = trly[axis].dB_fxpr_err; 
+   dB_pp     = pp[0].dB_fxpr;
+   dB_pp_err = pp[0].dB_fxpr_err;
+   dB_tr     = trly[0].dB_fxpr; 
+   dB_tr_err = trly[0].dB_fxpr_err; 
+
    // use raw if necessary
    if(dB_tr==0){
-      dB_tr     = trly[axis].dB;  
-      dB_tr_err = trly[axis].dB_err;
+      dB_tr     = trly[0].dB;  
+      dB_tr_err = trly[0].dB_err;
+      // std::cout << Form("ADJUSTED! dB(TR) = %.3lf +/- %.3lf Hz",dB_tr,dB_tr_err)       << std::endl; 
    }  
    if(dB_pp==0){
-      dB_pp     = pp[axis].dB; 
-      dB_pp_err = pp[axis].dB_err; 
+      dB_pp     = pp[0].dB; 
+      dB_pp_err = pp[0].dB_err; 
+      // std::cout << Form("ADJUSTED! dB(PP) = %.3lf +/- %.3lf Hz",dB_pp,dB_pp_err)       << std::endl; 
    } 
+
+   std::cout << Form("dB(TR) = %.3lf +/- %.3lf Hz",dB_tr,dB_tr_err)       << std::endl; 
+   std::cout << Form("dB(PP) = %.3lf +/- %.3lf Hz",dB_pp,dB_pp_err)       << std::endl; 
 
    // imposed gradient 
    if(axis==0){
@@ -655,8 +662,6 @@ int GetShimmedGradient_alt(int probe,int axis,std::string outDir,
       dBdq_imp_err = azi_grad_err; 
    }
 
-   std::cout << Form("dB(TR) = %.3lf +/- %.3lf Hz",dB_tr,dB_tr_err)       << std::endl; 
-   std::cout << Form("dB(PP) = %.3lf +/- %.3lf Hz",dB_pp,dB_pp_err)       << std::endl; 
    std::cout << Form("dBi/dq = %.3lf +/- %.3lf Hz",dBdq_imp,dBdq_imp_err) << std::endl; 
 
    double q0     = (dB_tr-dB_pp)/dBdq_imp;  // NOTE the Delta dB order! We evaluate where the TRLY is!  

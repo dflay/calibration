@@ -2,10 +2,14 @@
 //______________________________________________________________________________
 CSVManager::CSVManager(){
    fHeaderExists = false;
+   fNumCol = 0; 
+   fNumRow = 0; 
 }
 //______________________________________________________________________________
 CSVManager::~CSVManager(){
    ClearData();
+   fNumCol = 0;
+   fNumRow = 0;
 }
 //______________________________________________________________________________
 int CSVManager::ClearData(){
@@ -75,10 +79,15 @@ int CSVManager::ReadFile(const char *inpath,bool headerExists){
       row.clear(); 
    }
 
-   NROW = fData.size();
+   NROW    = fData.size();
+   fNumCol = fHeader.size(); 
+   fNumRow = NROW; 
+
+   // column check
+   if(NCOL!=fNumCol) std::cout << "[CSVManager::ReadFile]: ERROR!  Number of headers doesn't match number of columns!" << std::endl;
 
    char msg[200]; 
-   if(fHeaderExists)  sprintf(msg,"[CSVManager::ReadFile]: Found header, %d rows, %d columns",NROW,NCOL);
+   if(fHeaderExists)  sprintf(msg,"[CSVManager::ReadFile]: Found header, %d rows, %d columns"   ,NROW,NCOL);
    if(!fHeaderExists) sprintf(msg,"[CSVManager::ReadFile]: Found NO header, %d rows, %d columns",NROW,NCOL);
    std::cout << msg << std::endl;
 
@@ -140,7 +149,8 @@ int CSVManager::SetHeader(std::string fullHeader){
    // don't check for existing column sizes in case the user sets this first  
    fHeader.clear();
    int N = header.size();
-   for(int i=0;i<N;i++) fHeader.push_back(header[i]); 
+   for(int i=0;i<N;i++) fHeader.push_back(header[i]);
+   fNumCol = fHeader.size();  
    return 0;
 }
 //______________________________________________________________________________
@@ -150,6 +160,7 @@ int CSVManager::SetHeader(std::vector<std::string> header){
    fHeader.clear();
    int N = header.size();
    for(int i=0;i<N;i++) fHeader.push_back(header[i]); 
+   fNumCol = fHeader.size();  
    return 0;
 }
 //______________________________________________________________________________
@@ -165,10 +176,65 @@ int CSVManager::GetHeader(std::vector<std::string> &header){
    return 0;
 }
 //______________________________________________________________________________
+int CSVManager::PrintColumns(std::string cols){
+
+   std::vector<std::string> colName;
+   int rc  = SplitString(',',cols,colName);
+   int NCN = colName.size();
+
+   std::vector<int> colIndex; 
+   int NH = fHeader.size(); 
+   for(int i=0;i<NH;i++){
+      for(int j=0;j<NCN;j++){
+	 if( fHeader[i].compare(colName[j])==0 ){
+	    // std::cout << Form("[CSVManager::PrintColumns]: Found column '%s', index = %d",colName[j].c_str(),i) << std::endl;
+	    colIndex.push_back(i);
+	 }
+      }
+   }
+
+   int NC = colIndex.size(); 
+   if(NCN!=NC){
+      std::cout << "[CSVManager::PrintColumns]: Did not find all columns!  Printing only those found" << std::endl;
+   }
+
+   std::cout << "[CSVManager::PrintColumns]: Column data: " << std::endl;
+   for(int i=0;i<NC-1;i++) std::cout << colName[i] << ","; 
+   std::cout << colName[NC-1] << std::endl; 
+
+   int k=0;
+   std::string sx;  
+   char msg[200];
+   sprintf(msg,"");
+
+   int NROW = fData.size(); 
+   for(int i=0;i<NROW;i++){   
+      // build the row
+      for(int j=0;j<NC-1;j++){ 
+	 k = colIndex[j]; 
+	 sx = GetElement_str(i,k);
+	 if(j==0){
+	    sprintf(msg,"%s",sx.c_str()); 
+         }else{ 
+	    sprintf(msg,"%s,%s",msg,sx.c_str()); 
+	 } 
+      }
+      k  = colIndex[NC-1]; 
+      sx = GetElement_str(i,k);
+      sprintf(msg,"%s,%s",msg,sx.c_str());       
+      // print to screen 
+      std::cout << msg << std::endl;  
+      // clear
+      sprintf(msg,"");
+   } 
+ 
+   return 0;
+}
+//______________________________________________________________________________
 int CSVManager::Print(){
 
    int NROW = fData.size();
-   int NCOL = fData[0].size();
+   int NCOL = fHeader.size();
 
    char myStr[200];
    if(fHeaderExists){ 
@@ -179,6 +245,7 @@ int CSVManager::Print(){
   
    for(int i=0;i<NROW;i++){
       sprintf(myStr,"%s",fData[i][0].c_str()); 
+      NCOL = fData[i].size();
       for(int j=1;j<NCOL;j++) sprintf(myStr,"%s,%s",myStr,fData[i][j].c_str() );
       std::cout << myStr << std::endl;
    }

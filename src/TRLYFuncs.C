@@ -254,9 +254,9 @@ int GetTRLYStatsAtTime(bool UseTempCor,bool UseOscCor,int probe,int nev,double f
    // now need to average over each toggle 
 
    // dsigdT is in ppb/(deg C).  Need to convert to Hz/(deg C)
-   // 1 ppb = 0.06179 Hz.  
-   // from Martin C doc-db 2342: could be 5.45 ppb/(deg C), or -2.5 ppb/(deg C) 
-   double dSigdT = 0.06179*dsigdT; 
+   // 1 ppb = 1E-9  
+   double dSigdT = dsigdT*1E-9;
+   if(UseTempCor) std::cout << Form("[TRLYFuncs::GetTRLYStatsAtTime_hybrid]: USING TEMPERATURE CORRECTION, dsig/dT = %.1E/deg-C",dSigdT);
 
    int n=0;
    int M = trTime.size();
@@ -275,15 +275,16 @@ int GetTRLYStatsAtTime(bool UseTempCor,bool UseOscCor,int probe,int nev,double f
       for(int j=0;j<M;j++){
 	 if(trTime[j]>lastTime && trTime[j]<time[i]){
 	    tt.push_back(trTime[j]); 
-	    if(UseTempCor){
-	       // FIXME: apply a temperature correction if necessary
-	       // accounts for the trolley being at a temperature other than 25 deg c  
-	       delta_t = dSigdT*(25.-temp[j]);
-	    }
+	    // if(UseTempCor){
+	    //    // Apply a temperature correction if necessary
+	    //    // accounts for the trolley being at a temperature other than 25 deg c  
+	    //    delta_t = dSigdT*(25.-temp[j]);
+	    //    std::cout << Form("[TRLYFuncs::GetTRLYStatsAtTime_hybrid]: T = %.1lf deg-C, delta_T = %.3lf ppb",temp[j],delta_t);
+	    // }
 	    if(UseOscCor){
-	       arg_freq = (fLO + trFreq_cor[j])/(1.-delta_t);  
+	       arg_freq = fLO + trFreq_cor[j];  
 	    }else{
-	       arg_freq = (fLO + trFreq[j])/(1.-delta_t);  
+	       arg_freq = fLO + trFreq[j];  
 	    }
 	    freq.push_back(arg_freq); 
 	 }
@@ -294,6 +295,14 @@ int GetTRLYStatsAtTime(bool UseTempCor,bool UseOscCor,int probe,int nev,double f
       rc = FilterSingle("r"   ,probe,nev,time[i],Data,x);
       rc = FilterSingle("y"   ,probe,nev,time[i],Data,y);
       rc = FilterSingle("phi" ,probe,nev,time[i],Data,z);
+      if(UseTempCor){
+	 // apply temperature correction 
+	 for(int j=0;j<M;j++){
+            delta_t = dSigdT*(25.-temp[j]); 
+	    // std::cout << Form("[TRLYFuncs::GetTRLYStatsAtTime_hybrid]: T = %.1lf deg-C, delta_T = %.3lf ppb",temp[j],delta_t) << std::endl;
+	    freq[j] = freq[j]/(1.-delta_t);
+	 }
+      }
       // now get mean of events 
       mean_freq  = gm2fieldUtil::Math::GetMean<double>(freq);
       stdev_freq = gm2fieldUtil::Math::GetStandardDeviation<double>(freq);
@@ -341,21 +350,22 @@ int GetTRLYStatsAtTime_hybrid(bool UseTempCor,bool UseOscCor,int probe,int nev,d
    calibSwap_t theEvent; 
 
    // do oscillation correction and obtain ALL data associated with toggle times in time vector 
-   std::vector<double> trTime,trFreq,trFreq_cor; 
+   std::vector<double> trTime,trFreq,trFreq_cor,trX,trY,trZ; 
    int rc = CorrectOscillation_trly_hybrid(probe,nev,time,fxpr,Data,trTime,trFreq,trFreq_cor,"time",t0);
    if(rc!=0) return rc; 
    
-   if(UseOscCor) std::cout << "[GetTRLYStatsAtTime]: USING OSCILLATION CORRECTION" << std::endl;
+   if(UseOscCor) std::cout << "[TRLYFuncs::GetTRLYStatsAtTime_hybrid]: USING OSCILLATION CORRECTION" << std::endl;
 
    // now need to average over each toggle
  
    // dsigdT is in ppb/(deg C).  Need to convert to Hz/(deg C)
-   // 1 ppb = 0.06179 Hz.  
-   // from Martin C doc-db 2342: could be 5.45 ppb/(deg C), or -2.5 ppb/(deg C) 
-   double dSigdT = 0.06179*dsigdT; 
+   // 1 ppb = 1E-9  
+   double dSigdT = dsigdT*1E-9; 
+   if(UseTempCor) std::cout << Form("[TRLYFuncs::GetTRLYStatsAtTime_hybrid]: USING TEMPERATURE CORRECTION, dsig/dT = %.1E/deg-C",dSigdT);
 
    int n=0;
    int M = trTime.size();
+   int NF=0;
    const int NT = time.size();
    double lastTime=0;
    double arg_freq=0,delta_t=0;
@@ -367,19 +377,14 @@ int GetTRLYStatsAtTime_hybrid(bool UseTempCor,bool UseOscCor,int probe,int nev,d
    std::vector<double> tt,freq,temp,x,y,z;
    for(int i=0;i<NT;i++){
       // find events that satisfy the timestamp for frequency and apply corrections 
-      // WARNING: be careful to not accumulate events from previous swaps!  
+      // WARNING: be careful to not accumulate events from previous swaps! 
       for(int j=0;j<M;j++){
 	 if(trTime[j]>lastTime && trTime[j]<time[i]){
 	    tt.push_back(trTime[j]); 
-	    if(UseTempCor){
-	       // FIXME: apply a temperature correction if necessary
-	       // accounts for the trolley being at a temperature other than 25 deg c  
-	       delta_t = dSigdT*(25.-temp[j]);
-	    }
 	    if(UseOscCor){
-	       arg_freq = (fLO + trFreq_cor[j])/(1.-delta_t);  
+	       arg_freq = fLO + trFreq_cor[j];  
 	    }else{
-	       arg_freq = (fLO + trFreq[j])/(1.-delta_t);  
+	       arg_freq = fLO + trFreq[j];  
 	    }
 	    freq.push_back(arg_freq); 
 	 }
@@ -390,6 +395,16 @@ int GetTRLYStatsAtTime_hybrid(bool UseTempCor,bool UseOscCor,int probe,int nev,d
       rc = FilterSingle("r"   ,probe,nev,time[i],Data,x);
       rc = FilterSingle("y"   ,probe,nev,time[i],Data,y);
       rc = FilterSingle("phi" ,probe,nev,time[i],Data,z);
+      if(UseTempCor){
+	 // apply temperature correction 
+	 NF = freq.size();
+	 for(int j=0;j<NF;j++){
+            delta_t = dSigdT*(25.-temp[j]); 
+	    // std::cout << Form("[TRLYFuncs::GetTRLYStatsAtTime_hybrid]: T = %.1lf deg-C, delta_T = %.1E, 1-delta_T = %.10lf",
+            //                   temp[j],delta_t,1-delta_t) << std::endl;
+	    freq[j] = freq[j]/(1.-delta_t);
+	 }
+      }
       // now get mean of events 
       mean_freq  = gm2fieldUtil::Math::GetMean<double>(freq);
       stdev_freq = gm2fieldUtil::Math::GetStandardDeviation<double>(freq);

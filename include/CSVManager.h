@@ -13,6 +13,7 @@
 class CSVManager { 
 
    private:
+      int fNumRow,fNumCol;
       bool fHeaderExists;
       std::vector<std::string> fHeader;
       std::vector< std::vector<std::string> > fData;
@@ -39,6 +40,13 @@ class CSVManager {
       ~CSVManager();
 
      int Print();
+     int PrintColumns(std::string cols); 
+     int PrintHeader(){ 
+        std::cout << "[CSVManager::PrintHeader]: Header data: " << std::endl;
+	const int N = fHeader.size(); 
+	for(int i=0;i<N;i++) std::cout << fHeader[i] << std::endl;
+	return 0;
+     }
      int ClearData();
      int ReadFile(const char *inpath,bool header=false); 
      int WriteFile(const char *outpath);
@@ -48,6 +56,8 @@ class CSVManager {
      int SetHeader(std::vector<std::string> header);  
 
      // getter methods
+     int GetNumRows()    const { return fNumRow; } 
+     int GetNumColumns() const { return fNumCol; } 
      int GetHeader(std::vector<std::string> &header);  
      std::string GetElement_str(int rowIndex,int colIndex);  
      int GetColumn_byIndex_str(int colIndex,std::vector<std::string> &data); 

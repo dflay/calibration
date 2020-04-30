@@ -795,7 +795,7 @@ int GetDifference_ABA_final(bool useTimeWeight,
       // now get the ABA difference
       if(useTimeWeight){
 	 arg        = w*diff + w_prev*diff_prev;
-	 arg_err_sq = B_err[i-1]*B_err[i-1] + w*w*A_err[i]*A_err[i] + w_prev*w_prev*A_err[i-1]*A_err[i-1];
+	 arg_err_sq = (1.-2.*w*w_prev)*B_err[i-1]*B_err[i-1] + w*w*A_err[i]*A_err[i] + w_prev*w_prev*A_err[i-1]*A_err[i-1];
          // account for correlations in measurements 
 	 // arg_err_sq = B_err[i-1]*B_err[i-1] + w*w*A_err[i]*A_err[i] + w_prev*w_prev*A_err[i-1]*A_err[i-1] 
          //            + 2.*w*w_prev*A_err[i]*A_err[i-1] - 2.*w*w_prev*A_err[i]*B_err[i-1] - 2.*w*w_prev*A_err[i-1]*B_err[i-1];

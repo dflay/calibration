@@ -9,55 +9,56 @@ InputManager::~InputManager(){
 }
 //______________________________________________________________________________
 int InputManager::Init(){
-   fIsSimple        = false; 
-   fIsFullAnalysis  = false; 
-   fIsBlind         = false; 
-   fUseP2PFit       = false; 
-   fIsFinalLocation = false;
-   fIsFreeProton    = false; 
-   fUseAxis         = false;
-   fLoadSwapTime    = false; 
-   fLoadSCCTime     = false;
-   fUseTimeWeight   = false; 
-   fUseTempCor      = false;
-   fUseTempCor_pp   = false;
-   fUseOscCor       = false; 
-   fRemoveFXPRDrift = false;
-   fUseMisalignCor  = false; 
-   fVaryDBTime_tr   = false;  
-   fVarySwapTime_tr = false; 
-   fVaryShimFit     = false; 
-   fVaryImpGradFit  = false; 
-   fSyst            = false;
-   fShimGradAltEnable = false;
+   fIsSimple            = false; 
+   fIsFullAnalysis      = false; 
+   fIsBlind             = false; 
+   fUseP2PFit           = false; 
+   fIsFinalLocation     = false;
+   fIsFreeProton        = false; 
+   fUseAxis             = false;
+   fLoadSwapTime        = false; 
+   fLoadSCCTime         = false;
+   fUseTimeWeight       = false; 
+   fUseTempCor          = false;
+   fUseTempCor_pp       = false;
+   fUseOscCor           = false; 
+   fRemoveFXPRDrift     = false;
+   fUseMisalignCor      = false; 
+   fVaryDBTime_tr       = false;  
+   fVarySwapTime_tr     = false; 
+   fVaryShimFit         = false; 
+   fVaryImpGradFit      = false; 
+   fSyst                = false;
+   fShimGradAltEnable   = false;
    fTRLYFootprintStatus = false; 
-   fSystDirNum      = 0;  
-   fTempCor_pp      = 0;
-   fTempCor_tr      = 0;
-   fNumEventsToAvg  = 0;  
+   fSystDirNum          = 0;  
+   fTempCor_pp          = 0;
+   fTempCor_tr          = 0;
+   fTempCor_trErr       = 0;
+   fNumEventsToAvg      = 0;  
    fNumEventsTimeWindow = 0; 
-   fTrolleyAngle     = 0; 
-   fDBZCurrent       = 0;
-   fDBDeltaTime_tr   = 0; 
-   fSwapDeltaTime_tr = 0; 
-   fTRLYFootprint    = 0; 
-   fTRLYFootprintErr = 0; 
-   fTrolleyProbe     = -1; 
-   fAxis             = -1;
-   fFXPRListTag      = -1;
-   fRunPeriod        = -1;
-   fBlindUnits       = -1;  
-   fBlindScale       = -1;
-   fImpGradFitDim    = -1;  
-   fImpGradFitOrder  = -1;  
-   fType             = "NONE";
-   fDevice           = "NONE";  
-   fRunDate          = "NONE";  
-   fAnaDate          = "NONE";  
-   fFitFunc          = "NONE";
-   fProdTag          = "NONE"; 
-   fNMRANATag        = "NONE";
-   fPPID             = "NONE";  
+   fTrolleyAngle        = 0; 
+   fDBZCurrent          = 0;
+   fDBDeltaTime_tr      = 0; 
+   fSwapDeltaTime_tr    = 0; 
+   fTRLYFootprint       = 0; 
+   fTRLYFootprintErr    = 0; 
+   fTrolleyProbe        = -1; 
+   fAxis                = -1;
+   fFXPRListTag         = -1;
+   fRunPeriod           = -1;
+   fBlindUnits          = -1;  
+   fBlindScale          = -1;
+   fImpGradFitDim       = -1;  
+   fImpGradFitOrder     = -1;  
+   fType                = "NONE";
+   fDevice              = "NONE";  
+   fRunDate             = "NONE";  
+   fAnaDate             = "NONE";  
+   fFitFunc             = "NONE";
+   fProdTag             = "NONE"; 
+   fNMRANATag           = "NONE";
+   fPPID                = "NONE";  
    ClearVectors(); 
    return 0;
 }
@@ -243,6 +244,7 @@ int InputManager::Parse(){
       if(tempStatus){
 	 fUseTempCor     = (bool)( (int)fParams["use-trly-temp-cor"]["enable"] ); 
 	 fTempCor_tr     = (double)fParams["use-trly-temp-cor"]["temp-cor-value"];  // in ppb/degC! 
+	 fTempCor_trErr  = (double)fParams["use-trly-temp-cor"]["temp-cor-err"];    // in ppb/degC! 
       }
       if(oscStatus){
 	 fUseOscCor       = (bool)( (int)fParams["osc-cor"]["enable"] );

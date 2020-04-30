@@ -21,7 +21,7 @@ class InputManager{
       bool fTRLYFootprintStatus; 
       int fSystDirNum; 
       int fTrolleyProbe,fAxis,fFXPRListTag,fBlindUnits,fRunPeriod,fNumEventsToAvg,fNumEventsTimeWindow,fImpGradFitDim,fImpGradFitOrder;
-      double fTempCor_tr,fTempCor_pp; 
+      double fTempCor_tr,fTempCor_trErr,fTempCor_pp; 
       double fBlindScale,fTrolleyAngle,fDBZCurrent,fDBDeltaTime_tr,fSwapDeltaTime_tr,fTRLYFootprint,fTRLYFootprintErr; 
       std::string fType,fDevice,fRunDate,fFitFunc,fBlindLabel,fProdTag,fNMRANATag,fCutFile,fPPID,fOscCorType,fAnaDate;
       std::vector<int> fRunList,fFXPRList; 
