@@ -13,15 +13,20 @@ import seaborn as sns
 import math
 
 #_______________________________________________________________________________
-def printToScreen(axis,df):
-   # input axis = list of axes 
-   print("Data for {0}".format(axis) ) 
-   x = df[axis1].tolist()
-   y = df[axis2].tolist()
+def printToScreen_listOfTypes(axis,df):
+   # input axis = list of axes
+   #       df   = existing dataframe 
 
-   N = len(x) 
-   for i in xrange(0,N): 
-      print("probe {0:2d}: {1:.3f}, {2:.3f}".format(i+1,x[i],y[i]) )
+   df_new = pd.DataFrame() 
+
+   i=0
+   for ax in axis:
+      x = df[ax].tolist()
+      df_new.insert(i,ax,x)      
+      i = i + 1 
+      x[:] = []  
+
+   print df_new
 
    return
 #_______________________________________________________________________________
@@ -108,33 +113,55 @@ def getStats(colName,df):
    return mean,stdev
 #_______________________________________________________________________________
 
-plotBingzhi = False 
+plotBingzhi = True
+plotRun2    = True
+removeBlind = False # using UNBLINDED files now! 
 
-print("Loading data...") 
+print("Loading data...")
+
+pd.set_option("display.precision", 2) 
 
 # create a pandas dataframe, reading in the csv file  
-csv_path = "./output/blinded/flay/04-28-20/run-1/calibData_04-28-20.csv"
+csv_path = "./output/unblinded/04-30-20/run-1/calibData_04-30-20.csv"
 print("Reading data from: {0}".format(csv_path)) 
 data_df1 = pd.read_csv(csv_path,index_col=False) # index_col = False when you don't have an index column
 print data_df1.columns
 
-csv_path = "./input/ran-hong/run-1_04-27-20.csv"
+csv_path = "./output/unblinded/05-04-20/run-2/calibData_05-04-20.csv"
+print("Reading data from: {0}".format(csv_path)) 
+data_df1_r2 = pd.read_csv(csv_path,index_col=False) # index_col = False when you don't have an index column
+print data_df1_r2[['deltaB_pp_z','deltaB_tr_z']]
+
+csv_path = "./input/ran-hong/run-1_unblind_05-04-20.csv"
 print("Reading data from: {0}".format(csv_path)) 
 data_df2 = pd.read_csv(csv_path,index_col=False) # index_col = False when you don't have an index column
 print data_df2.columns
 
-csv_path = "./input/bingzhi-li/run-1_04-27-20.csv"
+csv_path = "./input/bingzhi-li/run-1_05-01-20.csv"
 print("Reading data from: {0}".format(csv_path)) 
 data_df3 = pd.read_csv(csv_path,index_col=False) # index_col = False when you don't have an index column
 print data_df3.columns
 
 print("--> Done.") 
 
+blindDF = 2.54
+blindRH = 8.60 
+blindBL = 3.14
+
+if(removeBlind):
+   print("WARNING! REMOVING BLINDS!") 
+   data_df1['calibCoeff']     -= blindDF 
+   data_df1['calibCoeff_cor'] -= blindDF 
+   data_df2['calibCoeff']     -= blindRH 
+   data_df2['calibCoeff_cor'] -= blindRH 
+   data_df3['calibCoeff']     -= blindBL 
+   data_df3['calibCoeff_cor'] -= blindBL 
+
 print("Making plots...") 
 
 # marker parameters  
-color  = ["blue","red","#20B010"]
-mStyle = ["s","o","v"]
+color  = ["blue","red","#20B010","magenta"]
+mStyle = ["s","o","v","s"]
 mSize  = 80 
 
 # calculate differences 
@@ -170,12 +197,22 @@ ccc3  = data_df3['calibCoeff_cor'].tolist()
 ccc3e = data_df3['calibCoeffErr_cor'].tolist()
 data_comp.insert(1,'calibCoeff_cor_3',ccc1)
 
+cc4  = data_df1_r2['calibCoeff'].tolist()
+cc4e = data_df1_r2['calibCoeffErr'].tolist()
+data_comp.insert(1,'calibCoeff_4',cc4)
+
+ccc4  = data_df1_r2['calibCoeff_cor'].tolist()
+ccc4e = data_df1_r2['calibCoeffErr_cor'].tolist()
+data_comp.insert(1,'calibCoeff_cor_4',ccc4)
+
 # estimate of uncertainty on DF vs RH 
 NP  = len(cc1) 
 ee2  = [] 
 cee2 = [] 
 ee3  = [] 
 cee3 = [] 
+ee4  = [] 
+cee4 = [] 
 for i in xrange(0,NP):
    arg = math.sqrt( cc1e[i]*cc1e[i] + cc2e[i]*cc2e[i] ) 
    ee2.append(arg) 
@@ -185,20 +222,43 @@ for i in xrange(0,NP):
    ee3.append(arg) 
    arg = math.sqrt( ccc1e[i]*ccc1e[i] + ccc3e[i]*ccc3e[i] ) 
    cee3.append(arg) 
+   arg = math.sqrt( cc1e[i]*cc1e[i] + cc4e[i]*cc4e[i] ) 
+   ee4.append(arg) 
+   arg = math.sqrt( ccc1e[i]*ccc1e[i] + ccc4e[i]*ccc4e[i] ) 
+   cee4.append(arg) 
 
 data_comp.insert(1,'calibCoeff_2Err',ee2)  
 data_comp.insert(1,'calibCoeff_cor_2Err',cee2)  
 data_comp.insert(1,'calibCoeff_3Err',ee3)  
 data_comp.insert(1,'calibCoeff_cor_3Err',cee3)  
+data_comp.insert(1,'calibCoeff_4Err',ee4)  
+data_comp.insert(1,'calibCoeff_cor_4Err',cee4)  
 
 # take differences 
 getDiff_2df("calibCoeff"        ,"calibCoeffErr"        ,"rh_cc_diff"  ,"rh_cce_diff"    ,data_df1,data_df2,data_diff)
 getDiff_2df("calibCoeff_cor"    ,"calibCoeffErr_cor"    ,"rh_ccc_diff" ,"rh_ccce_diff"   ,data_df1,data_df2,data_diff)
 getDiff_2df("calibCoeff"        ,"calibCoeffErr"        ,"bl_cc_diff"  ,"bl_cce_diff"    ,data_df1,data_df3,data_diff)
 getDiff_2df("calibCoeff_cor"    ,"calibCoeffErr_cor"    ,"bl_ccc_diff" ,"bl_ccce_diff"   ,data_df1,data_df3,data_diff)
+getDiff_2df("calibCoeff"        ,"calibCoeffErr"        ,"r2_cc_diff"  ,"r2_cce_diff"    ,data_df1,data_df1_r2,data_diff)
+getDiff_2df("calibCoeff_cor"    ,"calibCoeffErr_cor"    ,"r2_ccc_diff" ,"r2_ccce_diff"   ,data_df1,data_df1_r2,data_diff)
 
 # getDiff_2df("calibCoeffFree"    ,"calibCoeffFreeErr"    ,"fcc_diff"  ,"fcce_diff"  ,data_df1,data_df2,data_diff)
 # getDiff_2df("calibCoeffFree_cor","calibCoeffFreeErr_cor","fccc_diff" ,"fccce_diff" ,data_df1,data_df2,data_diff)
+
+axisList = ["calibCoeff_cor","calibCoeffErr_cor","TotalSystematicError"]
+
+print("DF")
+printToScreen_listOfTypes(axisList,data_df1) 
+
+print("DF (Run 2)")
+printToScreen_listOfTypes(axisList,data_df1_r2) 
+
+print("RH")
+printToScreen_listOfTypes(axisList,data_df2) 
+
+print("BL")
+printToScreen_listOfTypes(axisList,data_df3)
+# print data_df3.columns 
 
 # print("DF") 
 # printToScreen("calibCoeff","calibCoeffErr",data_df1) 
@@ -235,6 +295,9 @@ legend = ['DF','RH']
 if plotBingzhi:
    legend.append('BL')
 
+if plotRun2: 
+   legend.append("DF (Run 2)")
+
 # sns.set_style("ticks")
 
 # calib coeffs (NO FREE PROTON)
@@ -248,6 +311,10 @@ data_df1.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[0],
 data_df2.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
 if plotBingzhi:
    data_df3.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+
+if plotRun2:
+   data_df1_r2.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[3], s=mSize, color=color[3], ax=currentAxis)
+
 # currentAxis.legend(legend)
 currentAxis.set_xlabel("Probe"                   , fontsize=xAxisFontSize,fontname=myFont) 
 currentAxis.set_ylabel("Blinded Calib Coeff (Hz)", fontsize=yAxisFontSize,fontname=myFont) 
@@ -260,9 +327,15 @@ axis    = "rh_ccc_diff"
 axisErr = "rh_ccce_diff"
 data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
 if plotBingzhi:
-   axis    = "bl_cc_diff"
-   axisErr = "bl_cce_diff"
+   axis    = "bl_ccc_diff"
+   axisErr = "bl_ccce_diff"
    data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+
+if plotRun2:
+   axis    = "r2_ccc_diff"
+   axisErr = "r2_ccce_diff"
+   data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[3], s=mSize, color=color[3], ax=currentAxis)
+
 currentAxis.set_xlabel("Probe"                  , fontsize=xAxisFontSize,fontname=myFont) 
 currentAxis.set_ylabel("Blinded Difference (Hz)", fontsize=yAxisFontSize,fontname=myFont) 
 currentAxis.set_ylim(bottom=-4, top=12)
@@ -270,6 +343,54 @@ currentAxis.tick_params(labelsize=tickSize)
 
 for ax in fig.get_axes():
     ax.label_outer()
+
+# calib coeffs (NO FREE PROTON)
+fig = plt.figure(2) 
+
+currentAxis = plt.gca() # grab current axis 
+
+diffRH = data_diff['rh_ccc_diff'].tolist()
+plt.hist(diffRH,bins=50)
+plt.title("Histogram of Differences (RH-DF)") 
+plt.xlabel("RH-DF (Hz)",fontsize=xAxisFontSize,fontname=myFont) 
+plt.ylabel("Counts"    ,fontsize=yAxisFontSize,fontname=myFont) 
+plt.tick_params(labelsize=tickSize)
+
+fig = plt.figure(3) 
+
+currentAxis = plt.gca() # grab current axis 
+
+diffBL = data_diff['bl_ccc_diff'].tolist()
+plt.hist(diffBL,bins=50)
+plt.title("Histogram of Differences (BL-DF)") 
+plt.xlabel("BL-DF (Hz)",fontsize=xAxisFontSize,fontname=myFont) 
+plt.ylabel("Counts"    ,fontsize=yAxisFontSize,fontname=myFont) 
+plt.tick_params(labelsize=tickSize)
+
+fig = plt.figure(4) 
+
+currentAxis = plt.gca() # grab current axis 
+
+diffBL = data_diff['r2_ccc_diff'].tolist()
+plt.hist(diffBL,bins=50)
+plt.title("Histogram of Differences (DF2-DF)") 
+plt.xlabel("DF2-DF (Hz)",fontsize=xAxisFontSize,fontname=myFont) 
+plt.ylabel("Counts"    ,fontsize=yAxisFontSize,fontname=myFont) 
+plt.tick_params(labelsize=tickSize)
+
+# data_diff.plot.hist(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[1], s=mSize, color=color[1], ax=currentAxis)
+# if plotBingzhi:
+#    axis    = "bl_cc_diff"
+#    axisErr = "bl_cce_diff"
+#    data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[2], s=mSize, color=color[2], ax=currentAxis)
+# currentAxis.set_xlabel("Probe"                  , fontsize=xAxisFontSize,fontname=myFont) 
+# currentAxis.set_ylabel("Blinded Difference (Hz)", fontsize=yAxisFontSize,fontname=myFont) 
+# currentAxis.set_ylim(bottom=-4, top=12)
+# currentAxis.tick_params(labelsize=tickSize)
+# 
+# for ax in fig.get_axes():
+#     ax.label_outer()
+ 
  
 # # plot calib coeffs against one another 
 # fig = plt.figure(2) 

@@ -58,6 +58,8 @@ class CSVManager {
      // getter methods
      int GetNumRows()    const { return fNumRow; } 
      int GetNumColumns() const { return fNumCol; } 
+     int GetColumnIndex_byName(std::string colName); 
+
      int GetHeader(std::vector<std::string> &header);  
      std::string GetElement_str(int rowIndex,int colIndex);  
      int GetColumn_byIndex_str(int colIndex,std::vector<std::string> &data); 

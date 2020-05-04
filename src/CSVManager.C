@@ -176,6 +176,15 @@ int CSVManager::GetHeader(std::vector<std::string> &header){
    return 0;
 }
 //______________________________________________________________________________
+int CSVManager::GetColumnIndex_byName(std::string colName){
+   // find the inded of a given column
+   int k=-1;
+   int NH = fHeader.size(); 
+   for(int i=0;i<NH;i++) if( fHeader[i].compare(colName)==0 ) k = i;
+   if(k<0) std::cout << "[CSVManager::GetColumnIndex_byName]: No column named '" << colName << "'" << std::endl;
+   return k;
+}
+//______________________________________________________________________________
 int CSVManager::PrintColumns(std::string cols){
 
    std::vector<std::string> colName;
@@ -184,11 +193,11 @@ int CSVManager::PrintColumns(std::string cols){
 
    std::vector<int> colIndex; 
    int NH = fHeader.size(); 
-   for(int i=0;i<NH;i++){
-      for(int j=0;j<NCN;j++){
-	 if( fHeader[i].compare(colName[j])==0 ){
-	    // std::cout << Form("[CSVManager::PrintColumns]: Found column '%s', index = %d",colName[j].c_str(),i) << std::endl;
-	    colIndex.push_back(i);
+   for(int i=0;i<NCN;i++){
+      for(int j=0;j<NH;j++){
+	 if( colName[i].compare(fHeader[j])==0 ){
+	    // std::cout << Form("[CSVManager::PrintColumns]: Found column '%s', index = %d",colName[i].c_str(),j) << std::endl;
+	    colIndex.push_back(j);
 	 }
       }
    }
@@ -211,17 +220,18 @@ int CSVManager::PrintColumns(std::string cols){
    for(int i=0;i<NROW;i++){   
       // build the row
       for(int j=0;j<NC-1;j++){ 
-	 k = colIndex[j]; 
+	 k  = colIndex[j]; 
+         // std::cout << "NOW GETTING COLUMN " << colName[j] << ", index = " << k << std::endl;
 	 sx = GetElement_str(i,k);
 	 if(j==0){
 	    sprintf(msg,"%s",sx.c_str()); 
          }else{ 
-	    sprintf(msg,"%s,%s",msg,sx.c_str()); 
+	    sprintf(msg,"%s     %s",msg,sx.c_str()); 
 	 } 
       }
       k  = colIndex[NC-1]; 
       sx = GetElement_str(i,k);
-      sprintf(msg,"%s,%s",msg,sx.c_str());       
+      sprintf(msg,"%s     %s",msg,sx.c_str());       
       // print to screen 
       std::cout << msg << std::endl;  
       // clear

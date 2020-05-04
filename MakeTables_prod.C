@@ -332,7 +332,7 @@ int CollectData(int runPeriod,
                 std::vector< std::vector<misalignCor_t> > mCor_a,std::vector<calib_result_t> &data){
 
    // gather data into a single struct 
-   double db_tr=0,db_tr_err=0,db_pp=0,db_pp_err=0,DB=0,DBE_stat=0,DBE_syst=0;
+   double err_sq=0,db_tr=0,db_tr_err=0,db_pp=0,db_pp_err=0,DB=0,DBE_stat=0,DBE_syst=0;
    calib_result_t dataPt; 
    const int N = r.size();
    for(int i=0;i<N;i++){
@@ -448,8 +448,14 @@ int CollectData(int runPeriod,
       dataPt.dB_diff_zSystErr = DBE_syst;
       // misalignment CORRECTION. always use the opt result.  this is in Hz 
       // this is a sum over all axes
-      dataPt.misCor                = mCor[i][2].val; // index 2 = opt result     
-      dataPt.misCor_err            = TMath::Abs(mCor[i][2].err); // index 2 = opt result 
+      // dataPt.misCor                = mCor[i][2].val;             // index 2 = opt result     
+      // dataPt.misCor_err            = TMath::Abs(mCor[i][2].err); // index 2 = opt result 
+      // compute this one by hand 
+      dataPt.misCor                = mCor_a[i][0].val + mCor_a[i][1].val + mCor_a[i][2].val_bar; // barcode
+      err_sq                       = TMath::Power(mCor_a[i][0].err,2.) 
+                                   + TMath::Power(mCor_a[i][1].err,2.) 
+                                   + TMath::Power(mCor_a[i][2].err_bar,2.); // barcode
+      dataPt.misCor_err            = TMath::Sqrt(err_sq); 
       // now the second index is AXIS
       dataPt.misCor_x              = mCor_a[i][0].val;  
       dataPt.misCor_xErr           = TMath::Abs(mCor_a[i][0].err);
@@ -762,10 +768,13 @@ int PrintToFile_csv(const char *outpath,std::vector<calib_result_t> data){
          sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].mis_x,data[i].mis_xErr); 
          sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].mis_y,data[i].mis_yErr); 
          sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].mis_z,data[i].mis_zErr); 
+         sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].mis_z_bar,data[i].mis_zErr_bar); 
 
          sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].misCor_x,data[i].misCor_xErr); 
          sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].misCor_y,data[i].misCor_yErr); 
          sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].misCor_z,data[i].misCor_zErr); 
+         sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].misCor_z_bar,data[i].misCor_zErr_bar); 
+         sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].misCor,data[i].misCor_err); 
 
          sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].shim_x_a,data[i].shim_x_aErr); 
          sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].shim_x_b,data[i].shim_x_bErr); 
@@ -779,8 +788,6 @@ int PrintToFile_csv(const char *outpath,std::vector<calib_result_t> data){
          sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].shim_z_b,data[i].shim_z_bErr); 
          sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].shim_z_c,data[i].shim_z_cErr); 
 
-         sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].mis_z_bar,data[i].mis_zErr_bar); 
-         sprintf(outStr,"%s,%.3lf,%.3lf",outStr,data[i].misCor_z_bar,data[i].misCor_zErr_bar); 
 
          sprintf(outStr,"%s,%.3lf,%.3lf,%.3lf",outStr,data[i].dB_diff_x,data[i].dB_diff_xErr,data[i].dB_diff_xSystErr); 
          sprintf(outStr,"%s,%.3lf,%.3lf,%.3lf",outStr,data[i].dB_diff_y,data[i].dB_diff_yErr,data[i].dB_diff_ySystErr); 

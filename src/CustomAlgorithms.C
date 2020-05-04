@@ -1,7 +1,8 @@
 #include "../include/CustomAlgorithms.h"
 //______________________________________________________________________________
-int GetAvgSCCMagnitude(std::string type,std::vector<surfaceCoilEvent_t> data,double &mean,double &err){
-   // Get surface coil maximum magnitude (excluding zeroes) 
+int GetAvgSCCMagnitude(std::string type,std::vector<surfaceCoilEvent_t> data,double &mean,double &err,unsigned long long t0){
+   // Get surface coil maximum magnitude (excluding zeroes)
+   // t0 = time cut threshold  
    std::vector<double> x;
    double mag=0;
    double thr = 0.100; // cut threshold
@@ -13,7 +14,9 @@ int GetAvgSCCMagnitude(std::string type,std::vector<surfaceCoilEvent_t> data,dou
 	 if(type.compare("top")==0) mag = TMath::Abs(data[i].TopCurrents[j] );  
 	 if(type.compare("bot")==0) mag = TMath::Abs(data[i].BotCurrents[j] ); 
 	 if(type.compare("azi")==0) mag = TMath::Abs(data[i].AzCurrents[j]  );
-	 if(mag>thr) x.push_back(mag); // cut out zeroes 
+	 if(data[i].TopTime[j]>t0 && t0>0){
+	    if(mag>thr) x.push_back(mag); // cut out zeroes
+	 } 
       }
    }
    mean = gm2fieldUtil::Math::GetMean<double>(x); 

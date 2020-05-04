@@ -76,6 +76,11 @@ int DeltaB_trly_prod(std::string configFile){
    int systDirNum          = inputMgr->GetSystDirNum(); 
    double dB_delta         = inputMgr->GetDeltaTime("tr","db");  
 
+   unsigned long long t0_scc=-1; 
+   if(runPeriod==2 && probeNumber==10){
+      t0_scc = gm2fieldUtil::GetUTCTimeStampFromString("Sun 2019-07-07 13:58:00 CDT"); 
+   }
+
    // update the analysis method according to Ran's guidance -- do we use this anymore?? 
    // if(prodVersion.compare("v9_21_06_dev")==0) method = gm2fieldUtil::Constants::kHilbertPhaseLinear;
 
@@ -153,14 +158,19 @@ int DeltaB_trly_prod(std::string configFile){
    bool needSF=false;
    double sf=1.,mean_scc=0,err_scc=0,tgt=0.82,diff_pct=0;
    if(axis==2){
-      GetAvgSCCMagnitude("azi",sccData,mean_scc,err_scc);
-      // apply a correction scale factor if difference from 0.82 exceeds 10% 
-      diff_pct = 100.*TMath::Abs(mean_scc-tgt)/tgt;
-      if(diff_pct>10.){
-         sf = tgt/mean_scc;
-         needSF = true;
-         std::cout << Form("[DeltaB_pp_prod]: WARNING!  SCC azi current = %.3lf A.",mean_scc);
-         std::cout << Form("  Applying a scale factor = %.3lf to the dB result.",sf) << std::endl;
+      GetAvgSCCMagnitude("azi",sccData,mean_scc,err_scc,t0_scc);
+      if( TMath::Abs(mean_scc)>1){
+         std::cout << "[DeltaB_trly_prod]: WARNING!  SCC data corrupted? Setting scale factor to 1" << std::endl;
+         sf = 1.;
+      }else{
+         // apply a correction scale factor if difference from 0.82 exceeds 10% 
+         diff_pct = 100.*TMath::Abs(mean_scc-tgt)/tgt;
+         if(diff_pct>10.){
+            sf = tgt/mean_scc;
+            needSF = true;
+            std::cout << Form("[DeltaB_pp_prod]: WARNING!  SCC azi current = %.3lf A.",mean_scc);
+            std::cout << Form("  Applying a scale factor = %.3lf to the dB result.",sf) << std::endl;
+         }
       }
    }
    
