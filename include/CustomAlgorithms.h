@@ -36,7 +36,7 @@ TGraph *GetDiffPlot(TGraphErrors *g1,TGraphErrors *g2);
 // TGraph *GetDriftTGraph(int method,std::vector<int> driftRun,std::vector<int> fxprList,std::vector<double> &stats); 
 // TGraph *GetDriftTGraphR2R(int method,std::vector<int> driftRun,std::vector<int> fxprList,std::vector<double> &stats);
 
-int GetAvgSCCMagnitude(std::string type,std::vector<surfaceCoilEvent_t> data,double &mean,double &err,unsigned long long t0=-1); 
+int GetAvgSCCMagnitude(std::string type,std::vector<surfaceCoilEvent_t> data,double &mean,double &err,unsigned long long t0=0); 
 
 int CheckShimGrad(int probe,std::vector<grad_meas_t> &data); 
 

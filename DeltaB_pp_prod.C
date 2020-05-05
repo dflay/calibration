@@ -448,7 +448,12 @@ int DeltaB_pp_prod(std::string configFile){
    delete c1;  
 
    double yMin_scc = -50; 
-   double yMax_scc =  50; 
+   double yMax_scc =  50;
+
+   if(axis==2){
+      yMin_scc = -1;
+      yMax_scc =  1;
+   }
 
    TLine **tON  = new TLine*[NSCC];
    TLine **tOFF = new TLine*[NSCC];

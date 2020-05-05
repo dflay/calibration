@@ -76,9 +76,11 @@ int DeltaB_trly_prod(std::string configFile){
    int systDirNum          = inputMgr->GetSystDirNum(); 
    double dB_delta         = inputMgr->GetDeltaTime("tr","db");  
 
-   unsigned long long t0_scc=-1; 
-   if(runPeriod==2 && probeNumber==10){
-      t0_scc = gm2fieldUtil::GetUTCTimeStampFromString("Sun 2019-07-07 13:58:00 CDT"); 
+   std::string TIME_STAMP = "Sun 2019-07-07 13:59:00 CDT";  
+   unsigned long long t0_scc=0; 
+   if(runPeriod==2 && probeNumber==10 && axis==2){
+      t0_scc = gm2fieldUtil::GetUTCTimeStampFromString(TIME_STAMP,true);
+      std::cout << "SPECIAL CUT ON SCC TIME: " << TIME_STAMP << " (" << t0_scc << ")" << std::endl; 
    }
 
    // update the analysis method according to Ran's guidance -- do we use this anymore?? 
@@ -269,6 +271,11 @@ int DeltaB_trly_prod(std::string configFile){
 
    double yMin_scc = -3; 
    double yMax_scc =  3; 
+
+   if(axis==2){
+      yMin_scc = -1;
+      yMax_scc =  1;
+   }
 
    const int NL     = sccOn.size();
    TLine **tON      = new TLine*[NL];

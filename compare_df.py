@@ -113,8 +113,8 @@ def getStats(colName,df):
    return mean,stdev
 #_______________________________________________________________________________
 
-plotBingzhi = True
-plotRun2    = True
+plotBingzhi = True 
+plotRun2    = False 
 removeBlind = False # using UNBLINDED files now! 
 
 print("Loading data...")
@@ -122,7 +122,7 @@ print("Loading data...")
 pd.set_option("display.precision", 2) 
 
 # create a pandas dataframe, reading in the csv file  
-csv_path = "./output/unblinded/04-30-20/run-1/calibData_04-30-20.csv"
+csv_path = "./output/unblinded/05-04-20/run-1/calibData_05-04-20.csv"
 print("Reading data from: {0}".format(csv_path)) 
 data_df1 = pd.read_csv(csv_path,index_col=False) # index_col = False when you don't have an index column
 print data_df1.columns
@@ -130,14 +130,14 @@ print data_df1.columns
 csv_path = "./output/unblinded/05-04-20/run-2/calibData_05-04-20.csv"
 print("Reading data from: {0}".format(csv_path)) 
 data_df1_r2 = pd.read_csv(csv_path,index_col=False) # index_col = False when you don't have an index column
-print data_df1_r2[['deltaB_pp_z','deltaB_tr_z']]
+# print data_df1_r2[['deltaB_pp_z','deltaB_tr_z']]
 
 csv_path = "./input/ran-hong/run-1_unblind_05-04-20.csv"
 print("Reading data from: {0}".format(csv_path)) 
 data_df2 = pd.read_csv(csv_path,index_col=False) # index_col = False when you don't have an index column
 print data_df2.columns
 
-csv_path = "./input/bingzhi-li/run-1_05-01-20.csv"
+csv_path = "./input/bingzhi-li/run-1_unblind_05-04-20.csv"
 print("Reading data from: {0}".format(csv_path)) 
 data_df3 = pd.read_csv(csv_path,index_col=False) # index_col = False when you don't have an index column
 print data_df3.columns
@@ -150,10 +150,10 @@ blindBL = 3.14
 
 if(removeBlind):
    print("WARNING! REMOVING BLINDS!") 
-   data_df1['calibCoeff']     -= blindDF 
-   data_df1['calibCoeff_cor'] -= blindDF 
-   data_df2['calibCoeff']     -= blindRH 
-   data_df2['calibCoeff_cor'] -= blindRH 
+   # data_df1['calibCoeff']     -= blindDF 
+   # data_df1['calibCoeff_cor'] -= blindDF 
+   # data_df2['calibCoeff']     -= blindRH 
+   # data_df2['calibCoeff_cor'] -= blindRH 
    data_df3['calibCoeff']     -= blindBL 
    data_df3['calibCoeff_cor'] -= blindBL 
 
@@ -317,7 +317,7 @@ if plotRun2:
 
 # currentAxis.legend(legend)
 currentAxis.set_xlabel("Probe"                   , fontsize=xAxisFontSize,fontname=myFont) 
-currentAxis.set_ylabel("Blinded Calib Coeff (Hz)", fontsize=yAxisFontSize,fontname=myFont) 
+currentAxis.set_ylabel("Calib Coeff (Hz)", fontsize=yAxisFontSize,fontname=myFont) 
 currentAxis.set_ylim(bottom=100, top=300)
 currentAxis.tick_params(labelsize=tickSize)
 
@@ -337,7 +337,7 @@ if plotRun2:
    data_diff.plot(kind="scatter", x="Probe", y=axis, yerr=axisErr, marker=mStyle[3], s=mSize, color=color[3], ax=currentAxis)
 
 currentAxis.set_xlabel("Probe"                  , fontsize=xAxisFontSize,fontname=myFont) 
-currentAxis.set_ylabel("Blinded Difference (Hz)", fontsize=yAxisFontSize,fontname=myFont) 
+currentAxis.set_ylabel("Difference (Hz)", fontsize=yAxisFontSize,fontname=myFont) 
 currentAxis.set_ylim(bottom=-4, top=12)
 currentAxis.tick_params(labelsize=tickSize)
 

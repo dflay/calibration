@@ -84,7 +84,9 @@ int CSVManager::ReadFile(const char *inpath,bool headerExists){
    fNumRow = NROW; 
 
    // column check
-   if(NCOL!=fNumCol) std::cout << "[CSVManager::ReadFile]: ERROR!  Number of headers doesn't match number of columns!" << std::endl;
+   if(NCOL!=fNumCol && fHeaderExists){
+      std::cout << "[CSVManager::ReadFile]: ERROR!  Number of headers doesn't match number of columns!" << std::endl;
+   }
 
    char msg[200]; 
    if(fHeaderExists)  sprintf(msg,"[CSVManager::ReadFile]: Found header, %d rows, %d columns"   ,NROW,NCOL);
@@ -151,6 +153,7 @@ int CSVManager::SetHeader(std::string fullHeader){
    int N = header.size();
    for(int i=0;i<N;i++) fHeader.push_back(header[i]);
    fNumCol = fHeader.size();  
+   fHeaderExists = true;
    return 0;
 }
 //______________________________________________________________________________
@@ -161,6 +164,7 @@ int CSVManager::SetHeader(std::vector<std::string> header){
    int N = header.size();
    for(int i=0;i<N;i++) fHeader.push_back(header[i]); 
    fNumCol = fHeader.size();  
+   fHeaderExists = true;
    return 0;
 }
 //______________________________________________________________________________

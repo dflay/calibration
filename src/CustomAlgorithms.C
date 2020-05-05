@@ -2,9 +2,14 @@
 //______________________________________________________________________________
 int GetAvgSCCMagnitude(std::string type,std::vector<surfaceCoilEvent_t> data,double &mean,double &err,unsigned long long t0){
    // Get surface coil maximum magnitude (excluding zeroes)
-   // t0 = time cut threshold  
+   // t0 = time cut threshold 
+
+   std::string timeStamp = gm2fieldUtil::GetStringTimeStampFromUTC(t0); 
+   if(t0>0) std::cout << "[CustomAlgorithms::GetAvgSCCMagnitude]: THE TIME CUT IS " << timeStamp << "(" << t0 << ")" << std::endl;
+ 
    std::vector<double> x;
    double mag=0;
+   double theTime=0,T0=(double)t0;
    double thr = 0.100; // cut threshold
    int M = 100;
    if(type.compare("azi")==0) M = 4;
@@ -14,8 +19,10 @@ int GetAvgSCCMagnitude(std::string type,std::vector<surfaceCoilEvent_t> data,dou
 	 if(type.compare("top")==0) mag = TMath::Abs(data[i].TopCurrents[j] );  
 	 if(type.compare("bot")==0) mag = TMath::Abs(data[i].BotCurrents[j] ); 
 	 if(type.compare("azi")==0) mag = TMath::Abs(data[i].AzCurrents[j]  );
-	 if(data[i].TopTime[j]>t0 && t0>0){
-	    if(mag>thr) x.push_back(mag); // cut out zeroes
+         theTime = data[i].TopTime[j]/1E+9; 
+	 if(theTime>T0 && mag>thr){
+            std::cout << Form("event time = %.01lf, t0 = %.0lf, diff = %.0lf",theTime,T0,theTime-T0) << std::endl;
+	    x.push_back(mag); // cut out zeroes
 	 } 
       }
    }
