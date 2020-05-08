@@ -180,8 +180,12 @@ void FreeProton::CalculateBulkMagneticSusceptibility(double T,double &delta_b,do
 //______________________________________________________________________________
 void FreeProton::CalculateMagneticSusceptibility(double T,double &CHI,double &CHI_ERR){
    // compute magnetic susceptibility when accounting for temperature dependence
-   double DT   = 20. - T;  // NOTE: SIGN WAS FLIPPED TO MATCH SHIELDING BELOW 4/24/20
+   double DT   = T-20.;  // NOTE: SIGN IS DIFFERENT FROM DIAMAGNETIC SHIELDING!
+   // where does this come from?
    double a[3] = {1.38810E-4,-1.2685E-7,8.09E-10};
+   // from J Chem Phys 72, 4434 
+   // double a[3]  = {0.997218,1.0213,-14.12E-5};
+   // double da[3] = {0.000005,0.0007,0.03E-5};
    double ARG  = 1. + a[0]*DT + a[1]*TMath::Power(DT,2.) + a[2]*TMath::Power(DT,3.);
    CHI     = fchi*ARG;
    CHI_ERR = fchi_err*ARG;

@@ -18,7 +18,7 @@ TGraphErrors *GetTGraphErrors(int probe,std::string xAxis,std::string yAxis,std:
 int TestFree(){
 
    char inpath[200];
-   sprintf(inpath,"./input/perturbation/PP-145-01_test.json"); 
+   sprintf(inpath,"./input/perturbation/run-1/PP-145-01.json"); 
 
    FreeProton *fp = new FreeProton(inpath);
    fp->Print(); 
