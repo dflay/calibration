@@ -7,6 +7,8 @@ FreeProton::FreeProton(const char *inpath){
    if(thePath.compare("NONE")!=0){
       rc = LoadData(inpath);
    }
+   fT0_sigma = 25.0;
+   fT0_chi   = 20.0;
 }
 //______________________________________________________________________________
 FreeProton::~FreeProton(){
@@ -180,7 +182,7 @@ void FreeProton::CalculateBulkMagneticSusceptibility(double T,double &delta_b,do
 //______________________________________________________________________________
 void FreeProton::CalculateMagneticSusceptibility(double T,double &CHI,double &CHI_ERR){
    // compute magnetic susceptibility when accounting for temperature dependence
-   double DT   = T-20.;  // NOTE: SIGN IS DIFFERENT FROM DIAMAGNETIC SHIELDING!
+   double DT   = T - fT0_chi;  // NOTE: SIGN IS DIFFERENT FROM DIAMAGNETIC SHIELDING!
    // where does this come from?
    double a[3] = {1.38810E-4,-1.2685E-7,8.09E-10};
    // from J Chem Phys 72, 4434 
@@ -194,7 +196,7 @@ void FreeProton::CalculateMagneticSusceptibility(double T,double &CHI,double &CH
 void FreeProton::CalculateDiamagneticShielding(double T,double &SIG,double &ERR){
    // compute diamagnetic shielding with temperature dependence
    // sigma_T0 = sigma @ T = 25 deg C
-   double DT         = 25. - T;  
+   double DT         = fT0_sigma - T;  
    double dsigdT     = -10.36E-9; 
    double dsigdT_err =   0.30E-9;
    SIG = fsigma + dsigdT*DT;

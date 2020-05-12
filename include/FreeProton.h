@@ -18,6 +18,8 @@ class FreeProton {
    private:
 
       std::string fProbeID; 
+
+      double fT0_sigma,fT0_chi;  // baseline temps to correct to 
  
       double fsigma,feps,fchi,fdelta_s,fdelta_p,fdelta_b,fdelta_rd,fdelta_d,fdelta_v;
       double fsigma_err,feps_err,fchi_err,fdelta_s_err,fdelta_p_err,fdelta_b_err; 
@@ -33,7 +35,9 @@ class FreeProton {
       ~FreeProton(); 
 
       void Clear(); 
-      void Print(std::string units="ppb"); 
+      void Print(std::string units="ppb");
+      void SetT0_sigma(double t0)        { fT0_sigma = t0; } 
+      void SetT0_chi(double t0)          { fT0_chi   = t0; } 
 
       int LoadData(const char *inpath); 
       
@@ -50,6 +54,8 @@ class FreeProton {
       double GetDelta_rd_err()     const { return fdelta_rd_err; } 
       double GetDelta_d_err()      const { return fdelta_d_err;  } 
       double GetDelta_v_err()      const { return fdelta_v_err;  }
+      double GetT0_sigma()         const { return fT0_sigma;     }
+      double GetT0_chi()           const { return fT0_chi;       }
 
       // functions of T
       double GetDelta_b(double T); 
