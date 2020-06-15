@@ -1,0 +1,18 @@
+{
+"probe-01" : {"dB": {"time": "Sun 2019-02-17 13:30:00 CST","state": "upper", "axis":"z"}, 
+              "fxpr": {"time": ["Sun 2019-02-17 13:30:00 CST",
+                                "Sun 2019-02-17 13:30:00 CST",
+                                "Sun 2019-02-17 13:30:00 CST"], 
+                       "state": ["lower","lower","lower"]} },
+"probe-07" : {"dB": {"time": "Sun 2019-02-17 13:10:00 CST","state": "NONE"  , "axis":"t"}, 
+              "fxpr": {"time": ["Sun 2019-03-31 11:48:00 CDT",
+                                "Sun 2019-03-31 11:48:00 CDT",
+                                "Sun 2019-03-31 11:40:00 CDT"], 
+                       "state":["lower","lower","upper"]} },
+"probe-08" : {"dB":   {"time": "NONE","state": "NONE"  , "axis":"t"},
+              "shim": {"time": "Sun 2019-03-31 15:12:58 CDT,Sun 2019-03-31 15:15:00", "state": "range","axis": "y"}, 
+              "fxpr": {"time": ["Sun 2019-03-31 14:53:00 CDT,Sun 2019-03-31 15:00:00 CDT",
+                                "Sun 2019-03-31 15:12:50 CDT,Sun 2019-03-31 15:15:00 CDT",
+                                "Sun 2019-03-31 14:50:00 CDT"], 
+                       "state": ["range","range","upper"]} }
+}

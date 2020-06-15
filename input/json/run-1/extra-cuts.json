@@ -1,0 +1,7 @@
+{
+"probe-05": { "fxpr": {"time": ["Tue 2018-07-10 17:40:00 CDT","Tue 2018-07-10 17:40:00 CDT","Tue 2018-07-10 17:40:00 CDT"], "state": ["lower","lower","lower"]  } },
+"probe-06": { "fxpr": {"time": ["Thu 2018-07-12 12:30:30 CDT","Thu 2018-07-12 12:30:30 CDT","Thu 2018-07-12 12:30:30 CDT"], "state": ["lower","lower","lower"]  } },
+"probe-07": { "fxpr": {"time": ["Thu 2018-07-12 09:49:00 CDT","Thu 2018-07-12 09:49:00 CDT","Thu 2018-07-12 09:49:00 CDT"], "state": ["lower","lower","lower"]  } },
+"probe-10": { "fxpr": {"time": ["Wed 2018-07-11 18:56:00 CDT","Wed 2018-07-11 18:56:00 CDT","Wed 2018-07-11 18:56:00 CDT"], "state": ["lower","lower","lower"]  } },
+"probe-15": { "fxpr": {"time": ["Fri 2018-07-13 15:13:30 CDT","Fri 2018-07-13 15:13:30 CDT","Fri 2018-07-13 15:13:30 CDT"], "state": ["lower","lower","lower"]  } }
+}

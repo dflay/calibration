@@ -1,0 +1,15 @@
+{
+"date"                : "07-09-19",
+"trly-probe"          : 1,
+"trly_azi-angle"      : 189.096,
+"dBz-current"         : 0.82,
+"rel-field-strength"  : -3.0,  
+"dB-pp_x"             : {"midas-runs": [8083],"load-times": false },            
+"dB-pp_y"             : {"midas-runs": [8084],"load-times": false },       
+"dB-pp_z"             : {"midas-runs": [8085],"load-times": false },      
+"dB-trly_x"           : {"midas-runs": [6048] },
+"dB-trly_y"           : {"midas-runs": [6049] }, 
+"dB-trly_z"           : {"midas-runs": [8092] },
+"calib-run"           : {"midas-run" : 8107 },
+"local-shim-scan"     : {"midas-runs": [8105], "ppx": [-1], "ppy": [-1], "ppz": [-1], "fit": "pol2" }
+}

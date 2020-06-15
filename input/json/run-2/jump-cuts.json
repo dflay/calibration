@@ -1,0 +1,19 @@
+{
+"probe-01": { "swap-jump": {"time": ["NONE"], "state": ["NONE"]  } },
+"probe-02": { "swap-jump": {"time": ["NONE"], "state": ["NONE"]  } },
+"probe-03": { "swap-jump": {"time": ["NONE"], "state": ["NONE"]  } },
+"probe-04": { "swap-jump": {"time": ["NONE"], "state": ["NONE"]  } },
+"probe-05": { "swap-jump": {"time": ["NONE"], "state": ["NONE"]  } },
+"probe-06": { "swap-jump": {"time": ["NONE"], "state": ["NONE"]  } },
+"probe-07": { "swap-jump": {"time": ["NONE"], "state": ["NONE"]  } },
+"probe-08": { "swap-jump": {"time": ["NONE"], "state": ["NONE"]  } },
+"probe-09": { "swap-jump": {"time": ["NONE"], "state": ["NONE"]  } },
+"probe-10": { "swap-jump": {"time": ["NONE"], "state": ["NONE"]  } },
+"probe-11": { "swap-jump": {"time": ["NONE"], "state": ["NONE"]  } },
+"probe-12": { "swap-jump": {"time": ["NONE"], "state": ["NONE"]  } },
+"probe-13": { "swap-jump": {"time": ["NONE"], "state": ["NONE"]  } },
+"probe-14": { "swap-jump": {"time": ["NONE"], "state": ["NONE"]  } },
+"probe-15": { "swap-jump": {"time": ["NONE"], "state": ["NONE"]  } },
+"probe-16": { "swap-jump": {"time": ["NONE"], "state": ["NONE"]  } },
+"probe-17": { "swap-jump": {"time": ["NONE"], "state": ["NONE"]  } }
+}
